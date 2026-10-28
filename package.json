@@ -1,0 +1,24 @@
+{
+  "name": "backpack-miser",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "build:single": "vite build --config vite.single.config.ts",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "sim": "vite-node sim/balance.ts"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vite-node": "^6.0.0",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^4.1.12"
+  }
+}
