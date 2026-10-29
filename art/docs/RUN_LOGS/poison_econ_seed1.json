@@ -1,0 +1,236 @@
+{
+  "strategy": "poison_econ",
+  "strategyName": "毒/经济流（商旅）",
+  "seed": 1,
+  "heroClass": "merchant",
+  "mode": "story",
+  "starter": [
+    "匕首",
+    "盾牌",
+    "钱袋"
+  ],
+  "result": "victory",
+  "reached": 50,
+  "retries": 0,
+  "deaths": [],
+  "assistanceUsed": false,
+  "completion": "pure",
+  "relics": [
+    "C06",
+    "A12",
+    "R08"
+  ],
+  "runes": [
+    "U01",
+    "U03"
+  ],
+  "doctrine": "T06",
+  "doctrineRerolled": false,
+  "camps": [
+    "L5营地:forge:匕首",
+    "L10营地:forge:匕首",
+    "L15营地:forge:匕首",
+    "L20营地:rest",
+    "L25营地:forge:药水",
+    "L30营地:rest",
+    "L35营地:rest",
+    "L40营地:rest",
+    "L45营地:rest",
+    "L49整备:rest"
+  ],
+  "choices": {
+    "L19:0": "take",
+    "L23:1": "protect",
+    "L34:2": "keep",
+    "L39:3": "evidence"
+  },
+  "ending": "public_ledger",
+  "chapters": [
+    {
+      "chapter": 1,
+      "level": 5,
+      "hp": 100,
+      "maxHp": 100,
+      "gold": 48,
+      "retries": 0
+    },
+    {
+      "chapter": 2,
+      "level": 10,
+      "hp": 100,
+      "maxHp": 100,
+      "gold": 70,
+      "retries": 0
+    },
+    {
+      "chapter": 3,
+      "level": 15,
+      "hp": 93,
+      "maxHp": 100,
+      "gold": 52,
+      "retries": 0
+    },
+    {
+      "chapter": 4,
+      "level": 20,
+      "hp": 86,
+      "maxHp": 100,
+      "gold": 199,
+      "retries": 0
+    },
+    {
+      "chapter": 5,
+      "level": 25,
+      "hp": 70,
+      "maxHp": 100,
+      "gold": 255,
+      "retries": 0
+    },
+    {
+      "chapter": 6,
+      "level": 30,
+      "hp": 95,
+      "maxHp": 100,
+      "gold": 360,
+      "retries": 0
+    },
+    {
+      "chapter": 7,
+      "level": 35,
+      "hp": 95,
+      "maxHp": 100,
+      "gold": 446,
+      "retries": 0
+    },
+    {
+      "chapter": 8,
+      "level": 40,
+      "hp": 100,
+      "maxHp": 100,
+      "gold": 548,
+      "retries": 0
+    },
+    {
+      "chapter": 9,
+      "level": 45,
+      "hp": 93,
+      "maxHp": 100,
+      "gold": 693,
+      "retries": 0
+    },
+    {
+      "chapter": 10,
+      "level": 49,
+      "hp": 73,
+      "maxHp": 100,
+      "gold": 789,
+      "retries": 0
+    },
+    {
+      "chapter": 10,
+      "level": 50,
+      "hp": 3,
+      "maxHp": 100,
+      "gold": 847,
+      "retries": 0
+    }
+  ],
+  "goldCurve": [
+    8,
+    7,
+    6,
+    9,
+    16,
+    6,
+    12,
+    13,
+    19,
+    23,
+    12,
+    21,
+    13,
+    14,
+    32,
+    17,
+    47,
+    79,
+    81,
+    105,
+    178,
+    177,
+    187,
+    196,
+    183,
+    216,
+    238,
+    233,
+    259,
+    284,
+    313,
+    328,
+    335,
+    330,
+    366,
+    400,
+    405,
+    407,
+    431,
+    460,
+    527,
+    524,
+    552,
+    567,
+    601,
+    662,
+    690,
+    695,
+    723,
+    737
+  ],
+  "skipLoot21": 5,
+  "loot21": 24,
+  "buildChanges21": 8,
+  "bossResults": {
+    "5": {
+      "win": 1,
+      "loss": 0
+    },
+    "10": {
+      "win": 1,
+      "loss": 0
+    },
+    "15": {
+      "win": 1,
+      "loss": 0
+    },
+    "20": {
+      "win": 1,
+      "loss": 0
+    },
+    "25": {
+      "win": 1,
+      "loss": 0
+    },
+    "30": {
+      "win": 1,
+      "loss": 0
+    },
+    "35": {
+      "win": 1,
+      "loss": 0
+    },
+    "40": {
+      "win": 1,
+      "loss": 0
+    },
+    "45": {
+      "win": 1,
+      "loss": 0
+    },
+    "50": {
+      "win": 1,
+      "loss": 0
+    }
+  },
+  "wallMs": 58
+}

@@ -1,0 +1,6604 @@
+{
+  "version": "art-v1",
+  "canvas": {
+    "hero": [
+      1024,
+      1024
+    ],
+    "footAnchor": [
+      512,
+      928
+    ]
+  },
+  "animationPolicy": "keyframe_hold_until_inbetweens",
+  "counts": {
+    "total": 305,
+    "ready": 305,
+    "pending": 0,
+    "byStatus": {
+      "ready_keyframe": 11,
+      "ready_cycle": 194,
+      "ready_procedural": 98,
+      "ready_ai_key": 1,
+      "ready_ai": 1
+    }
+  },
+  "assets": [
+    {
+      "id": "merchant_idle",
+      "use": "hero_merchant_idle",
+      "path": "art/characters/merchant/keyframes/merchant_idle.png",
+      "publicPath": "art/characters/merchant/merchant_idle.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_keyframe",
+      "note": "HOLD keyframe; full continuous cycle ready"
+    },
+    {
+      "id": "merchant_move",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move.png",
+      "publicPath": "art/characters/merchant/merchant_move.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 1,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_keyframe",
+      "note": "HOLD keyframe; full continuous cycle ready"
+    },
+    {
+      "id": "merchant_attack",
+      "use": "hero_merchant_attack",
+      "path": "art/characters/merchant/keyframes/merchant_attack.png",
+      "publicPath": "art/characters/merchant/merchant_attack.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_keyframe",
+      "note": "HOLD keyframe; full continuous cycle ready"
+    },
+    {
+      "id": "merchant_defend",
+      "use": "hero_merchant_defend",
+      "path": "art/characters/merchant/keyframes/merchant_defend.png",
+      "publicPath": "art/characters/merchant/merchant_defend_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 1,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/merchant_defend_v2.jpg",
+      "status": "ready_keyframe",
+      "note": "HOLD keyframe = defend f01; full cycle 4 frames ready (from merchant_defend_v2)"
+    },
+    {
+      "id": "merchant_hurt",
+      "use": "hero_merchant_hurt",
+      "path": "art/characters/merchant/keyframes/merchant_hurt.png",
+      "publicPath": "art/characters/merchant/merchant_hurt.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 1,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_keyframe",
+      "note": "HOLD keyframe; full continuous cycle ready"
+    },
+    {
+      "id": "merchant_drink",
+      "use": "hero_merchant_drink",
+      "path": "art/characters/merchant/keyframes/merchant_drink.png",
+      "publicPath": "art/characters/merchant/merchant_drink_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = drink f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "merchant_special",
+      "use": "hero_merchant_special",
+      "path": "art/characters/merchant/keyframes/merchant_special.png",
+      "publicPath": "art/characters/merchant/merchant_special_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = special f01; full cycle 6 frames ready (gold pot)"
+    },
+    {
+      "id": "merchant_victory",
+      "use": "hero_merchant_victory",
+      "path": "art/characters/merchant/keyframes/merchant_victory.png",
+      "publicPath": "art/characters/merchant/merchant_victory_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = victory f01; full cycle 6 frames ready (gold pot)"
+    },
+    {
+      "id": "merchant_defeat",
+      "use": "hero_merchant_defeat",
+      "path": "art/characters/merchant/keyframes/merchant_defeat.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = defeat f01; full cycle 6 frames ready (gold pot)"
+    },
+    {
+      "id": "merchant_sheet_1024",
+      "use": "hero_merchant_atlas",
+      "path": "art/characters/merchant/sheets/merchant_keyframes.png",
+      "size": [
+        3072,
+        3072
+      ],
+      "transparent": true,
+      "characterState": "atlas",
+      "frameCount": 9,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_keyframe",
+      "note": "9 key poses packed"
+    },
+    {
+      "id": "merchant_sheet_512",
+      "use": "hero_merchant_atlas_runtime",
+      "path": "art/characters/merchant/sheets/merchant_keyframes_512.png",
+      "publicPath": "art/characters/merchant/merchant_keyframes_512.png",
+      "size": [
+        1536,
+        1536
+      ],
+      "transparent": true,
+      "characterState": "atlas",
+      "frameCount": 9,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "art/refs/merchant-9grid.png",
+      "status": "ready_keyframe",
+      "note": "runtime half-res"
+    },
+    {
+      "id": "guard_idle",
+      "use": "hero_guard_idle",
+      "path": "art/characters/guard/keyframes/guard_idle.png",
+      "publicPath": "art/characters/guard/guard_idle_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = idle f01; full cycle ready"
+    },
+    {
+      "id": "guard_move",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move.png",
+      "publicPath": "art/characters/guard/guard_move_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 1,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = move f01; full cycle ready"
+    },
+    {
+      "id": "guard_attack",
+      "use": "hero_guard_attack",
+      "path": "art/characters/guard/keyframes/guard_attack.png",
+      "publicPath": "art/characters/guard/guard_attack_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = attack f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "guard_defend",
+      "use": "hero_guard_defend",
+      "path": "art/characters/guard/keyframes/guard_defend.png",
+      "publicPath": "art/characters/guard/guard_defend_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 1,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = defend f01; full cycle 4 frames ready"
+    },
+    {
+      "id": "guard_hurt",
+      "use": "hero_guard_hurt",
+      "path": "art/characters/guard/keyframes/guard_hurt.png",
+      "publicPath": "art/characters/guard/guard_hurt_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 1,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = hurt f01; full cycle 3 frames ready"
+    },
+    {
+      "id": "guard_drink",
+      "use": "hero_guard_drink",
+      "path": "art/characters/guard/keyframes/guard_drink.png",
+      "publicPath": "art/characters/guard/guard_drink_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = drink f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "guard_special",
+      "use": "hero_guard_special",
+      "path": "art/characters/guard/keyframes/guard_special.png",
+      "publicPath": "art/characters/guard/guard_special_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = special f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "guard_victory",
+      "use": "hero_guard_victory",
+      "path": "art/characters/guard/keyframes/guard_victory.png",
+      "publicPath": "art/characters/guard/guard_victory_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = victory f01; full cycle 6 frames ready (runtime HOLD last)"
+    },
+    {
+      "id": "guard_defeat",
+      "use": "hero_guard_defeat",
+      "path": "art/characters/guard/keyframes/guard_defeat.png",
+      "publicPath": "art/characters/guard/guard_defeat_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = defeat f01; full cycle 6 frames ready (runtime HOLD last)"
+    },
+    {
+      "id": "guard_sheet_1024",
+      "use": "hero_guard_atlas",
+      "path": "art/characters/guard/sheets/guard_keyframes.png",
+      "size": [
+        3072,
+        3072
+      ],
+      "transparent": true,
+      "characterState": "atlas",
+      "frameCount": 9,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_keyframe",
+      "note": "9 key poses packed"
+    },
+    {
+      "id": "guard_sheet_512",
+      "use": "hero_guard_atlas_runtime",
+      "path": "art/characters/guard/sheets/guard_keyframes_512.png",
+      "publicPath": "art/characters/guard/guard_keyframes_512.png",
+      "size": [
+        1536,
+        1536
+      ],
+      "transparent": true,
+      "characterState": "atlas",
+      "frameCount": 9,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "art/refs/guard-9grid.png",
+      "status": "ready_keyframe",
+      "note": "runtime half-res"
+    },
+    {
+      "id": "ranger_idle",
+      "use": "hero_ranger_idle",
+      "path": "art/characters/ranger/keyframes/ranger_idle.png",
+      "publicPath": "art/characters/ranger/ranger_idle_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = idle f01; full cycle 4 frames ready"
+    },
+    {
+      "id": "ranger_move",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move.png",
+      "publicPath": "art/characters/ranger/ranger_move_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 1,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = move f01; full cycle 8 frames ready"
+    },
+    {
+      "id": "ranger_attack",
+      "use": "hero_ranger_attack",
+      "path": "art/characters/ranger/keyframes/ranger_attack.png",
+      "publicPath": "art/characters/ranger/ranger_attack_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = attack f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "ranger_defend",
+      "use": "hero_ranger_defend",
+      "path": "art/characters/ranger/keyframes/ranger_defend.png",
+      "publicPath": "art/characters/ranger/ranger_defend_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 1,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = defend f01; full cycle 4 frames ready"
+    },
+    {
+      "id": "ranger_hurt",
+      "use": "hero_ranger_hurt",
+      "path": "art/characters/ranger/keyframes/ranger_hurt.png",
+      "publicPath": "art/characters/ranger/ranger_hurt_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 1,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = hurt f01; full cycle 3 frames ready"
+    },
+    {
+      "id": "ranger_drink",
+      "use": "hero_ranger_drink",
+      "path": "art/characters/ranger/keyframes/ranger_drink.png",
+      "publicPath": "art/characters/ranger/ranger_drink_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = drink f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "ranger_special",
+      "use": "hero_ranger_special",
+      "path": "art/characters/ranger/keyframes/ranger_special.png",
+      "publicPath": "art/characters/ranger/ranger_special_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = special f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "ranger_victory",
+      "use": "hero_ranger_victory",
+      "path": "art/characters/ranger/keyframes/ranger_victory.png",
+      "publicPath": "art/characters/ranger/ranger_victory_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = victory f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "ranger_defeat",
+      "use": "hero_ranger_defeat",
+      "path": "art/characters/ranger/keyframes/ranger_defeat.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 1,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_cycle",
+      "note": "HOLD keyframe = defeat f01; full cycle 6 frames ready"
+    },
+    {
+      "id": "ranger_sheet_1024",
+      "use": "hero_ranger_atlas",
+      "path": "art/characters/ranger/sheets/ranger_keyframes.png",
+      "size": [
+        3072,
+        3072
+      ],
+      "transparent": true,
+      "characterState": "atlas",
+      "frameCount": 9,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_keyframe",
+      "note": "9 key poses packed"
+    },
+    {
+      "id": "ranger_sheet_512",
+      "use": "hero_ranger_atlas_runtime",
+      "path": "art/characters/ranger/sheets/ranger_keyframes_512.png",
+      "publicPath": "art/characters/ranger/ranger_keyframes_512.png",
+      "size": [
+        1536,
+        1536
+      ],
+      "transparent": true,
+      "characterState": "atlas",
+      "frameCount": 9,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "art/refs/ranger-9grid.png",
+      "status": "ready_keyframe",
+      "note": "runtime half-res"
+    },
+    {
+      "id": "equip_W01_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/W01_t1.png",
+      "publicPath": "art/equipment/W01_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "匕首 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W01_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/W01_t2.png",
+      "publicPath": "art/equipment/W01_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "匕首 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W01_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/W01_t3.png",
+      "publicPath": "art/equipment/W01_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "匕首 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W02_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/W02_t1.png",
+      "publicPath": "art/equipment/W02_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "大剑 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W02_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/W02_t2.png",
+      "publicPath": "art/equipment/W02_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "大剑 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W02_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/W02_t3.png",
+      "publicPath": "art/equipment/W02_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "大剑 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_D01_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/D01_t1.png",
+      "publicPath": "art/equipment/D01_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "盾牌 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_D01_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/D01_t2.png",
+      "publicPath": "art/equipment/D01_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "盾牌 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_D01_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/D01_t3.png",
+      "publicPath": "art/equipment/D01_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "盾牌 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_H01_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/H01_t1.png",
+      "publicPath": "art/equipment/H01_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "药水 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_H01_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/H01_t2.png",
+      "publicPath": "art/equipment/H01_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "药水 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_H01_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/H01_t3.png",
+      "publicPath": "art/equipment/H01_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "药水 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S01_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/S01_t1.png",
+      "publicPath": "art/equipment/S01_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "红宝石 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S01_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/S01_t2.png",
+      "publicPath": "art/equipment/S01_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "红宝石 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S01_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/S01_t3.png",
+      "publicPath": "art/equipment/S01_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "红宝石 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_E01_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/E01_t1.png",
+      "publicPath": "art/equipment/E01_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "钱袋 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_E01_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/E01_t2.png",
+      "publicPath": "art/equipment/E01_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "钱袋 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_E01_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/E01_t3.png",
+      "publicPath": "art/equipment/E01_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "钱袋 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W03_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/W03_t1.png",
+      "publicPath": "art/equipment/W03_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "连弩 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W03_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/W03_t2.png",
+      "publicPath": "art/equipment/W03_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "连弩 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W03_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/W03_t3.png",
+      "publicPath": "art/equipment/W03_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "连弩 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W04_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/W04_t1.png",
+      "publicPath": "art/equipment/W04_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "链锤 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W04_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/W04_t2.png",
+      "publicPath": "art/equipment/W04_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "链锤 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W04_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/W04_t3.png",
+      "publicPath": "art/equipment/W04_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "链锤 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W05_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/W05_t1.png",
+      "publicPath": "art/equipment/W05_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "毒针 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W05_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/W05_t2.png",
+      "publicPath": "art/equipment/W05_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "毒针 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W05_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/W05_t3.png",
+      "publicPath": "art/equipment/W05_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "毒针 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W06_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/W06_t1.png",
+      "publicPath": "art/equipment/W06_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "战锤 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W06_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/W06_t2.png",
+      "publicPath": "art/equipment/W06_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "战锤 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_W06_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/W06_t3.png",
+      "publicPath": "art/equipment/W06_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "战锤 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S02_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/S02_t1.png",
+      "publicPath": "art/equipment/S02_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "冰晶 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S02_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/S02_t2.png",
+      "publicPath": "art/equipment/S02_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "冰晶 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S02_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/S02_t3.png",
+      "publicPath": "art/equipment/S02_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "冰晶 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S03_t1",
+      "use": "equipment_icon",
+      "path": "art/equipment/S03_t1.png",
+      "publicPath": "art/equipment/S03_t1.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "战旗 等级1 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S03_t2",
+      "use": "equipment_icon",
+      "path": "art/equipment/S03_t2.png",
+      "publicPath": "art/equipment/S03_t2.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "战旗 等级2 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "equip_S03_t3",
+      "use": "equipment_icon",
+      "path": "art/equipment/S03_t3.png",
+      "publicPath": "art/equipment/S03_t3.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "战旗 等级3 程序绘制占位，待手绘重生"
+    },
+    {
+      "id": "relic_C01",
+      "use": "relic_icon",
+      "path": "art/relics/C01.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C01.png"
+    },
+    {
+      "id": "relic_C02",
+      "use": "relic_icon",
+      "path": "art/relics/C02.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C02.png"
+    },
+    {
+      "id": "relic_C03",
+      "use": "relic_icon",
+      "path": "art/relics/C03.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C03.png"
+    },
+    {
+      "id": "relic_C04",
+      "use": "relic_icon",
+      "path": "art/relics/C04.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C04.png"
+    },
+    {
+      "id": "relic_C05",
+      "use": "relic_icon",
+      "path": "art/relics/C05.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C05.png"
+    },
+    {
+      "id": "relic_C06",
+      "use": "relic_icon",
+      "path": "art/relics/C06.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C06.png"
+    },
+    {
+      "id": "relic_C07",
+      "use": "relic_icon",
+      "path": "art/relics/C07.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C07.png"
+    },
+    {
+      "id": "relic_C08",
+      "use": "relic_icon",
+      "path": "art/relics/C08.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C08.png"
+    },
+    {
+      "id": "relic_C09",
+      "use": "relic_icon",
+      "path": "art/relics/C09.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C09.png"
+    },
+    {
+      "id": "relic_C10",
+      "use": "relic_icon",
+      "path": "art/relics/C10.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C10.png"
+    },
+    {
+      "id": "relic_C11",
+      "use": "relic_icon",
+      "path": "art/relics/C11.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C11.png"
+    },
+    {
+      "id": "relic_C12",
+      "use": "relic_icon",
+      "path": "art/relics/C12.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/C12.png"
+    },
+    {
+      "id": "relic_R01",
+      "use": "relic_icon",
+      "path": "art/relics/R01.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R01.png"
+    },
+    {
+      "id": "relic_R02",
+      "use": "relic_icon",
+      "path": "art/relics/R02.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R02.png"
+    },
+    {
+      "id": "relic_R03",
+      "use": "relic_icon",
+      "path": "art/relics/R03.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R03.png"
+    },
+    {
+      "id": "relic_R04",
+      "use": "relic_icon",
+      "path": "art/relics/R04.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R04.png"
+    },
+    {
+      "id": "relic_R05",
+      "use": "relic_icon",
+      "path": "art/relics/R05.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R05.png"
+    },
+    {
+      "id": "relic_R06",
+      "use": "relic_icon",
+      "path": "art/relics/R06.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R06.png"
+    },
+    {
+      "id": "relic_R07",
+      "use": "relic_icon",
+      "path": "art/relics/R07.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R07.png"
+    },
+    {
+      "id": "relic_R08",
+      "use": "relic_icon",
+      "path": "art/relics/R08.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/R08.png"
+    },
+    {
+      "id": "relic_K01",
+      "use": "relic_icon",
+      "path": "art/relics/K01.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/K01.png"
+    },
+    {
+      "id": "relic_K02",
+      "use": "relic_icon",
+      "path": "art/relics/K02.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/K02.png"
+    },
+    {
+      "id": "relic_K03",
+      "use": "relic_icon",
+      "path": "art/relics/K03.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/K03.png"
+    },
+    {
+      "id": "relic_K04",
+      "use": "relic_icon",
+      "path": "art/relics/K04.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "unique silhouette",
+      "publicPath": "art/relics/K04.png"
+    },
+    {
+      "id": "N01_slime",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N01_slime.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已检查",
+      "note": "史莱姆",
+      "type": "enemy",
+      "publicPath": "art/enemies/N01_slime.png",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N02_bat",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N02_bat.png",
+      "size": [
+        256,
+        256
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        128,
+        220
+      ],
+      "reference": "V2 procedural",
+      "status": "已接入待检查",
+      "note": "洞穴蝙蝠",
+      "publicPath": "art/enemies/N02_bat.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N03_skeleton",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N03_skeleton.png",
+      "size": [
+        256,
+        256
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        128,
+        220
+      ],
+      "reference": "V2 procedural",
+      "status": "已接入待检查",
+      "note": "骷髅卫士",
+      "publicPath": "art/enemies/N03_skeleton.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N04_brute",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N04_brute.png",
+      "size": [
+        256,
+        256
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        128,
+        220
+      ],
+      "reference": "V2 procedural",
+      "status": "已接入待检查",
+      "note": "地牢蛮兵",
+      "publicPath": "art/enemies/N04_brute.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N05_rats",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N05_rats.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已制作未接入",
+      "note": "双生鼠群 procedural silhouette",
+      "publicPath": "art/enemies/N05_rats.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N06_beetle",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N06_beetle.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "结晶甲虫 procedural silhouette",
+      "publicPath": "art/enemies/N06_beetle.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N07_archer",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N07_archer.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "蓄力弓手 procedural silhouette",
+      "publicPath": "art/enemies/N07_archer.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N08_priest",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N08_priest.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "补给祭司 procedural silhouette",
+      "publicPath": "art/enemies/N08_priest.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N09_spider",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N09_spider.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "孵化幼蛛 procedural silhouette",
+      "publicPath": "art/enemies/N09_spider.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N10_miner",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N10_miner.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "狂热矿工 procedural silhouette",
+      "publicPath": "art/enemies/N10_miner.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N11_vault_guard",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N11_vault_guard.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "王库守卫 procedural silhouette",
+      "publicPath": "art/enemies/N11_vault_guard.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N12_hound",
+      "use": "enemy_sprite",
+      "path": "art/enemies/N12_hound.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "黄金猎犬 procedural silhouette",
+      "publicPath": "art/enemies/N12_hound.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E03_foreman",
+      "use": "enemy_sprite",
+      "path": "art/enemies/E03_foreman.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已检查",
+      "note": "矿洞监工 procedural silhouette",
+      "publicPath": "art/enemies/E03_foreman.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E08_dual_guard",
+      "use": "enemy_sprite",
+      "path": "art/enemies/E08_dual_guard.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "铁甲双卫 procedural silhouette",
+      "publicPath": "art/enemies/E08_dual_guard.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E13_brood",
+      "use": "enemy_sprite",
+      "path": "art/enemies/E13_brood.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已检查",
+      "note": "剧毒育母 procedural silhouette",
+      "publicPath": "art/enemies/E13_brood.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E18_executioner",
+      "use": "enemy_sprite",
+      "path": "art/enemies/E18_executioner.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "王库执刑官 procedural silhouette",
+      "publicPath": "art/enemies/E18_executioner.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B05_mimic",
+      "use": "enemy_sprite",
+      "path": "art/enemies/B05_mimic.png",
+      "size": [
+        256,
+        256
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        128,
+        220
+      ],
+      "reference": "V2 procedural",
+      "status": "已检查",
+      "note": "黄金宝箱怪",
+      "publicPath": "art/enemies/B05_mimic.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B10_iron_warden",
+      "use": "enemy_sprite",
+      "path": "art/enemies/B10_iron_warden.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "铸铁看守 procedural silhouette",
+      "publicPath": "art/enemies/B10_iron_warden.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B15_spider_queen",
+      "use": "enemy_sprite",
+      "path": "art/enemies/B15_spider_queen.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "孵化蛛后 procedural silhouette",
+      "publicPath": "art/enemies/B15_spider_queen.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B20_tax_lord",
+      "use": "enemy_sprite",
+      "path": "art/enemies/B20_tax_lord.png",
+      "size": [
+        512,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 1,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "V2 §16-18",
+      "status": "已接入待检查",
+      "note": "税金领主 procedural silhouette",
+      "publicPath": "art/enemies/B20_tax_lord.png",
+      "type": "enemy",
+      "canvas": 1024,
+      "footY": 928,
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "bg_chapter1",
+      "use": "battle_background",
+      "path": "art/backgrounds/chapter1_mine.png",
+      "publicPath": "art/backgrounds/chapter1_mine.png",
+      "size": [
+        960,
+        540
+      ],
+      "transparent": false,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE §8",
+      "status": "ready_ai",
+      "note": "贪婪矿洞"
+    },
+    {
+      "id": "chapter2_prison",
+      "use": "battle_background",
+      "path": "art/backgrounds/chapter2_prison.png",
+      "publicPath": "art/backgrounds/chapter2_prison.png",
+      "size": [
+        960,
+        540
+      ],
+      "transparent": false,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE §8",
+      "status": "已检查",
+      "note": "铁锈牢城",
+      "type": "background",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "chapter3_nest",
+      "use": "battle_background",
+      "path": "art/backgrounds/chapter3_nest.png",
+      "publicPath": "art/backgrounds/chapter3_nest.png",
+      "size": [
+        960,
+        540
+      ],
+      "transparent": false,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE §8",
+      "status": "已检查",
+      "note": "幽毒巢穴",
+      "type": "background",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "chapter4_vault",
+      "use": "battle_background",
+      "path": "art/backgrounds/chapter4_vault.png",
+      "publicPath": "art/backgrounds/chapter4_vault.png",
+      "size": [
+        960,
+        540
+      ],
+      "transparent": false,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE §8",
+      "status": "已接入待检查",
+      "note": "黄金王库",
+      "type": "background",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "ui_panel_wide",
+      "use": "ui_chrome",
+      "path": "art/ui/panel_wide.png",
+      "publicPath": "art/ui/panel_wide.png",
+      "size": [
+        64,
+        64
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "宽面板"
+    },
+    {
+      "id": "ui_panel_square",
+      "use": "ui_chrome",
+      "path": "art/ui/panel_square.png",
+      "publicPath": "art/ui/panel_square.png",
+      "size": [
+        64,
+        64
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "方面板"
+    },
+    {
+      "id": "ui_btn_gold",
+      "use": "ui_chrome",
+      "path": "art/ui/btn_gold.png",
+      "publicPath": "art/ui/btn_gold.png",
+      "size": [
+        64,
+        64
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "金按钮"
+    },
+    {
+      "id": "ui_bar_frame",
+      "use": "ui_chrome",
+      "path": "art/ui/bar_frame.png",
+      "publicPath": "art/ui/bar_frame.png",
+      "size": [
+        64,
+        64
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "血条框"
+    },
+    {
+      "id": "ui_coin",
+      "use": "ui_chrome",
+      "path": "art/ui/coin.png",
+      "publicPath": "art/ui/coin.png",
+      "size": [
+        64,
+        64
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "金币"
+    },
+    {
+      "id": "ui_bag_cell",
+      "use": "ui_chrome",
+      "path": "art/ui/bag_cell.png",
+      "publicPath": "art/ui/bag_cell.png",
+      "size": [
+        64,
+        64
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "背包格"
+    },
+    {
+      "id": "fx_slash",
+      "use": "vfx",
+      "path": "art/fx/slash.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "slash",
+      "publicPath": "art/fx/slash.png"
+    },
+    {
+      "id": "fx_block_spark",
+      "use": "vfx",
+      "path": "art/fx/block_spark.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "block_spark",
+      "publicPath": "art/fx/block_spark.png"
+    },
+    {
+      "id": "fx_heal",
+      "use": "vfx",
+      "path": "art/fx/heal.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "heal",
+      "publicPath": "art/fx/heal.png"
+    },
+    {
+      "id": "fx_poison",
+      "use": "vfx",
+      "path": "art/fx/poison.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "poison",
+      "publicPath": "art/fx/poison.png"
+    },
+    {
+      "id": "fx_coin_burst",
+      "use": "vfx",
+      "path": "art/fx/coin_burst.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "coin_burst",
+      "publicPath": "art/fx/coin_burst.png"
+    },
+    {
+      "id": "fx_merge_glow",
+      "use": "vfx",
+      "path": "art/fx/merge_glow.png",
+      "size": [
+        128,
+        128
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE procedural",
+      "status": "ready_procedural",
+      "note": "merge_glow",
+      "publicPath": "art/fx/merge_glow.png"
+    },
+    {
+      "id": "deco_shop_deco",
+      "use": "scene_deco",
+      "path": "art/ui/shop_deco.png",
+      "size": [
+        512,
+        256
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE",
+      "status": "ready_procedural",
+      "note": "shop_deco",
+      "publicPath": "art/ui/shop_deco.png"
+    },
+    {
+      "id": "deco_camp_deco",
+      "use": "scene_deco",
+      "path": "art/ui/camp_deco.png",
+      "size": [
+        512,
+        256
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE",
+      "status": "ready_procedural",
+      "note": "camp_deco",
+      "publicPath": "art/ui/camp_deco.png"
+    },
+    {
+      "id": "deco_event_deco",
+      "use": "scene_deco",
+      "path": "art/ui/event_deco.png",
+      "size": [
+        512,
+        256
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE",
+      "status": "ready_procedural",
+      "note": "event_deco",
+      "publicPath": "art/ui/event_deco.png"
+    },
+    {
+      "id": "deco_reward_frame",
+      "use": "scene_deco",
+      "path": "art/ui/reward_frame.png",
+      "size": [
+        512,
+        256
+      ],
+      "transparent": true,
+      "characterState": null,
+      "frameCount": 1,
+      "footAnchor": null,
+      "reference": "ART_BIBLE",
+      "status": "ready_procedural",
+      "note": "reward_frame",
+      "publicPath": "art/ui/reward_frame.png"
+    },
+    {
+      "id": "merchant_idle_f01",
+      "use": "hero_merchant_idle",
+      "path": "art/characters/merchant/keyframes/merchant_idle_f01.png",
+      "publicPath": "art/characters/merchant/merchant_idle_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "idle 1/4 complete"
+    },
+    {
+      "id": "merchant_move_f01",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f01.png",
+      "publicPath": "art/characters/merchant/merchant_move_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 1/8 complete cycle"
+    },
+    {
+      "id": "merchant_move_f02",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f02.png",
+      "publicPath": "art/characters/merchant/merchant_move_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 2/8 complete cycle"
+    },
+    {
+      "id": "merchant_idle_f02",
+      "use": "hero_merchant_idle",
+      "path": "art/characters/merchant/keyframes/merchant_idle_f02.png",
+      "publicPath": "art/characters/merchant/merchant_idle_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "idle 2/4 complete"
+    },
+    {
+      "id": "merchant_idle_f03",
+      "use": "hero_merchant_idle",
+      "path": "art/characters/merchant/keyframes/merchant_idle_f03.png",
+      "publicPath": "art/characters/merchant/merchant_idle_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "idle 3/4 complete"
+    },
+    {
+      "id": "merchant_move_f03",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f03.png",
+      "publicPath": "art/characters/merchant/merchant_move_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 3/8 complete cycle"
+    },
+    {
+      "id": "merchant_move_f04",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f04.png",
+      "publicPath": "art/characters/merchant/merchant_move_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 4/8 complete cycle"
+    },
+    {
+      "id": "merchant_move_f05",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f05.png",
+      "publicPath": "art/characters/merchant/merchant_move_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 5/8 complete cycle"
+    },
+    {
+      "id": "merchant_move_f06",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f06.png",
+      "publicPath": "art/characters/merchant/merchant_move_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 6/8 complete cycle"
+    },
+    {
+      "id": "merchant_move_f07",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f07.png",
+      "publicPath": "art/characters/merchant/merchant_move_f07_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 7/8 complete cycle"
+    },
+    {
+      "id": "merchant_move_f08",
+      "use": "hero_merchant_move",
+      "path": "art/characters/merchant/keyframes/merchant_move_f08.png",
+      "publicPath": "art/characters/merchant/merchant_move_f08_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "move frame 8/8 complete cycle"
+    },
+    {
+      "id": "merchant_idle_f04",
+      "use": "hero_merchant_idle",
+      "path": "art/characters/merchant/keyframes/merchant_idle_f04.png",
+      "publicPath": "art/characters/merchant/merchant_idle_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "idle 4/4 complete"
+    },
+    {
+      "id": "merchant_attack_f01",
+      "use": "hero_merchant_attack",
+      "path": "art/characters/merchant/keyframes/merchant_attack_f01.png",
+      "publicPath": "art/characters/merchant/merchant_attack_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "attack 1/6 complete"
+    },
+    {
+      "id": "merchant_attack_f02",
+      "use": "hero_merchant_attack",
+      "path": "art/characters/merchant/keyframes/merchant_attack_f02.png",
+      "publicPath": "art/characters/merchant/merchant_attack_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "attack 2/6 complete"
+    },
+    {
+      "id": "merchant_attack_f03",
+      "use": "hero_merchant_attack",
+      "path": "art/characters/merchant/keyframes/merchant_attack_f03.png",
+      "publicPath": "art/characters/merchant/merchant_attack_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "attack 3/6 complete"
+    },
+    {
+      "id": "merchant_attack_f04",
+      "use": "hero_merchant_attack",
+      "path": "art/characters/merchant/keyframes/merchant_attack_f04.png",
+      "publicPath": "art/characters/merchant/merchant_attack_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "attack 4/6 complete"
+    },
+    {
+      "id": "merchant_attack_f05",
+      "use": "hero_merchant_attack",
+      "path": "art/characters/merchant/keyframes/merchant_attack_f05.png",
+      "publicPath": "art/characters/merchant/merchant_attack_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "attack 5/6 complete"
+    },
+    {
+      "id": "merchant_attack_f06",
+      "use": "hero_merchant_attack",
+      "path": "art/characters/merchant/keyframes/merchant_attack_f06.png",
+      "publicPath": "art/characters/merchant/merchant_attack_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "attack 6/6 complete"
+    },
+    {
+      "id": "merchant_attack_cycle_512",
+      "use": "hero_merchant_attack_atlas",
+      "path": "art/characters/merchant/sheets/merchant_attack_cycle_512.png",
+      "publicPath": "art/characters/merchant/merchant_attack_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "attack 6-frame strip atlas"
+    },
+    {
+      "id": "merchant_defend_f01",
+      "use": "hero_merchant_defend",
+      "path": "art/characters/merchant/keyframes/merchant_defend_f01.png",
+      "publicPath": "art/characters/merchant/merchant_defend_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "defend 1/4"
+    },
+    {
+      "id": "merchant_defend_f02",
+      "use": "hero_merchant_defend",
+      "path": "art/characters/merchant/keyframes/merchant_defend_f02.png",
+      "publicPath": "art/characters/merchant/merchant_defend_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "defend 2/4"
+    },
+    {
+      "id": "merchant_defend_f03",
+      "use": "hero_merchant_defend",
+      "path": "art/characters/merchant/keyframes/merchant_defend_f03.png",
+      "publicPath": "art/characters/merchant/merchant_defend_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "defend 3/4"
+    },
+    {
+      "id": "merchant_defend_f04",
+      "use": "hero_merchant_defend",
+      "path": "art/characters/merchant/keyframes/merchant_defend_f04.png",
+      "publicPath": "art/characters/merchant/merchant_defend_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "defend 4/4"
+    },
+    {
+      "id": "merchant_hurt_f01",
+      "use": "hero_merchant_hurt",
+      "path": "art/characters/merchant/keyframes/merchant_hurt_f01.png",
+      "publicPath": "art/characters/merchant/merchant_hurt_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "hurt 1/3"
+    },
+    {
+      "id": "merchant_hurt_f02",
+      "use": "hero_merchant_hurt",
+      "path": "art/characters/merchant/keyframes/merchant_hurt_f02.png",
+      "publicPath": "art/characters/merchant/merchant_hurt_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "hurt 2/3"
+    },
+    {
+      "id": "merchant_hurt_f03",
+      "use": "hero_merchant_hurt",
+      "path": "art/characters/merchant/keyframes/merchant_hurt_f03.png",
+      "publicPath": "art/characters/merchant/merchant_hurt_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "hurt 3/3"
+    },
+    {
+      "id": "merchant_defend_cycle_512",
+      "use": "hero_merchant_defend_atlas",
+      "path": "art/characters/merchant/sheets/merchant_defend_cycle_512.png",
+      "publicPath": "art/characters/merchant/merchant_defend_cycle_512.png",
+      "size": [
+        2048,
+        512
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "defend strip"
+    },
+    {
+      "id": "merchant_hurt_cycle_512",
+      "use": "hero_merchant_hurt_atlas",
+      "path": "art/characters/merchant/sheets/merchant_hurt_cycle_512.png",
+      "publicPath": "art/characters/merchant/merchant_hurt_cycle_512.png",
+      "size": [
+        1536,
+        512
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "hurt strip"
+    },
+    {
+      "id": "merchant_drink_f01",
+      "use": "hero_merchant_drink",
+      "path": "art/characters/merchant/keyframes/merchant_drink_f01.png",
+      "publicPath": "art/characters/merchant/merchant_drink_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "drink frame 1/6 one-shot→idle"
+    },
+    {
+      "id": "merchant_drink_f02",
+      "use": "hero_merchant_drink",
+      "path": "art/characters/merchant/keyframes/merchant_drink_f02.png",
+      "publicPath": "art/characters/merchant/merchant_drink_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "drink frame 2/6 one-shot→idle"
+    },
+    {
+      "id": "merchant_drink_f03",
+      "use": "hero_merchant_drink",
+      "path": "art/characters/merchant/keyframes/merchant_drink_f03.png",
+      "publicPath": "art/characters/merchant/merchant_drink_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "drink frame 3/6 one-shot→idle"
+    },
+    {
+      "id": "merchant_drink_f04",
+      "use": "hero_merchant_drink",
+      "path": "art/characters/merchant/keyframes/merchant_drink_f04.png",
+      "publicPath": "art/characters/merchant/merchant_drink_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "drink frame 4/6 one-shot→idle"
+    },
+    {
+      "id": "merchant_drink_f05",
+      "use": "hero_merchant_drink",
+      "path": "art/characters/merchant/keyframes/merchant_drink_f05.png",
+      "publicPath": "art/characters/merchant/merchant_drink_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "drink frame 5/6 one-shot→idle"
+    },
+    {
+      "id": "merchant_drink_f06",
+      "use": "hero_merchant_drink",
+      "path": "art/characters/merchant/keyframes/merchant_drink_f06.png",
+      "publicPath": "art/characters/merchant/merchant_drink_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "drink frame 6/6 one-shot→idle"
+    },
+    {
+      "id": "merchant_drink_cycle_512",
+      "use": "hero_merchant_drink_atlas",
+      "path": "art/characters/merchant/sheets/merchant_drink_cycle_512.png",
+      "publicPath": "art/characters/merchant/merchant_drink_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas drink f01–f06"
+    },
+    {
+      "id": "guard_idle_f01",
+      "use": "hero_guard_idle",
+      "path": "art/characters/guard/keyframes/guard_idle_f01.png",
+      "publicPath": "art/characters/guard/guard_idle_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard idle frame 1/4 loop"
+    },
+    {
+      "id": "guard_idle_f02",
+      "use": "hero_guard_idle",
+      "path": "art/characters/guard/keyframes/guard_idle_f02.png",
+      "publicPath": "art/characters/guard/guard_idle_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard idle frame 2/4 loop"
+    },
+    {
+      "id": "guard_idle_f03",
+      "use": "hero_guard_idle",
+      "path": "art/characters/guard/keyframes/guard_idle_f03.png",
+      "publicPath": "art/characters/guard/guard_idle_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard idle frame 3/4 loop"
+    },
+    {
+      "id": "guard_idle_f04",
+      "use": "hero_guard_idle",
+      "path": "art/characters/guard/keyframes/guard_idle_f04.png",
+      "publicPath": "art/characters/guard/guard_idle_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard idle frame 4/4 loop"
+    },
+    {
+      "id": "guard_move_f01",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f01.png",
+      "publicPath": "art/characters/guard/guard_move_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 1/8 loop"
+    },
+    {
+      "id": "guard_move_f02",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f02.png",
+      "publicPath": "art/characters/guard/guard_move_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 2/8 loop"
+    },
+    {
+      "id": "guard_move_f03",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f03.png",
+      "publicPath": "art/characters/guard/guard_move_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 3/8 loop"
+    },
+    {
+      "id": "guard_move_f04",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f04.png",
+      "publicPath": "art/characters/guard/guard_move_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 4/8 loop"
+    },
+    {
+      "id": "guard_move_f05",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f05.png",
+      "publicPath": "art/characters/guard/guard_move_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 5/8 loop"
+    },
+    {
+      "id": "guard_move_f06",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f06.png",
+      "publicPath": "art/characters/guard/guard_move_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 6/8 loop"
+    },
+    {
+      "id": "guard_move_f07",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f07.png",
+      "publicPath": "art/characters/guard/guard_move_f07_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 7/8 loop"
+    },
+    {
+      "id": "guard_move_f08",
+      "use": "hero_guard_move",
+      "path": "art/characters/guard/keyframes/guard_move_f08.png",
+      "publicPath": "art/characters/guard/guard_move_f08_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard move frame 8/8 loop"
+    },
+    {
+      "id": "guard_idle_cycle_512",
+      "use": "hero_guard_idle_atlas",
+      "path": "art/characters/guard/sheets/guard_idle_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_idle_cycle_512.png",
+      "size": [
+        2048,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard idle f01–f04"
+    },
+    {
+      "id": "guard_move_cycle_512",
+      "use": "hero_guard_move_atlas",
+      "path": "art/characters/guard/sheets/guard_move_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_move_cycle_512.png",
+      "size": [
+        4096,
+        512
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard move f01–f08"
+    },
+    {
+      "id": "guard_attack_f01",
+      "use": "hero_guard_attack",
+      "path": "art/characters/guard/keyframes/guard_attack_f01.png",
+      "publicPath": "art/characters/guard/guard_attack_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard attack frame 1/6 one-shot→idle"
+    },
+    {
+      "id": "guard_attack_f02",
+      "use": "hero_guard_attack",
+      "path": "art/characters/guard/keyframes/guard_attack_f02.png",
+      "publicPath": "art/characters/guard/guard_attack_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard attack frame 2/6 one-shot→idle"
+    },
+    {
+      "id": "guard_attack_f03",
+      "use": "hero_guard_attack",
+      "path": "art/characters/guard/keyframes/guard_attack_f03.png",
+      "publicPath": "art/characters/guard/guard_attack_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard attack frame 3/6 one-shot→idle"
+    },
+    {
+      "id": "guard_attack_f04",
+      "use": "hero_guard_attack",
+      "path": "art/characters/guard/keyframes/guard_attack_f04.png",
+      "publicPath": "art/characters/guard/guard_attack_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard attack frame 4/6 one-shot→idle"
+    },
+    {
+      "id": "guard_attack_f05",
+      "use": "hero_guard_attack",
+      "path": "art/characters/guard/keyframes/guard_attack_f05.png",
+      "publicPath": "art/characters/guard/guard_attack_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard attack frame 5/6 one-shot→idle"
+    },
+    {
+      "id": "guard_attack_f06",
+      "use": "hero_guard_attack",
+      "path": "art/characters/guard/keyframes/guard_attack_f06.png",
+      "publicPath": "art/characters/guard/guard_attack_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard attack frame 6/6 one-shot→idle"
+    },
+    {
+      "id": "guard_attack_cycle_512",
+      "use": "hero_guard_attack_atlas",
+      "path": "art/characters/guard/sheets/guard_attack_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_attack_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard attack f01–f06"
+    },
+    {
+      "id": "guard_defend_f01",
+      "use": "hero_guard_defend",
+      "path": "art/characters/guard/keyframes/guard_defend_f01.png",
+      "publicPath": "art/characters/guard/guard_defend_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defend frame 1/4 one-shot→idle"
+    },
+    {
+      "id": "guard_defend_f02",
+      "use": "hero_guard_defend",
+      "path": "art/characters/guard/keyframes/guard_defend_f02.png",
+      "publicPath": "art/characters/guard/guard_defend_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defend frame 2/4 one-shot→idle"
+    },
+    {
+      "id": "guard_defend_f03",
+      "use": "hero_guard_defend",
+      "path": "art/characters/guard/keyframes/guard_defend_f03.png",
+      "publicPath": "art/characters/guard/guard_defend_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defend frame 3/4 one-shot→idle"
+    },
+    {
+      "id": "guard_defend_f04",
+      "use": "hero_guard_defend",
+      "path": "art/characters/guard/keyframes/guard_defend_f04.png",
+      "publicPath": "art/characters/guard/guard_defend_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defend frame 4/4 one-shot→idle"
+    },
+    {
+      "id": "guard_hurt_f01",
+      "use": "hero_guard_hurt",
+      "path": "art/characters/guard/keyframes/guard_hurt_f01.png",
+      "publicPath": "art/characters/guard/guard_hurt_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard hurt frame 1/3 one-shot→idle"
+    },
+    {
+      "id": "guard_hurt_f02",
+      "use": "hero_guard_hurt",
+      "path": "art/characters/guard/keyframes/guard_hurt_f02.png",
+      "publicPath": "art/characters/guard/guard_hurt_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard hurt frame 2/3 one-shot→idle"
+    },
+    {
+      "id": "guard_hurt_f03",
+      "use": "hero_guard_hurt",
+      "path": "art/characters/guard/keyframes/guard_hurt_f03.png",
+      "publicPath": "art/characters/guard/guard_hurt_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard hurt frame 3/3 one-shot→idle"
+    },
+    {
+      "id": "guard_defend_cycle_512",
+      "use": "hero_guard_defend_atlas",
+      "path": "art/characters/guard/sheets/guard_defend_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_defend_cycle_512.png",
+      "size": [
+        2048,
+        512
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard defend f01–f04"
+    },
+    {
+      "id": "guard_hurt_cycle_512",
+      "use": "hero_guard_hurt_atlas",
+      "path": "art/characters/guard/sheets/guard_hurt_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_hurt_cycle_512.png",
+      "size": [
+        1536,
+        512
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard hurt f01–f03"
+    },
+    {
+      "id": "ranger_idle_f01",
+      "use": "hero_ranger_idle",
+      "path": "art/characters/ranger/keyframes/ranger_idle_f01.png",
+      "publicPath": "art/characters/ranger/ranger_idle_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger idle frame 1/4 loop"
+    },
+    {
+      "id": "ranger_idle_f02",
+      "use": "hero_ranger_idle",
+      "path": "art/characters/ranger/keyframes/ranger_idle_f02.png",
+      "publicPath": "art/characters/ranger/ranger_idle_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger idle frame 2/4 loop"
+    },
+    {
+      "id": "ranger_idle_f03",
+      "use": "hero_ranger_idle",
+      "path": "art/characters/ranger/keyframes/ranger_idle_f03.png",
+      "publicPath": "art/characters/ranger/ranger_idle_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger idle frame 3/4 loop"
+    },
+    {
+      "id": "ranger_idle_f04",
+      "use": "hero_ranger_idle",
+      "path": "art/characters/ranger/keyframes/ranger_idle_f04.png",
+      "publicPath": "art/characters/ranger/ranger_idle_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger idle frame 4/4 loop"
+    },
+    {
+      "id": "ranger_idle_cycle_512",
+      "use": "hero_ranger_idle_atlas",
+      "path": "art/characters/ranger/sheets/ranger_idle_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_idle_cycle_512.png",
+      "size": [
+        2048,
+        512
+      ],
+      "transparent": true,
+      "characterState": "idle",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger idle f01–f04"
+    },
+    {
+      "id": "ranger_move_f01",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f01.png",
+      "publicPath": "art/characters/ranger/ranger_move_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 1/8 loop"
+    },
+    {
+      "id": "ranger_move_f02",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f02.png",
+      "publicPath": "art/characters/ranger/ranger_move_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 2/8 loop"
+    },
+    {
+      "id": "ranger_move_f03",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f03.png",
+      "publicPath": "art/characters/ranger/ranger_move_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 3/8 loop"
+    },
+    {
+      "id": "ranger_move_f04",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f04.png",
+      "publicPath": "art/characters/ranger/ranger_move_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 4/8 loop"
+    },
+    {
+      "id": "ranger_move_f05",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f05.png",
+      "publicPath": "art/characters/ranger/ranger_move_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 5/8 loop"
+    },
+    {
+      "id": "ranger_move_f06",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f06.png",
+      "publicPath": "art/characters/ranger/ranger_move_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 6/8 loop"
+    },
+    {
+      "id": "ranger_move_f07",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f07.png",
+      "publicPath": "art/characters/ranger/ranger_move_f07_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 7/8 loop"
+    },
+    {
+      "id": "ranger_move_f08",
+      "use": "hero_ranger_move",
+      "path": "art/characters/ranger/keyframes/ranger_move_f08.png",
+      "publicPath": "art/characters/ranger/ranger_move_f08_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger move frame 8/8 loop"
+    },
+    {
+      "id": "ranger_move_cycle_512",
+      "use": "hero_ranger_move_atlas",
+      "path": "art/characters/ranger/sheets/ranger_move_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_move_cycle_512.png",
+      "size": [
+        4096,
+        512
+      ],
+      "transparent": true,
+      "characterState": "move",
+      "frameCount": 8,
+      "targetFrameCount": 8,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger move f01–f08"
+    },
+    {
+      "id": "ranger_attack_f01",
+      "use": "hero_ranger_attack",
+      "path": "art/characters/ranger/keyframes/ranger_attack_f01.png",
+      "publicPath": "art/characters/ranger/ranger_attack_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger attack frame 1/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_attack_f02",
+      "use": "hero_ranger_attack",
+      "path": "art/characters/ranger/keyframes/ranger_attack_f02.png",
+      "publicPath": "art/characters/ranger/ranger_attack_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger attack frame 2/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_attack_f03",
+      "use": "hero_ranger_attack",
+      "path": "art/characters/ranger/keyframes/ranger_attack_f03.png",
+      "publicPath": "art/characters/ranger/ranger_attack_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger attack frame 3/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_attack_f04",
+      "use": "hero_ranger_attack",
+      "path": "art/characters/ranger/keyframes/ranger_attack_f04.png",
+      "publicPath": "art/characters/ranger/ranger_attack_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger attack frame 4/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_attack_f05",
+      "use": "hero_ranger_attack",
+      "path": "art/characters/ranger/keyframes/ranger_attack_f05.png",
+      "publicPath": "art/characters/ranger/ranger_attack_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger attack frame 5/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_attack_f06",
+      "use": "hero_ranger_attack",
+      "path": "art/characters/ranger/keyframes/ranger_attack_f06.png",
+      "publicPath": "art/characters/ranger/ranger_attack_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger attack frame 6/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_attack_cycle_512",
+      "use": "hero_ranger_attack_atlas",
+      "path": "art/characters/ranger/sheets/ranger_attack_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_attack_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "attack",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger attack f01–f06"
+    },
+    {
+      "id": "ranger_defend_f01",
+      "use": "hero_ranger_defend",
+      "path": "art/characters/ranger/keyframes/ranger_defend_f01.png",
+      "publicPath": "art/characters/ranger/ranger_defend_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defend frame 1/4 one-shot→idle"
+    },
+    {
+      "id": "ranger_defend_f02",
+      "use": "hero_ranger_defend",
+      "path": "art/characters/ranger/keyframes/ranger_defend_f02.png",
+      "publicPath": "art/characters/ranger/ranger_defend_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defend frame 2/4 one-shot→idle"
+    },
+    {
+      "id": "ranger_defend_f03",
+      "use": "hero_ranger_defend",
+      "path": "art/characters/ranger/keyframes/ranger_defend_f03.png",
+      "publicPath": "art/characters/ranger/ranger_defend_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defend frame 3/4 one-shot→idle"
+    },
+    {
+      "id": "ranger_defend_f04",
+      "use": "hero_ranger_defend",
+      "path": "art/characters/ranger/keyframes/ranger_defend_f04.png",
+      "publicPath": "art/characters/ranger/ranger_defend_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defend frame 4/4 one-shot→idle"
+    },
+    {
+      "id": "ranger_hurt_f01",
+      "use": "hero_ranger_hurt",
+      "path": "art/characters/ranger/keyframes/ranger_hurt_f01.png",
+      "publicPath": "art/characters/ranger/ranger_hurt_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger hurt frame 1/3 one-shot→idle (dual daggers)"
+    },
+    {
+      "id": "ranger_hurt_f02",
+      "use": "hero_ranger_hurt",
+      "path": "art/characters/ranger/keyframes/ranger_hurt_f02.png",
+      "publicPath": "art/characters/ranger/ranger_hurt_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger hurt frame 2/3 one-shot→idle (dual daggers)"
+    },
+    {
+      "id": "ranger_hurt_f03",
+      "use": "hero_ranger_hurt",
+      "path": "art/characters/ranger/keyframes/ranger_hurt_f03.png",
+      "publicPath": "art/characters/ranger/ranger_hurt_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger hurt frame 3/3 one-shot→idle (dual daggers)"
+    },
+    {
+      "id": "ranger_defend_cycle_512",
+      "use": "hero_ranger_defend_atlas",
+      "path": "art/characters/ranger/sheets/ranger_defend_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_defend_cycle_512.png",
+      "size": [
+        2048,
+        512
+      ],
+      "transparent": true,
+      "characterState": "defend",
+      "frameCount": 4,
+      "targetFrameCount": 4,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger defend f01–f04"
+    },
+    {
+      "id": "ranger_hurt_cycle_512",
+      "use": "hero_ranger_hurt_atlas",
+      "path": "art/characters/ranger/sheets/ranger_hurt_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_hurt_cycle_512.png",
+      "size": [
+        1536,
+        512
+      ],
+      "transparent": true,
+      "characterState": "hurt",
+      "frameCount": 3,
+      "targetFrameCount": 3,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger hurt f01–f03"
+    },
+    {
+      "id": "ranger_drink_f01",
+      "use": "hero_ranger_drink",
+      "path": "art/characters/ranger/keyframes/ranger_drink_f01.png",
+      "publicPath": "art/characters/ranger/ranger_drink_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger drink frame 1/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_drink_f02",
+      "use": "hero_ranger_drink",
+      "path": "art/characters/ranger/keyframes/ranger_drink_f02.png",
+      "publicPath": "art/characters/ranger/ranger_drink_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger drink frame 2/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_drink_f03",
+      "use": "hero_ranger_drink",
+      "path": "art/characters/ranger/keyframes/ranger_drink_f03.png",
+      "publicPath": "art/characters/ranger/ranger_drink_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger drink frame 3/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_drink_f04",
+      "use": "hero_ranger_drink",
+      "path": "art/characters/ranger/keyframes/ranger_drink_f04.png",
+      "publicPath": "art/characters/ranger/ranger_drink_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger drink frame 4/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_drink_f05",
+      "use": "hero_ranger_drink",
+      "path": "art/characters/ranger/keyframes/ranger_drink_f05.png",
+      "publicPath": "art/characters/ranger/ranger_drink_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger drink frame 5/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_drink_f06",
+      "use": "hero_ranger_drink",
+      "path": "art/characters/ranger/keyframes/ranger_drink_f06.png",
+      "publicPath": "art/characters/ranger/ranger_drink_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger drink frame 6/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_drink_cycle_512",
+      "use": "hero_ranger_drink_atlas",
+      "path": "art/characters/ranger/sheets/ranger_drink_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_drink_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger drink f01–f06"
+    },
+    {
+      "id": "ranger_special_f01",
+      "use": "hero_ranger_special",
+      "path": "art/characters/ranger/keyframes/ranger_special_f01.png",
+      "publicPath": "art/characters/ranger/ranger_special_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger special frame 1/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_special_f02",
+      "use": "hero_ranger_special",
+      "path": "art/characters/ranger/keyframes/ranger_special_f02.png",
+      "publicPath": "art/characters/ranger/ranger_special_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger special frame 2/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_special_f03",
+      "use": "hero_ranger_special",
+      "path": "art/characters/ranger/keyframes/ranger_special_f03.png",
+      "publicPath": "art/characters/ranger/ranger_special_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger special frame 3/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_special_f04",
+      "use": "hero_ranger_special",
+      "path": "art/characters/ranger/keyframes/ranger_special_f04.png",
+      "publicPath": "art/characters/ranger/ranger_special_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger special frame 4/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_special_f05",
+      "use": "hero_ranger_special",
+      "path": "art/characters/ranger/keyframes/ranger_special_f05.png",
+      "publicPath": "art/characters/ranger/ranger_special_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger special frame 5/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_special_f06",
+      "use": "hero_ranger_special",
+      "path": "art/characters/ranger/keyframes/ranger_special_f06.png",
+      "publicPath": "art/characters/ranger/ranger_special_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger special frame 6/6 one-shot→idle"
+    },
+    {
+      "id": "ranger_special_cycle_512",
+      "use": "hero_ranger_special_atlas",
+      "path": "art/characters/ranger/sheets/ranger_special_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_special_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger special f01–f06"
+    },
+    {
+      "id": "ranger_victory_f01",
+      "use": "hero_ranger_victory",
+      "path": "art/characters/ranger/keyframes/ranger_victory_f01.png",
+      "publicPath": "art/characters/ranger/ranger_victory_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger victory frame 1/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_victory_f02",
+      "use": "hero_ranger_victory",
+      "path": "art/characters/ranger/keyframes/ranger_victory_f02.png",
+      "publicPath": "art/characters/ranger/ranger_victory_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger victory frame 2/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_victory_f03",
+      "use": "hero_ranger_victory",
+      "path": "art/characters/ranger/keyframes/ranger_victory_f03.png",
+      "publicPath": "art/characters/ranger/ranger_victory_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger victory frame 3/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_victory_f04",
+      "use": "hero_ranger_victory",
+      "path": "art/characters/ranger/keyframes/ranger_victory_f04.png",
+      "publicPath": "art/characters/ranger/ranger_victory_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger victory frame 4/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_victory_f05",
+      "use": "hero_ranger_victory",
+      "path": "art/characters/ranger/keyframes/ranger_victory_f05.png",
+      "publicPath": "art/characters/ranger/ranger_victory_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger victory frame 5/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_victory_f06",
+      "use": "hero_ranger_victory",
+      "path": "art/characters/ranger/keyframes/ranger_victory_f06.png",
+      "publicPath": "art/characters/ranger/ranger_victory_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger victory frame 6/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_victory_cycle_512",
+      "use": "hero_ranger_victory_atlas",
+      "path": "art/characters/ranger/sheets/ranger_victory_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_victory_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger victory f01–f06"
+    },
+    {
+      "id": "ranger_defeat_f01",
+      "use": "hero_ranger_defeat",
+      "path": "art/characters/ranger/keyframes/ranger_defeat_f01.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defeat frame 1/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_defeat_f02",
+      "use": "hero_ranger_defeat",
+      "path": "art/characters/ranger/keyframes/ranger_defeat_f02.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defeat frame 2/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_defeat_f03",
+      "use": "hero_ranger_defeat",
+      "path": "art/characters/ranger/keyframes/ranger_defeat_f03.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defeat frame 3/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_defeat_f04",
+      "use": "hero_ranger_defeat",
+      "path": "art/characters/ranger/keyframes/ranger_defeat_f04.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defeat frame 4/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_defeat_f05",
+      "use": "hero_ranger_defeat",
+      "path": "art/characters/ranger/keyframes/ranger_defeat_f05.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defeat frame 5/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_defeat_f06",
+      "use": "hero_ranger_defeat",
+      "path": "art/characters/ranger/keyframes/ranger_defeat_f06.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "ranger defeat frame 6/6 one-shot HOLD last"
+    },
+    {
+      "id": "ranger_defeat_cycle_512",
+      "use": "hero_ranger_defeat_atlas",
+      "path": "art/characters/ranger/sheets/ranger_defeat_cycle_512.png",
+      "publicPath": "art/characters/ranger/ranger_defeat_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas ranger defeat f01–f06"
+    },
+    {
+      "id": "merchant_special_f01",
+      "use": "hero_merchant_special",
+      "path": "art/characters/merchant/keyframes/merchant_special_f01.png",
+      "publicPath": "art/characters/merchant/merchant_special_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant special frame 1/6 one-shot→idle (gold pot)"
+    },
+    {
+      "id": "merchant_special_f02",
+      "use": "hero_merchant_special",
+      "path": "art/characters/merchant/keyframes/merchant_special_f02.png",
+      "publicPath": "art/characters/merchant/merchant_special_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant special frame 2/6 one-shot→idle (gold pot)"
+    },
+    {
+      "id": "merchant_special_f03",
+      "use": "hero_merchant_special",
+      "path": "art/characters/merchant/keyframes/merchant_special_f03.png",
+      "publicPath": "art/characters/merchant/merchant_special_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant special frame 3/6 one-shot→idle (gold pot)"
+    },
+    {
+      "id": "merchant_special_f04",
+      "use": "hero_merchant_special",
+      "path": "art/characters/merchant/keyframes/merchant_special_f04.png",
+      "publicPath": "art/characters/merchant/merchant_special_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant special frame 4/6 one-shot→idle (gold pot)"
+    },
+    {
+      "id": "merchant_special_f05",
+      "use": "hero_merchant_special",
+      "path": "art/characters/merchant/keyframes/merchant_special_f05.png",
+      "publicPath": "art/characters/merchant/merchant_special_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant special frame 5/6 one-shot→idle (gold pot)"
+    },
+    {
+      "id": "merchant_special_f06",
+      "use": "hero_merchant_special",
+      "path": "art/characters/merchant/keyframes/merchant_special_f06.png",
+      "publicPath": "art/characters/merchant/merchant_special_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant special frame 6/6 one-shot→idle (gold pot)"
+    },
+    {
+      "id": "merchant_special_cycle_512",
+      "use": "hero_merchant_special_atlas",
+      "path": "art/characters/merchant/sheets/merchant_special_cycle_512.png",
+      "publicPath": "art/characters/merchant/merchant_special_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas merchant special f01–f06"
+    },
+    {
+      "id": "merchant_victory_f01",
+      "use": "hero_merchant_victory",
+      "path": "art/characters/merchant/keyframes/merchant_victory_f01.png",
+      "publicPath": "art/characters/merchant/merchant_victory_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant victory frame 1/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_victory_f02",
+      "use": "hero_merchant_victory",
+      "path": "art/characters/merchant/keyframes/merchant_victory_f02.png",
+      "publicPath": "art/characters/merchant/merchant_victory_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant victory frame 2/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_victory_f03",
+      "use": "hero_merchant_victory",
+      "path": "art/characters/merchant/keyframes/merchant_victory_f03.png",
+      "publicPath": "art/characters/merchant/merchant_victory_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant victory frame 3/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_victory_f04",
+      "use": "hero_merchant_victory",
+      "path": "art/characters/merchant/keyframes/merchant_victory_f04.png",
+      "publicPath": "art/characters/merchant/merchant_victory_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant victory frame 4/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_victory_f05",
+      "use": "hero_merchant_victory",
+      "path": "art/characters/merchant/keyframes/merchant_victory_f05.png",
+      "publicPath": "art/characters/merchant/merchant_victory_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant victory frame 5/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_victory_f06",
+      "use": "hero_merchant_victory",
+      "path": "art/characters/merchant/keyframes/merchant_victory_f06.png",
+      "publicPath": "art/characters/merchant/merchant_victory_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant victory frame 6/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_victory_cycle_512",
+      "use": "hero_merchant_victory_atlas",
+      "path": "art/characters/merchant/sheets/merchant_victory_cycle_512.png",
+      "publicPath": "art/characters/merchant/merchant_victory_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas merchant victory f01–f06"
+    },
+    {
+      "id": "merchant_defeat_f01",
+      "use": "hero_merchant_defeat",
+      "path": "art/characters/merchant/keyframes/merchant_defeat_f01.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant defeat frame 1/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_defeat_f02",
+      "use": "hero_merchant_defeat",
+      "path": "art/characters/merchant/keyframes/merchant_defeat_f02.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant defeat frame 2/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_defeat_f03",
+      "use": "hero_merchant_defeat",
+      "path": "art/characters/merchant/keyframes/merchant_defeat_f03.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant defeat frame 3/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_defeat_f04",
+      "use": "hero_merchant_defeat",
+      "path": "art/characters/merchant/keyframes/merchant_defeat_f04.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant defeat frame 4/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_defeat_f05",
+      "use": "hero_merchant_defeat",
+      "path": "art/characters/merchant/keyframes/merchant_defeat_f05.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant defeat frame 5/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_defeat_f06",
+      "use": "hero_merchant_defeat",
+      "path": "art/characters/merchant/keyframes/merchant_defeat_f06.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "merchant defeat frame 6/6 one-shot HOLD last (gold pot)"
+    },
+    {
+      "id": "merchant_defeat_cycle_512",
+      "use": "hero_merchant_defeat_atlas",
+      "path": "art/characters/merchant/sheets/merchant_defeat_cycle_512.png",
+      "publicPath": "art/characters/merchant/merchant_defeat_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas merchant defeat f01–f06"
+    },
+    {
+      "id": "guard_drink_f01",
+      "use": "hero_guard_drink",
+      "path": "art/characters/guard/keyframes/guard_drink_f01.png",
+      "publicPath": "art/characters/guard/guard_drink_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard drink frame 1/6 one-shot→idle"
+    },
+    {
+      "id": "guard_drink_f02",
+      "use": "hero_guard_drink",
+      "path": "art/characters/guard/keyframes/guard_drink_f02.png",
+      "publicPath": "art/characters/guard/guard_drink_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard drink frame 2/6 one-shot→idle"
+    },
+    {
+      "id": "guard_drink_f03",
+      "use": "hero_guard_drink",
+      "path": "art/characters/guard/keyframes/guard_drink_f03.png",
+      "publicPath": "art/characters/guard/guard_drink_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard drink frame 3/6 one-shot→idle"
+    },
+    {
+      "id": "guard_drink_f04",
+      "use": "hero_guard_drink",
+      "path": "art/characters/guard/keyframes/guard_drink_f04.png",
+      "publicPath": "art/characters/guard/guard_drink_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard drink frame 4/6 one-shot→idle"
+    },
+    {
+      "id": "guard_drink_f05",
+      "use": "hero_guard_drink",
+      "path": "art/characters/guard/keyframes/guard_drink_f05.png",
+      "publicPath": "art/characters/guard/guard_drink_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard drink frame 5/6 one-shot→idle"
+    },
+    {
+      "id": "guard_drink_f06",
+      "use": "hero_guard_drink",
+      "path": "art/characters/guard/keyframes/guard_drink_f06.png",
+      "publicPath": "art/characters/guard/guard_drink_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard drink frame 6/6 one-shot→idle"
+    },
+    {
+      "id": "guard_drink_cycle_512",
+      "use": "hero_guard_drink_atlas",
+      "path": "art/characters/guard/sheets/guard_drink_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_drink_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "drink",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard drink f01–f06"
+    },
+    {
+      "id": "guard_special_f01",
+      "use": "hero_guard_special",
+      "path": "art/characters/guard/keyframes/guard_special_f01.png",
+      "publicPath": "art/characters/guard/guard_special_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard special frame 1/6 one-shot→idle (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_special_f02",
+      "use": "hero_guard_special",
+      "path": "art/characters/guard/keyframes/guard_special_f02.png",
+      "publicPath": "art/characters/guard/guard_special_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard special frame 2/6 one-shot→idle (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_special_f03",
+      "use": "hero_guard_special",
+      "path": "art/characters/guard/keyframes/guard_special_f03.png",
+      "publicPath": "art/characters/guard/guard_special_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard special frame 3/6 one-shot→idle (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_special_f04",
+      "use": "hero_guard_special",
+      "path": "art/characters/guard/keyframes/guard_special_f04.png",
+      "publicPath": "art/characters/guard/guard_special_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard special frame 4/6 one-shot→idle (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_special_f05",
+      "use": "hero_guard_special",
+      "path": "art/characters/guard/keyframes/guard_special_f05.png",
+      "publicPath": "art/characters/guard/guard_special_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard special frame 5/6 one-shot→idle (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_special_f06",
+      "use": "hero_guard_special",
+      "path": "art/characters/guard/keyframes/guard_special_f06.png",
+      "publicPath": "art/characters/guard/guard_special_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard special frame 6/6 one-shot→idle (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_special_cycle_512",
+      "use": "hero_guard_special_atlas",
+      "path": "art/characters/guard/sheets/guard_special_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_special_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "special",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard special f01–f06"
+    },
+    {
+      "id": "guard_victory_f01",
+      "use": "hero_guard_victory",
+      "path": "art/characters/guard/keyframes/guard_victory_f01.png",
+      "publicPath": "art/characters/guard/guard_victory_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard victory frame 1/6 HOLD last (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_victory_f02",
+      "use": "hero_guard_victory",
+      "path": "art/characters/guard/keyframes/guard_victory_f02.png",
+      "publicPath": "art/characters/guard/guard_victory_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard victory frame 2/6 HOLD last (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_victory_f03",
+      "use": "hero_guard_victory",
+      "path": "art/characters/guard/keyframes/guard_victory_f03.png",
+      "publicPath": "art/characters/guard/guard_victory_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard victory frame 3/6 HOLD last (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_victory_f04",
+      "use": "hero_guard_victory",
+      "path": "art/characters/guard/keyframes/guard_victory_f04.png",
+      "publicPath": "art/characters/guard/guard_victory_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard victory frame 4/6 HOLD last (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_victory_f05",
+      "use": "hero_guard_victory",
+      "path": "art/characters/guard/keyframes/guard_victory_f05.png",
+      "publicPath": "art/characters/guard/guard_victory_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard victory frame 5/6 HOLD last (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_victory_f06",
+      "use": "hero_guard_victory",
+      "path": "art/characters/guard/keyframes/guard_victory_f06.png",
+      "publicPath": "art/characters/guard/guard_victory_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard victory frame 6/6 HOLD last (RIGHT=sword LEFT=shield)"
+    },
+    {
+      "id": "guard_victory_cycle_512",
+      "use": "hero_guard_victory_atlas",
+      "path": "art/characters/guard/sheets/guard_victory_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_victory_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "victory",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard victory f01–f06"
+    },
+    {
+      "id": "guard_defeat_f01",
+      "use": "hero_guard_defeat",
+      "path": "art/characters/guard/keyframes/guard_defeat_f01.png",
+      "publicPath": "art/characters/guard/guard_defeat_f01_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defeat frame 1/6 HOLD last (collapse; sword+shield visible)"
+    },
+    {
+      "id": "guard_defeat_f02",
+      "use": "hero_guard_defeat",
+      "path": "art/characters/guard/keyframes/guard_defeat_f02.png",
+      "publicPath": "art/characters/guard/guard_defeat_f02_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defeat frame 2/6 HOLD last (collapse; sword+shield visible)"
+    },
+    {
+      "id": "guard_defeat_f03",
+      "use": "hero_guard_defeat",
+      "path": "art/characters/guard/keyframes/guard_defeat_f03.png",
+      "publicPath": "art/characters/guard/guard_defeat_f03_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defeat frame 3/6 HOLD last (collapse; sword+shield visible)"
+    },
+    {
+      "id": "guard_defeat_f04",
+      "use": "hero_guard_defeat",
+      "path": "art/characters/guard/keyframes/guard_defeat_f04.png",
+      "publicPath": "art/characters/guard/guard_defeat_f04_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defeat frame 4/6 HOLD last (collapse; sword+shield visible)"
+    },
+    {
+      "id": "guard_defeat_f05",
+      "use": "hero_guard_defeat",
+      "path": "art/characters/guard/keyframes/guard_defeat_f05.png",
+      "publicPath": "art/characters/guard/guard_defeat_f05_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defeat frame 5/6 HOLD last (collapse; sword+shield visible)"
+    },
+    {
+      "id": "guard_defeat_f06",
+      "use": "hero_guard_defeat",
+      "path": "art/characters/guard/keyframes/guard_defeat_f06.png",
+      "publicPath": "art/characters/guard/guard_defeat_f06_512.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        512,
+        928
+      ],
+      "reference": "art/inbox/",
+      "status": "ready_cycle",
+      "note": "guard defeat frame 6/6 HOLD last (collapse; sword+shield visible)"
+    },
+    {
+      "id": "guard_defeat_cycle_512",
+      "use": "hero_guard_defeat_atlas",
+      "path": "art/characters/guard/sheets/guard_defeat_cycle_512.png",
+      "publicPath": "art/characters/guard/guard_defeat_cycle_512.png",
+      "size": [
+        3072,
+        512
+      ],
+      "transparent": true,
+      "characterState": "defeat",
+      "frameCount": 6,
+      "targetFrameCount": 6,
+      "footAnchor": [
+        256,
+        464
+      ],
+      "status": "ready_cycle",
+      "note": "horizontal atlas guard defeat f01–f06"
+    },
+    {
+      "id": "B25_salt_captain",
+      "type": "enemy",
+      "path": "art/enemies/B25_salt_captain.png",
+      "publicPath": "art/enemies/B25_salt_captain.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B30_mirror_auditor",
+      "type": "enemy",
+      "path": "art/enemies/B30_mirror_auditor.png",
+      "publicPath": "art/enemies/B30_mirror_auditor.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B35_furnace_colossus",
+      "type": "enemy",
+      "path": "art/enemies/B35_furnace_colossus.png",
+      "publicPath": "art/enemies/B35_furnace_colossus.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B40_silent_warden",
+      "type": "enemy",
+      "path": "art/enemies/B40_silent_warden.png",
+      "publicPath": "art/enemies/B40_silent_warden.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B45_debt_regent",
+      "type": "enemy",
+      "path": "art/enemies/B45_debt_regent.png",
+      "publicPath": "art/enemies/B45_debt_regent.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "B50_golden_heart",
+      "type": "enemy",
+      "path": "art/enemies/B50_golden_heart.png",
+      "publicPath": "art/enemies/B50_golden_heart.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E23_smuggler_deacon",
+      "type": "enemy",
+      "path": "art/enemies/E23_smuggler_deacon.png",
+      "publicPath": "art/enemies/E23_smuggler_deacon.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E28_twin_auditors",
+      "type": "enemy",
+      "path": "art/enemies/E28_twin_auditors.png",
+      "publicPath": "art/enemies/E28_twin_auditors.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E33_forge_overseer",
+      "type": "enemy",
+      "path": "art/enemies/E33_forge_overseer.png",
+      "publicPath": "art/enemies/E33_forge_overseer.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E38_sealing_friar",
+      "type": "enemy",
+      "path": "art/enemies/E38_sealing_friar.png",
+      "publicPath": "art/enemies/E38_sealing_friar.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E43_debt_knight",
+      "type": "enemy",
+      "path": "art/enemies/E43_debt_knight.png",
+      "publicPath": "art/enemies/E43_debt_knight.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "E48_last_auditor",
+      "type": "enemy",
+      "path": "art/enemies/E48_last_auditor.png",
+      "publicPath": "art/enemies/E48_last_auditor.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N13_harbor_patrol",
+      "type": "enemy",
+      "path": "art/enemies/N13_harbor_patrol.png",
+      "publicPath": "art/enemies/N13_harbor_patrol.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N14_tide_crab",
+      "type": "enemy",
+      "path": "art/enemies/N14_tide_crab.png",
+      "publicPath": "art/enemies/N14_tide_crab.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N15_smuggler_xbow",
+      "type": "enemy",
+      "path": "art/enemies/N15_smuggler_xbow.png",
+      "publicPath": "art/enemies/N15_smuggler_xbow.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N16_mirror_sentinel",
+      "type": "enemy",
+      "path": "art/enemies/N16_mirror_sentinel.png",
+      "publicPath": "art/enemies/N16_mirror_sentinel.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N17_sandmirror_xbow",
+      "type": "enemy",
+      "path": "art/enemies/N17_sandmirror_xbow.png",
+      "publicPath": "art/enemies/N17_sandmirror_xbow.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N18_ash_sapper",
+      "type": "enemy",
+      "path": "art/enemies/N18_ash_sapper.png",
+      "publicPath": "art/enemies/N18_ash_sapper.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N19_furnace_guard",
+      "type": "enemy",
+      "path": "art/enemies/N19_furnace_guard.png",
+      "publicPath": "art/enemies/N19_furnace_guard.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N20_chanter",
+      "type": "enemy",
+      "path": "art/enemies/N20_chanter.png",
+      "publicPath": "art/enemies/N20_chanter.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N21_amulet_attendant",
+      "type": "enemy",
+      "path": "art/enemies/N21_amulet_attendant.png",
+      "publicPath": "art/enemies/N21_amulet_attendant.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N22_echo_guard",
+      "type": "enemy",
+      "path": "art/enemies/N22_echo_guard.png",
+      "publicPath": "art/enemies/N22_echo_guard.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N23_core_soldier",
+      "type": "enemy",
+      "path": "art/enemies/N23_core_soldier.png",
+      "publicPath": "art/enemies/N23_core_soldier.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "N24_lamp_priest",
+      "type": "enemy",
+      "path": "art/enemies/N24_lamp_priest.png",
+      "publicPath": "art/enemies/N24_lamp_priest.png",
+      "canvas": 1024,
+      "footY": 928,
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "lumi",
+      "type": "npc",
+      "path": "art/npc/lumi.png",
+      "publicPath": "art/npc/lumi.png",
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "old_rivet",
+      "type": "npc",
+      "path": "art/npc/old_rivet.png",
+      "publicPath": "art/npc/old_rivet.png",
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "mr_crow",
+      "type": "npc",
+      "path": "art/npc/mr_crow.png",
+      "publicPath": "art/npc/mr_crow.png",
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "eve",
+      "type": "npc",
+      "path": "art/npc/eve.png",
+      "publicPath": "art/npc/eve.png",
+      "status": "已接入待检查",
+      "style": "unified_v3_2026-10-29"
+    },
+    {
+      "id": "dagger",
+      "type": "item_icon",
+      "path": "art/items/dagger.png",
+      "publicPath": "art/items/dagger.png",
+      "status": "已检查"
+    },
+    {
+      "id": "greatsword",
+      "type": "item_icon",
+      "path": "art/items/greatsword.png",
+      "publicPath": "art/items/greatsword.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "shield",
+      "type": "item_icon",
+      "path": "art/items/shield.png",
+      "publicPath": "art/items/shield.png",
+      "status": "已检查"
+    },
+    {
+      "id": "potion",
+      "type": "item_icon",
+      "path": "art/items/potion.png",
+      "publicPath": "art/items/potion.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "ruby",
+      "type": "item_icon",
+      "path": "art/items/ruby.png",
+      "publicPath": "art/items/ruby.png",
+      "status": "已检查"
+    },
+    {
+      "id": "moneybag",
+      "type": "item_icon",
+      "path": "art/items/moneybag.png",
+      "publicPath": "art/items/moneybag.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "spear",
+      "type": "item_icon",
+      "path": "art/items/spear.png",
+      "publicPath": "art/items/spear.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "compass",
+      "type": "item_icon",
+      "path": "art/items/compass.png",
+      "publicPath": "art/items/compass.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "firework_crossbow",
+      "type": "item_icon",
+      "path": "art/items/firework_crossbow.png",
+      "publicPath": "art/items/firework_crossbow.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "fold_wall",
+      "type": "item_icon",
+      "path": "art/items/fold_wall.png",
+      "publicPath": "art/items/fold_wall.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "travel_lamp",
+      "type": "item_icon",
+      "path": "art/items/travel_lamp.png",
+      "publicPath": "art/items/travel_lamp.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "emergency_ledger",
+      "type": "item_icon",
+      "path": "art/items/emergency_ledger.png",
+      "publicPath": "art/items/emergency_ledger.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "poison_needle",
+      "type": "item_icon",
+      "path": "art/items/poison_needle.png",
+      "publicPath": "art/items/poison_needle.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "crossbow",
+      "type": "item_icon",
+      "path": "art/items/crossbow.png",
+      "publicPath": "art/items/crossbow.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "chain_hammer",
+      "type": "item_icon",
+      "path": "art/items/chain_hammer.png",
+      "publicPath": "art/items/chain_hammer.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "warhammer",
+      "type": "item_icon",
+      "path": "art/items/warhammer.png",
+      "publicPath": "art/items/warhammer.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "ice_crystal",
+      "type": "item_icon",
+      "path": "art/items/ice_crystal.png",
+      "publicPath": "art/items/ice_crystal.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "war_banner",
+      "type": "item_icon",
+      "path": "art/items/war_banner.png",
+      "publicPath": "art/items/war_banner.png",
+      "status": "已接入待检查"
+    },
+    {
+      "id": "chapter8_sanctum",
+      "type": "background",
+      "path": "art/backgrounds/chapter8_sanctum.png",
+      "publicPath": "art/backgrounds/chapter8_sanctum.png",
+      "status": "已检查",
+      "style": "unified_v3_2026-10-29"
+    }
+  ],
+  "deliveryNotes": {
+    "heroKeyframes": "3 classes × 9 poses = 27 master 1024 PNGs + 27 runtime 512 PNGs; HOLD + continuous cycles",
+    "continuousAnimation": "DONE — merchant/guard/ranger all states have continuous cycles wired",
+    "merchantDefend": "full cycle 4 frames ready (from merchant_defend_v2)",
+    "battleWired": true,
+    "animPreview": "?debugArt=1 or title 美术预览",
+    "v2Scaffold": "src/config/v2 behind ?v2=1 flag; V1 loop intact",
+    "publish": "do not push until author asks; Pages https://13185.github.io/backpack-miser/"
+  },
+  "generateQueue": "art/GENERATE_QUEUE.md",
+  "inbox": "art/inbox/",
+  "phaseC": {
+    "merchantDefendV2": true,
+    "merchantIdleF01": true,
+    "merchantMoveF01F02": true,
+    "battleHeroFitFix": true,
+    "continuousAnimation": "partial merchant move 2/8; others HOLD"
+  },
+  "merchantCycles": {
+    "idle": "4/4",
+    "move": "8/8",
+    "attack": "6/6",
+    "defend": "4/4",
+    "hurt": "3/3",
+    "drink": "6/6",
+    "special": "6/6",
+    "victory": "6/6",
+    "defeat": "6/6"
+  },
+  "guardCycles": {
+    "idle": "4/4",
+    "move": "8/8",
+    "attack": "6/6",
+    "defend": "4/4",
+    "hurt": "3/3",
+    "drink": "6/6",
+    "special": "6/6",
+    "victory": "6/6",
+    "defeat": "6/6"
+  },
+  "rangerCycles": {
+    "idle": "4/4",
+    "move": "8/8",
+    "attack": "6/6",
+    "defend": "4/4",
+    "hurt": "3/3",
+    "drink": "6/6",
+    "special": "6/6",
+    "victory": "6/6",
+    "defeat": "6/6"
+  },
+  "updated": "2026-10-29 01:40 Asia/Shanghai"
+}

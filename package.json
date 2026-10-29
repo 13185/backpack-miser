@@ -1,7 +1,7 @@
 {
   "name": "backpack-miser",
   "private": true,
-  "version": "1.0.0",
+  "version": "3.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -9,16 +9,77 @@
     "build:single": "vite build --config vite.single.config.ts",
     "preview": "vite preview --host",
     "test": "vitest run",
-    "sim": "vite-node sim/balance.ts"
+    "sim": "vite-node sim/balance.ts",
+    "build:desktop": "tsc --noEmit && vite build --base ./",
+    "desktop": "npm run build:desktop && electron .",
+    "dist:win": "npm run build:desktop && electron-builder --win --x64 && node scripts/make_nsis.cjs",
+    "dist:linux": "npm run build:desktop && electron-builder --linux dir --x64"
   },
-  "dependencies": {
-    "phaser": "^3.90.0"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0",
+    "playwright": "^1.64.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
     "vite-node": "^6.0.0",
     "vite-plugin-singlefile": "^2.3.4",
-    "vitest": "^4.1.12"
+    "vitest": "^4.1.12",
+    "phaser": "^3.90.0"
+  },
+  "author": "Jack",
+  "description": "背包守财奴 Backpack Miser",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "com.jack.backpackmiser",
+    "productName": "背包守财奴",
+    "copyright": "© 2026 Jack",
+    "directories": {
+      "output": "release/desktop",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "BackpackMiser-${version}-win-x64.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "背包守财奴",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "BackpackMiser-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "BackpackMiser-${version}-portable.${ext}"
+    },
+    "linux": {
+      "target": "dir"
+    }
   }
 }

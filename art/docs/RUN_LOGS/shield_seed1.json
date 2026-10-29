@@ -1,0 +1,236 @@
+{
+  "strategy": "shield",
+  "strategyName": "护盾/恢复流（守卫）",
+  "seed": 1,
+  "heroClass": "guard",
+  "mode": "story",
+  "starter": [
+    "大剑",
+    "盾牌",
+    "药水"
+  ],
+  "result": "victory",
+  "reached": 50,
+  "retries": 0,
+  "deaths": [],
+  "assistanceUsed": false,
+  "completion": "pure",
+  "relics": [
+    "C04",
+    "C07",
+    "A06"
+  ],
+  "runes": [
+    "U02",
+    "U04"
+  ],
+  "doctrine": "T03",
+  "doctrineRerolled": false,
+  "camps": [
+    "L5营地:forge:大剑",
+    "L10营地:forge:大剑",
+    "L15营地:forge:大剑",
+    "L20营地:forge:红宝石",
+    "L25营地:rest",
+    "L30营地:rest",
+    "L35营地:rest",
+    "L40营地:rest",
+    "L45营地:rest",
+    "L49整备:rest"
+  ],
+  "choices": {
+    "L19:0": "leave",
+    "L23:1": "protect",
+    "L34:2": "give",
+    "L39:3": "rescue"
+  },
+  "ending": "break_bond",
+  "chapters": [
+    {
+      "chapter": 1,
+      "level": 5,
+      "hp": 110,
+      "maxHp": 110,
+      "gold": 31,
+      "retries": 0
+    },
+    {
+      "chapter": 2,
+      "level": 10,
+      "hp": 110,
+      "maxHp": 110,
+      "gold": 47,
+      "retries": 0
+    },
+    {
+      "chapter": 3,
+      "level": 15,
+      "hp": 108,
+      "maxHp": 110,
+      "gold": 19,
+      "retries": 0
+    },
+    {
+      "chapter": 4,
+      "level": 20,
+      "hp": 89,
+      "maxHp": 110,
+      "gold": 81,
+      "retries": 0
+    },
+    {
+      "chapter": 5,
+      "level": 25,
+      "hp": 110,
+      "maxHp": 110,
+      "gold": 65,
+      "retries": 0
+    },
+    {
+      "chapter": 6,
+      "level": 30,
+      "hp": 100,
+      "maxHp": 110,
+      "gold": 74,
+      "retries": 0
+    },
+    {
+      "chapter": 7,
+      "level": 35,
+      "hp": 110,
+      "maxHp": 110,
+      "gold": 77,
+      "retries": 0
+    },
+    {
+      "chapter": 8,
+      "level": 40,
+      "hp": 110,
+      "maxHp": 110,
+      "gold": 83,
+      "retries": 0
+    },
+    {
+      "chapter": 9,
+      "level": 45,
+      "hp": 99,
+      "maxHp": 110,
+      "gold": 85,
+      "retries": 0
+    },
+    {
+      "chapter": 10,
+      "level": 49,
+      "hp": 105,
+      "maxHp": 110,
+      "gold": 59,
+      "retries": 0
+    },
+    {
+      "chapter": 10,
+      "level": 50,
+      "hp": 47,
+      "maxHp": 110,
+      "gold": 105,
+      "retries": 0
+    }
+  ],
+  "goldCurve": [
+    8,
+    8,
+    13,
+    8,
+    7,
+    23,
+    11,
+    11,
+    16,
+    13,
+    13,
+    16,
+    21,
+    24,
+    20,
+    13,
+    30,
+    22,
+    37,
+    21,
+    38,
+    22,
+    17,
+    23,
+    15,
+    22,
+    39,
+    45,
+    26,
+    24,
+    28,
+    41,
+    31,
+    29,
+    23,
+    96,
+    43,
+    31,
+    28,
+    21,
+    51,
+    30,
+    37,
+    30,
+    23,
+    22,
+    21,
+    14,
+    23,
+    25
+  ],
+  "skipLoot21": 10,
+  "loot21": 19,
+  "buildChanges21": 10,
+  "bossResults": {
+    "5": {
+      "win": 1,
+      "loss": 0
+    },
+    "10": {
+      "win": 1,
+      "loss": 0
+    },
+    "15": {
+      "win": 1,
+      "loss": 0
+    },
+    "20": {
+      "win": 1,
+      "loss": 0
+    },
+    "25": {
+      "win": 1,
+      "loss": 0
+    },
+    "30": {
+      "win": 1,
+      "loss": 0
+    },
+    "35": {
+      "win": 1,
+      "loss": 0
+    },
+    "40": {
+      "win": 1,
+      "loss": 0
+    },
+    "45": {
+      "win": 1,
+      "loss": 0
+    },
+    "50": {
+      "win": 1,
+      "loss": 0
+    }
+  },
+  "wallMs": 45
+}

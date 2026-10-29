@@ -19,7 +19,29 @@ export function gemBonus(items: ItemInstance[], weapon: ItemInstance): { pct: nu
   for (const g of items) if (g.kind === 'ruby' && inBag(g) && isOrthAdjacent(g, weapon)) { pct += ITEMS.ruby.values[g.level - 1]; gems.push(g.id); }
   return { pct: Math.min(GEM_CAP, pct), gems };
 }
+/** 同种武器≥3把时，第3把起伤害×0.85（抑制匕首堆叠） */
+export function sameKindPenalty(items: ItemInstance[], weapon: ItemInstance): number {
+  if (!inBag(weapon)) return 1;
+  const same = items.filter(i => inBag(i) && i.kind === weapon.kind);
+  if (same.length < 3) return 1;
+  // 按 id 排序，前2把无惩罚，其余×0.85
+  const ranked = [...same].sort((a, b) => a.id.localeCompare(b.id));
+  const idx = ranked.findIndex(i => i.id === weapon.id);
+  return idx >= 2 ? 0.85 : 1;
+}
+/** 邻接战旗提供的间隔缩短（取最高） */
+export function bannerShorten(items: ItemInstance[], weapon: ItemInstance): number {
+  if (!inBag(weapon) || ITEMS[weapon.kind].category !== 'weapon') return 0;
+  let best = 0;
+  for (const b of items) {
+    if (b.kind !== 'war_banner' || !inBag(b)) continue;
+    if (!isOrthAdjacent(b, weapon)) continue;
+    best = Math.max(best, ITEMS.war_banner.values[b.level - 1]);
+  }
+  return best / 100;
+}
 export function weaponDamage(items: ItemInstance[], weapon: ItemInstance): number {
   const base = ITEMS[weapon.kind].values[weapon.level - 1];
-  return Math.round(base * (1 + gemBonus(items, weapon).pct / 100));
+  const gem = gemBonus(items, weapon).pct / 100;
+  return Math.round(base * (1 + gem) * sameKindPenalty(items, weapon));
 }

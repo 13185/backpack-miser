@@ -34,6 +34,57 @@ export function drawMonster(g: Phaser.GameObjects.Graphics, kind: MonsterKind, r
     g.fillStyle(0x5a3a2a); g.fillRect(-r * 0.6, -r * 0.42, r * 0.45, r * 0.1); g.fillRect(r * 0.15, -r * 0.42, r * 0.45, r * 0.1);
     eye(-r * 0.35, -r * 0.2, r * 0.17); eye(r * 0.35, -r * 0.2, r * 0.17);
     g.fillStyle(0xffffff); g.fillTriangle(-r * 0.3, r * 0.35, -r * 0.18, r * 0.35, -r * 0.24, r * 0.15); g.fillTriangle(r * 0.3, r * 0.35, r * 0.18, r * 0.35, r * 0.24, r * 0.15);
+  } else if (kind === 'harbor_patrol') {
+    g.fillStyle(0x4a6a8a); g.fillRoundedRect(-r * 0.7, r * 0.1, r * 1.4, r * 0.9, r * 0.2);
+    g.fillStyle(0xffd9b0); g.fillCircle(0, -r * 0.2, r * 0.55);
+    g.fillStyle(0x2a4058); g.fillRoundedRect(-r * 0.6, -r * 0.85, r * 1.2, r * 0.35, r * 0.1);
+    eye(-r * 0.22, -r * 0.25, r * 0.14); eye(r * 0.22, -r * 0.25, r * 0.14);
+    g.fillStyle(0xc0d0e0); g.fillRect(r * 0.55, -r * 0.1, r * 0.15, r * 0.9);
+  } else if (kind === 'tide_crab') {
+    g.fillStyle(0xd4784a); g.fillEllipse(0, r * 0.2, r * 2.0, r * 1.2);
+    g.fillStyle(0xe8a06e); g.fillCircle(0, -r * 0.1, r * 0.7);
+    for (const sx of [-1, 1]) {
+      g.fillStyle(0xc06838); g.fillTriangle(sx * r * 0.9, 0, sx * r * 1.5, -r * 0.5, sx * r * 1.3, r * 0.4);
+    }
+    eye(-r * 0.25, -r * 0.15, r * 0.16); eye(r * 0.25, -r * 0.15, r * 0.16);
+    g.fillStyle(0x6ab0d0, 0.5); g.fillEllipse(0, r * 0.55, r * 1.6, r * 0.25);
+  } else if (kind === 'salt_captain') {
+    g.fillStyle(0x3a4a5a); g.fillRoundedRect(-r * 0.85, r * 0.05, r * 1.7, r * 1.0, r * 0.2);
+    g.fillStyle(0xffd9b0); g.fillCircle(0, -r * 0.25, r * 0.6);
+    g.fillStyle(0x1a2838); g.fillTriangle(-r * 0.7, -r * 0.5, 0, -r * 1.35, r * 0.7, -r * 0.5);
+    g.fillStyle(0xe8c060); g.fillCircle(0, -r * 0.85, r * 0.12);
+    eye(-r * 0.25, -r * 0.3, r * 0.15); eye(r * 0.25, -r * 0.3, r * 0.15);
+    g.fillStyle(0x6ab0d0, 0.45); g.fillEllipse(0, r * 0.7, r * 1.8, r * 0.3);
+  } else if (kind === 'furnace_colossus') {
+    g.fillStyle(0x6a3a2a); g.fillRoundedRect(-r, -r * 0.2, r * 2, r * 1.3, r * 0.2);
+    g.fillStyle(0xff6a30); g.fillCircle(0, -r * 0.4, r * 0.55);
+    g.fillStyle(0xffd080); g.fillCircle(0, -r * 0.4, r * 0.25);
+    eye(-r * 0.25, -r * 0.5, r * 0.12); eye(r * 0.25, -r * 0.5, r * 0.12);
+  } else if (kind === 'golden_heart') {
+    g.fillStyle(0xffd45c); g.fillCircle(0, 0, r * 0.95);
+    g.fillStyle(0xff8a3a); g.fillCircle(0, 0, r * 0.55);
+    g.fillStyle(0xfff0c0); g.fillCircle(-r * 0.2, -r * 0.2, r * 0.2);
+  } else if (kind === 'silence_warden' || kind === 'debt_regent' || kind === 'priest') {
+    g.fillStyle(0xd8d0e8); g.fillRoundedRect(-r * 0.7, r * 0.05, r * 1.4, r * 1.0, r * 0.2);
+    g.fillStyle(0xffd9b0); g.fillCircle(0, -r * 0.25, r * 0.55);
+    g.fillStyle(0x3a2a5a); g.fillTriangle(-r * 0.6, -r * 0.5, 0, -r * 1.2, r * 0.6, -r * 0.5);
+    eye(-r * 0.2, -r * 0.3, r * 0.12); eye(r * 0.2, -r * 0.3, r * 0.12);
+  } else if (kind === 'iron_warden' || kind === 'spider_queen' || kind === 'tax_lord') {
+    g.fillStyle(0x8a9098); g.fillRoundedRect(-r * 0.85, 0, r * 1.7, r * 1.0, r * 0.15);
+    g.fillStyle(0xffd9b0); g.fillCircle(0, -r * 0.35, r * 0.55);
+    eye(-r * 0.22, -r * 0.4, r * 0.14); eye(r * 0.22, -r * 0.4, r * 0.14);
+    g.fillStyle(0xffd45c); g.fillRect(-r * 0.5, r * 0.3, r, r * 0.12);
+  } else if (kind === 'mirror_auditor') {
+    g.fillStyle(0xc8b890); g.fillRoundedRect(-r * 0.9, -r * 0.2, r * 1.8, r * 1.2, r * 0.15);
+    g.fillStyle(0x8ab0c8); g.fillRect(-r * 0.7, -r * 0.9, r * 0.55, r * 0.9); g.fillRect(r * 0.15, -r * 0.9, r * 0.55, r * 0.9);
+    g.fillStyle(0xffd9b0); g.fillCircle(0, -r * 0.35, r * 0.45);
+    eye(-r * 0.18, -r * 0.4, r * 0.12); eye(r * 0.18, -r * 0.4, r * 0.12);
+    g.fillStyle(0xe8d080); g.fillRect(-r * 0.15, r * 0.2, r * 0.3, r * 0.5);
+  } else if (kind === 'smuggler') {
+    g.fillStyle(0x5a4a3a); g.fillRoundedRect(-r * 0.65, r * 0.1, r * 1.3, r * 0.85, r * 0.2);
+    g.fillStyle(0xffd9b0); g.fillCircle(0, -r * 0.2, r * 0.5);
+    g.fillStyle(0x3a2a1a); g.fillCircle(0, -r * 0.7, r * 0.35);
+    eye(-r * 0.2, -r * 0.25, r * 0.13); eye(r * 0.2, -r * 0.25, r * 0.13);
   } else {
     g.fillStyle(0x8a5a2b); g.fillRoundedRect(-r * 1.05, -r * 0.1, r * 2.1, r * 1.05, r * 0.15);
     g.fillStyle(0xa8703a); g.fillRoundedRect(-r * 1.05, -r * 0.95, r * 2.1, r * 0.6, { tl: r * 0.5, tr: r * 0.5, bl: 0, br: 0 });

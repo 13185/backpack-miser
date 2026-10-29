@@ -1,17 +1,23 @@
+import { npcPortraitHtml } from '../art/npcArt';
 import Phaser from 'phaser';
 import { ECONOMY } from '../config/economy';
 import { ITEMS } from '../config/items';
-import { LEVELS } from '../config/levels';
 import { MONSTER_BASE } from '../config/monsters';
+import { EVENTS as EVENTS_MAP } from '../config/v3/events';
+import { CAMPAIGN_LENGTH, getLevel, isMidAct, applyEliteOverlay, V3_CHAPTERS, RUNES, DOCTRINES, ENDING_CHOICES, ENDING_IDS, CHAPTER_INTROS, MID_ACT_STORY, resolveStoryText, LEVEL_LINES, runeLegalForItem, V3_RELICS, type RuneId, type EndingId, type RelicId } from '../config/v3';
 import type { GameState, ItemInstance, ItemKind, Level, Settings } from '../models/types';
 import { gemBonus, weaponDamage, weaponsBoostedBy } from '../systems/adjacency';
 import type { CombatEvent, CombatState } from '../systems/combat';
 import { buyPrice, expansionCost, refreshCost, sellPrice } from '../systems/economy';
-import { Game, itemLabel, newGameState, type Result } from '../systems/game';
+import { Game, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
+import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
 import { canMerge } from '../systems/merge';
 import { canPlace, inBag, itemAt, itemSize, occupiedCells } from '../systems/placement';
 import { clearSave, loadGame, loadSettings, saveGame, saveSettings } from '../systems/save';
 import { BattleScene } from '../scenes/BattleScene';
+import { AnimPreviewScene } from '../scenes/AnimPreviewScene';
+import { isV2Enabled } from '../config/v2';
+import type { HeroClassId } from '../art/types';
 import { setSound, sfx, unlockAudio } from './audio';
 import { iconSvg } from './icons';
 
@@ -39,6 +45,8 @@ export class App {
   drag: DragState | null = null;
   sellConfirm: { id: string; until: number } | null = null;
   speed = 1;
+  heroClass: HeroClassId = 'merchant';
+  ironman = false;
   tutStep = -1;
   busy = false; // 防止快速连点
   cell = 60;
@@ -50,10 +58,26 @@ export class App {
     document.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
     this.phaser = new Phaser.Game({
       type: Phaser.AUTO, parent: 'battle', backgroundColor: '#15101e', transparent: false,
-      scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' }, scene: [BattleScene],
+      scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' }, scene: [BattleScene, AnimPreviewScene],
       render: { antialias: true }, banner: false, audio: { noAudio: true },
     });
-    this.phaser.events.once('ready', () => { this.scene = this.phaser.scene.getScene('battle') as BattleScene; this.showTitle(); });
+    const bootUi = () => {
+      this.scene = this.phaser.scene.getScene('battle') as BattleScene;
+      if (!this.scene || !(this.scene as any).artReady) return;
+      this.scene.setHeroClass(this.heroClass);
+      try {
+        if (new URLSearchParams(location.search).get('debugArt') === '1') {
+          this.phaser.scene.start('animPreview');
+          this.phaser.events.once('artPreviewClosed', () => {
+            this.phaser.scene.start('battle');
+            this.phaser.events.once('battle-ui-ready', () => bootUi());
+          });
+          return;
+        }
+      } catch { /* ignore */ }
+      this.showTitle();
+    };
+    this.phaser.events.on('battle-ui-ready', () => bootUi());
     // 切到后台暂停统一时钟
     document.addEventListener('visibilitychange', () => { if (this.scene) this.scene.paused = document.hidden; });
     window.addEventListener('keydown', e => {
@@ -78,18 +102,27 @@ export class App {
     ov.className = 'show title';
     ov.innerHTML = `<div class="titleCard">
       <div class="logo">${iconSvg('moneybag')}<h1>背包守财奴</h1>${iconSvg('greatsword')}</div>
-      <p class="sub">整理背包 · 合成装备 · 自动战斗 · 攒金币</p>
+      <p class="sub">整理背包 · 合成装备 · 自动战斗 · <b>地狱难度</b></p>
       ${message ? `<p class="warn">${esc(message)}</p>` : ''}
       ${corrupt ? `<p class="warn">⚠ ${esc(corrupt)}请开始新的冒险。</p>` : ''}
+      <div class="classPick" id="classPick" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0">
+        ${['merchant','guard','ranger'].map(id=>{
+          const names:Record<string,string>={merchant:'商旅',guard:'守卫',ranger:'游侠'};
+          const on=this.heroClass===id;
+          return `<button type="button" class="btn ${on?'gold':''}" data-class="${id}" style="min-width:88px">${names[id]}</button>`;
+        }).join('')}
+      </div>
+      <label class="toggle" style="justify-content:center"><input type="checkbox" id="tIron" ${this.ironman ? 'checked' : ''}/> 单命远征（战败即结束，无回档/援助）</label>
       <div class="btns">
         ${canContinue ? `<button class="btn gold big" id="tContinue">继续游戏（第${(lr as any).state.level}关）</button>` : ''}
         <button class="btn ${canContinue ? '' : 'gold'} big" id="tNew">开始冒险</button>
+        <button class="btn" id="tArt" title="仅调试">美术预览</button>
       </div>
       <ul class="howto">
         <li>🎒 把装备拖进背包格子，<b>放进背包才生效</b>；手机点「旋转」，电脑按 R 键旋转。</li>
         <li>✨ 同种同级装备拖到一起即可<b>合成升级</b>。</li>
         <li>💎 红宝石强化<b>上下左右</b>相邻的武器。</li>
-        <li>⚔ 开战后装备自动攻击，击败10关怪物，打倒黄金宝箱怪！</li>
+        <li>⚔ 开战后装备自动攻击，征战50关、10个章节，第20关只是中段折转，第50关才是终点！</li>
       </ul>
       <label class="toggle"><input type="checkbox" id="tSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
     </div>`;
@@ -98,12 +131,39 @@ export class App {
       sfx.click(); this.newGame();
     };
     if (canContinue) $('tContinue').onclick = () => { sfx.click(); this.loadState((lr as any).state); };
+    ($('tIron') as HTMLInputElement).onchange = e => { this.ironman = (e.target as HTMLInputElement).checked; };
     ($('tSound') as HTMLInputElement).onchange = e => { this.settings.sound = (e.target as HTMLInputElement).checked; this.saveSettings(); };
-    this.scene.setPreview(LEVELS[0], 100, 100);
+    document.querySelectorAll('#classPick [data-class]').forEach(btn => {
+      (btn as HTMLElement).onclick = () => {
+        this.heroClass = (btn as HTMLElement).dataset.class as HeroClassId;
+        this.scene.setHeroClass(this.heroClass);
+        sfx.click(); this.showTitle();
+      };
+    });
+    const artBtn = $('tArt');
+    if (artBtn) artBtn.onclick = () => {
+      sfx.click();
+      this.closeOverlay();
+      this.phaser.scene.stop('battle');
+      this.phaser.scene.start('animPreview');
+      this.phaser.events.once('artPreviewClosed', () => {
+        this.phaser.scene.start('battle');
+        this.phaser.events.once('battle-ui-ready', () => {
+          this.scene = this.phaser.scene.getScene('battle') as BattleScene;
+          this.scene.setHeroClass(this.heroClass);
+          this.showTitle();
+        });
+      });
+    };
+    const sub = ov.querySelector('.sub');
+    if (sub) sub.innerHTML = `V3 战役 · ${CAMPAIGN_LENGTH}关 / 10章 · <b style="color:#ff8866">地狱难度</b> · 第50关终局`;
+    void isV2Enabled;
+    this.scene.setPreview(getLevel(1), 100, 100, { eliteActive: false, levelNo: 1 });
   }
   newGame() {
     clearSave(localStorage);
-    const st = newGameState((Date.now() ^ (Math.random() * 1e9)) >>> 0);
+    const st = newGameState((Date.now() ^ (Math.random() * 1e9)) >>> 0, { heroClass: this.heroClass, mode: this.ironman ? 'ironman' : 'story' });
+    if (!st.seenDialogue.includes('ch1_intro')) st.pendingStoryId = 'ch1_intro';
     saveGame(localStorage, st);
     this.tutStep = this.settings.tutorialDone ? -1 : 0;
     this.loadState(st);
@@ -111,11 +171,15 @@ export class App {
   loadState(st: GameState) {
     this.game = new Game(st, this.persist);
     this.selected = null; this.closeOverlay();
-    this.scene.setPreview(LEVELS[st.level - 1], st.hp, st.maxHp);
+    this.scene.setPreview(st.eliteActive ? applyEliteOverlay(getLevel(st.level), st.level) : getLevel(st.level), st.hp, st.maxHp, { eliteActive: !!st.eliteActive, levelNo: st.level });
     if (st.phase === 'battle') {
       this.toast('检测到战斗中断，已恢复到开战前，重新进行本场战斗。');
       this.render(); this.runBattle();
-    } else this.render();
+    } else {
+      this.render();
+      if (st.phase === 'camp') this.showCamp();
+      else this.showPendingModals();
+    }
   }
   closeOverlay() { const o = $('overlay'); o.className = ''; o.innerHTML = ''; }
 
@@ -146,24 +210,32 @@ export class App {
     const battle = s.phase === 'battle';
     document.body.classList.toggle('inBattle', battle);
     // HUD
-    $('hud').innerHTML = `<div class="hudItem lvl">第 <b>${s.level}</b>/10 关</div>
+    const ch = V3_CHAPTERS.find(c => c.id === (s.currentChapter ?? 1));
+    const lvDef = getLevel(s.level);
+    const cap = s.campaignLength ?? CAMPAIGN_LENGTH;
+    $('hud').innerHTML = `<div class="hudItem lvl">第 <b>${s.level}</b>/${cap} 关</div>
+      <div class="hudItem chap" title="${lvDef.title}">${ch ? ch.name : ''} · ${lvDef.title}</div>
       <div class="hudItem hp"><span>❤</span><div class="hpbar"><i style="width:${(s.hp / s.maxHp) * 100}%"></i></div><b>${s.hp}/${s.maxHp}</b></div>
       <div class="hudItem gold"><span class="coin"></span><b id="goldNum">${s.gold}</b></div>
+      <button class="iconBtn" id="logBtn" aria-label="剧情日志" title="剧情日志">📜</button>
       <button class="iconBtn" id="soundBtn" aria-label="音效">${this.settings.sound ? '🔊' : '🔇'}</button>
       <button class="iconBtn" id="setBtn" aria-label="设置">⚙</button>`;
+    $('logBtn').onclick = () => this.showStoryLog();
     $('soundBtn').onclick = () => { this.settings.sound = !this.settings.sound; this.saveSettings(); this.render(); };
     $('setBtn').onclick = () => this.showSettings();
     this.renderMid(); this.renderBag(); this.renderTemp(); this.renderDetails(); this.renderShop(); this.renderStats(); this.renderTutorial();
   }
   renderMid() {
-    const g = this.game!, s = g.s, lv = LEVELS[s.level - 1], base = MONSTER_BASE[lv.monster];
+    const g = this.game!, s = g.s, lv = getLevel(s.level), base = MONSTER_BASE[lv.monster];
     const battle = s.phase === 'battle';
     const can = g.canStartBattle();
     const abil = lv.armor ? base.ability.replace('固定值', `${lv.armor}点`) : base.ability;
+    const lvLine = LEVEL_LINES[s.level] ?? '';
     $('mid').innerHTML = `<div class="enemyCard ${lv.boss ? 'boss' : ''}">
         <div class="eName">${lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
+        ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
-        <div class="eAbil">✦ ${abil}<br/>⚠ ${ECONOMY.enrageAt}秒后狂暴，每${ECONOMY.enrageStep}秒伤害提升；${ECONOMY.timeout}秒未击败即失败。</div>
+        <div class="eAbil">✦ ${abil}${lv.mechSummary ? `<br/>⚙ ${lv.mechSummary}` : ''}<br/>⚠ ${ECONOMY.enrageAt}秒后狂暴，每${ECONOMY.enrageStep}秒伤害提升；${ECONOMY.timeout}秒未击败即失败。</div>
       </div>
       <div class="actions">
         ${battle ? `<div class="hint">⚔ 自动战斗中……背包已锁定</div>
@@ -238,15 +310,19 @@ export class App {
     if (!it) { el.innerHTML = `<div class="ptitle">🔍 装备详情</div><div class="empty">点击一件装备查看详情</div>`; return; }
     const d = ITEMS[it.kind]; const v = d.values[it.level - 1]; const { w, h } = itemSize(it.kind, it.rotated);
     let stats = '';
-    if (d.category === 'weapon') {
-      const b = gemBonus(g.s.items, it); const fin = weaponDamage(g.s.items, it);
-      stats = `<div>基础伤害：<b>${v}</b> · 间隔 ${d.interval}秒</div><div>宝石加成：<b class="${b.pct ? 'up' : ''}">+${b.pct}%</b>${b.pct >= 100 ? '（已达上限）' : ''}${!inBag(it) ? '（在临时区不生效）' : ''}</div>
-        <div>最终伤害：<b class="up">${inBag(it) ? fin : 0}</b> · 每秒约 ${inBag(it) ? (fin / d.interval!).toFixed(1) : 0}</div>`;
+    if (d.category === 'weapon' || d.category === 'needle') {
+      const b = d.category === 'weapon' ? gemBonus(g.s.items, it) : { pct: 0 };
+      const fin = d.category === 'weapon' ? weaponDamage(g.s.items, it) : v;
+      stats = `<div>基础伤害：<b>${v}</b> · 间隔 ${d.interval}秒</div><div>宝石加成：<b class="${b.pct ? 'up' : ''}">+${b.pct}%</b>${!inBag(it) ? '（临时区不生效）' : ''}</div>
+        <div>最终伤害：<b class="up">${inBag(it) ? fin : 0}</b>${d.category === 'needle' ? ' · 附毒' : ''}</div>`;
     } else if (d.category === 'gem') {
       const n = weaponsBoostedBy(g.s.items, it).length;
       stats = `<div>加成：<b>+${v}%</b></div><div>当前强化武器：<b class="${n ? 'up' : ''}">${n}</b> 件（已高亮）</div>`;
-    } else if (d.category === 'shield') stats = `<div>每3秒护盾：<b>${v}</b></div><div>护盾上限：${Math.floor(g.s.maxHp * ECONOMY.shieldCapRate)}</div>`;
+    } else if (d.category === 'shield') stats = `<div>护盾生成：<b>${v}</b> / ${d.interval}秒</div><div>护盾上限：${Math.floor(g.s.maxHp * ECONOMY.shieldCapRate)}${d.maxTriggers ? ` · 每场最多${d.maxTriggers}次` : ''}</div>`;
     else if (d.category === 'potion') stats = `<div>恢复：<b>${v}</b> 生命</div><div>触发：生命 ≤ ${Math.floor(g.s.maxHp * ECONOMY.potionThreshold)}</div>`;
+    else if (d.category === 'heal') stats = `<div>恢复：<b>${v}</b> · 间隔 ${d.interval}秒</div><div>每场最多 ${d.maxTriggers ?? 3} 次（非药水）</div>`;
+    else if (d.category === 'passive') stats = `<div>减甲：<b>${v}</b> · 持续前8秒</div>`;
+    else if (d.category === 'economy') stats = `<div>开战金&lt;30时额外：<b>+${v}</b> 金币</div>`;
     else stats = `<div>胜利金币：<b>+${v}</b></div>`;
     const next = it.level < 3 ? `<div class="nextLv">合成后 Lv${it.level + 1}：${d.category === 'gem' ? '+' + d.values[it.level as number] + '%' : d.values[it.level as number]}</div>` : `<div class="nextLv">已达最高等级</div>`;
     const sp = sellPrice(it.kind, it.level); const confirming = this.sellConfirm?.id === it.id && this.sellConfirm.until > Date.now();
@@ -278,7 +354,7 @@ export class App {
   }
   renderShop() {
     const g = this.game!, s = g.s, prep = s.phase === 'prep';
-    const rc = refreshCost(s.shop.refreshes);
+    const rc = refreshCost(s.shop.refreshes, s.doctrine, s.heroClass, s.level);
     $('shop').innerHTML = `<div class="ptitle">🏪 商店 <small>购买的装备进入临时区</small></div>
       <div class="shopRow">${s.shop.slots.map((sl, i) => {
         const p = buyPrice(sl.kind, sl.level); const poor = s.gold < p; const d = ITEMS[sl.kind];
@@ -429,7 +505,7 @@ export class App {
     const g = this.game!;
     this.selected = null; this.render();
     const c = g.makeCombat();
-    this.scene.setPreview(LEVELS[g.s.level - 1], g.s.hp, g.s.maxHp);
+    this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
     this.scene.setSpeed(this.speed);
     this.scene.start(c, g.s.items.map(i => ({ ...i })), {
       onEvents: (ev, cs) => this.onBattleEvents(ev, cs),
@@ -462,31 +538,337 @@ export class App {
   showLoot() {
     const g = this.game!, s = g.s, l = s.last!, loot = s.loot!;
     const ov = $('overlay'); ov.className = 'show';
+    const midBanner = isMidAct(l.level)
+      ? `<div class="warn" style="margin:8px 0">⚔ 中段折转：王库只是收税站……黄金心脏仍在更深处。继续第21关。</div>`
+      : '';
     ov.innerHTML = `<div class="modal"><h2>🏆 第${l.level}关胜利！</h2>
+      ${midBanner}
       <div class="goldGain"><span class="coin big"></span> +${l.baseGold + l.bagGold} 金币 <small>（胜利${l.baseGold}${l.bagGold ? ` + 钱袋${l.bagGold}` : ''}）</small></div>
       <div class="muted">生命恢复 ${Math.round(s.maxHp * ECONOMY.healAfterWin)} 点（当前 ${s.hp}/${s.maxHp}）</div>
       ${this.statsHtml(l)}
       <h3>选择一件战利品（三选一）</h3>
-      <div class="lootRow">${loot.options.map((o, i) => { const d = ITEMS[o.kind]; return `<button class="lootCard" data-loot="${i}"><div class="detIcon lv${o.level}" style="--c:${d.color}">${iconSvg(o.kind)}<div class="lvBadge">Lv${o.level}</div></div><div class="sName">${d.name} Lv${o.level}</div><div class="sDesc">${d.desc(d.values[o.level - 1])}</div></button>`; }).join('')}</div></div>`;
+      <div class="lootRow">${loot.options.map((o, i) => { const d = ITEMS[o.kind]; return `<button class="lootCard" data-loot="${i}"><div class="detIcon lv${o.level}" style="--c:${d.color}">${iconSvg(o.kind)}<div class="lvBadge">Lv${o.level}</div></div><div class="sName">${d.name} Lv${o.level}</div><div class="sDesc">${d.desc(d.values[o.level - 1])}</div></button>`; }).join('')}</div>
+      <div class="btns" style="margin-top:12px">${l.level >= 21
+        ? `<button class="btn" id="skipLoot">回收：+4金币${s.relics.includes('A05') ? '（空袋节俭+2）' : ''}</button><button class="btn" id="restLoot">休整：恢复4生命${s.relics.includes('A05') ? '（+2金）' : ''}</button>`
+        : `<button class="btn" id="skipLoot">回收物资（放弃装备，+2金币）</button>`}</div></div>`;
     ov.querySelectorAll<HTMLElement>('[data-loot]').forEach(b => (b.onclick = () => this.guard(() => {
       ov.querySelectorAll('button').forEach(x => ((x as HTMLButtonElement).disabled = true));
-      if (this.act(() => g.claimLoot(+b.dataset.loot!), sfx.coin)) { this.closeOverlay(); this.scene.setPreview(LEVELS[s.level - 1], s.hp, s.maxHp); this.render(); }
+      if (this.act(() => g.claimLoot(+b.dataset.loot!), sfx.coin)) { this.closeOverlay(); this.afterLootAdvance(); }
     })));
+    const sk = document.getElementById('skipLoot');
+    if (sk) sk.onclick = () => this.guard(() => {
+      if (this.act(() => g.skipLoot('recycle'), sfx.coin)) { this.closeOverlay(); this.afterLootAdvance(); }
+    });
+    const rl = document.getElementById('restLoot');
+    if (rl) rl.onclick = () => this.guard(() => {
+      if (this.act(() => g.skipLoot('rest'))) { this.closeOverlay(); this.afterLootAdvance(); }
+    });
+  }
+  afterLootAdvance() {
+    const g = this.game!;
+    this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+    this.render();
+    if (g.s.phase === 'camp') this.showCamp();
+    else this.showPendingModals();
+  }
+  showCamp() {
+    const g = this.game!, s = g.s;
+    const ov = $('overlay'); ov.className = 'show';
+    const final = s.campKind === 'final';
+    const forgeables = g.bagItems.filter(i => i.level < 3);
+    const restHeal = Math.min(s.maxHp - s.hp, Math.floor(s.maxHp * 0.3));
+    const reroll = s.doctrineRerollChoices && !s.storyFlags.doctrineRerollUsed
+      ? `<div class="warn" style="margin-top:10px">⚔ 专精免费重选（仅一次，不占营地服务）：当前【${DOCTRINES[s.doctrine as keyof typeof DOCTRINES]?.name ?? '无'}】
+         <div class="lootRow">${s.doctrineRerollChoices.map(id => { const d = DOCTRINES[id as keyof typeof DOCTRINES]; return `<button class="btn small" data-reroll="${id}" title="${esc(d.desc)}">换为${d.name}</button>`; }).join('')}
+         <button class="btn small" data-reroll="">保留现有</button></div></div>` : '';
+    ov.innerHTML = `<div class="modal"><h2>${final ? '🔥 最终整备站' : '🏕️ 章节营地'}</h2>
+      <p class="muted">${final ? '第49关后：选择一项服务（休息／锻造／移除负担），商店在第50关准备阶段照常开放。' : '本章只能使用一次主服务，然后离开；离开后写入章节检查点（回档不会再给一次服务）。'}</p>
+      <div class="statList"><div><span>生命</span><b>${s.hp}/${s.maxHp}</b></div><div><span>金币</span><b>${s.gold}</b></div>
+      <div><span>主服务</span><b>${s.campServiceUsed ? '已用' : '可用'}</b></div></div>
+      ${reroll}
+      <div class="btns col" style="gap:8px;margin-top:12px">
+        <button class="btn gold" id="campRest" ${s.campServiceUsed ? 'disabled' : ''}>休息：恢复${restHeal}生命（最大生命30%）${s.relics.includes('A06') ? ' · 修补线下场+5' : ''}</button>
+        <div class="muted">锻造：1→2 ${g.forgeCost(1) ? g.forgeCost(1) + '金' : '免费'} / 2→3 ${g.forgeCost(2) ? g.forgeCost(2) + '金' : '免费'}${final && s.questStates.forge === 'stopped_clean' ? '（老铆回报：本次锻造免费）' : ''}</div>
+        <div class="lootRow">${forgeables.map(i => `<button class="btn small" data-forge="${i.id}" ${s.campServiceUsed || s.gold < g.forgeCost(i.level) ? 'disabled' : ''}>${itemLabel(i)} → Lv${i.level + 1}</button>`).join('') || '<span class="muted">背包内无可锻造装备</span>'}</div>
+        <button class="btn" id="campBurden" ${s.campServiceUsed || !s.items.some(i => i.kind === 'burden') || s.gold < 15 ? 'disabled' : ''}>
+          移除负担（15金）${s.items.some(i => i.kind === 'burden') ? '' : ' · 无负担物'}</button>
+        <button class="btn gold big" id="campLeave">${final ? '前往黄金心脏' : '离开营地'}</button>
+      </div></div>`;
+    $('campRest').onclick = () => this.guard(() => { if (this.act(() => g.campRest())) this.showCamp(); });
+    const burBtn = document.getElementById('campBurden');
+    if (burBtn) burBtn.onclick = () => this.guard(() => { if (this.act(() => g.campRemoveBurden())) this.showCamp(); });
+    ov.querySelectorAll<HTMLElement>('[data-forge]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.campForge(b.dataset.forge!))) this.showCamp();
+    }));
+    ov.querySelectorAll<HTMLElement>('[data-reroll]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.rerollDoctrine(b.dataset.reroll || null))) this.showCamp();
+    }));
+    $('campLeave').onclick = () => this.guard(() => {
+      if (this.act(() => g.campLeave())) {
+        this.closeOverlay();
+        this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+        this.render(); this.showPendingModals();
+      }
+    });
   }
   showEnd(won: boolean) {
     const g = this.game!, s = g.s, l = s.last!;
     const main = Object.entries(s.stats.contribution).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const ov = $('overlay'); ov.className = 'show';
-    ov.innerHTML = `<div class="modal ${won ? 'win' : 'lose'}"><h2>${won ? '👑 通关！你成为了地牢首富！' : '💀 冒险失败'}</h2>
-      ${won ? '' : `<p class="warn">${esc(l.reason)}</p>`}
-      <div class="statList"><div><span>到达关卡</span><b>第${l.level}关</b></div><div><span>击败怪物</span><b>${s.stats.kills}</b></div>
+    const canCheckpoint = !won && s.mode === 'story' && !!s.chapterCheckpoint;
+    const end = s.endingChoice ? ENDING_CHOICES[s.endingChoice as EndingId] : null;
+    const winTitle = won ? (end ? `👑 通关 · ${end.title}` : '👑 通关！黄金心脏已沉寂，你走完了五十关旅程！') : '💀 冒险失败';
+    ov.innerHTML = `<div class="modal ${won ? 'win' : 'lose'}"><h2>${winTitle}</h2>
+      ${won && end ? `<p style="line-height:1.6">${esc(end.finale)}</p>` : ''}
+      ${won && s.completion ? `<p class="muted">记录：${s.completion.type === 'pure' ? '无援助故事通关' : s.completion.type === 'assisted' ? '援助通关（与纯净记录分开）' : '单命远征通关'} · 重试 ${s.completion.retries} 次</p>` : ''}${won ? '' : `<p class="warn">${esc(l.reason)}</p>`}
+      <div class="statList"><div><span>到达关卡</span><b>第${l.level}/${s.campaignLength ?? CAMPAIGN_LENGTH}关</b></div><div><span>击败怪物</span><b>${s.stats.kills}</b></div>
       <div><span>累计获得金币</span><b>${s.stats.goldEarned}</b></div><div><span>剩余金币</span><b>${s.gold}</b></div></div>
       <h3>主要装备</h3><div class="equipRow">${g.bagItems.map(i => `<div class="mini lv${i.level}" style="--c:${ITEMS[i.kind].color}">${iconSvg(i.kind)}<span>${itemLabel(i)}</span></div>`).join('')}</div>
       <h3>累计战斗贡献</h3><div class="statList">${main.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('') || '<div>无</div>'}</div>
       <h3>最后一战</h3>${this.statsHtml(l)}
-      <div class="btns"><button class="btn gold big" id="again">重新开始</button><button class="btn big" id="toTitle">返回标题</button></div></div>`;
+      <div class="btns">
+        ${canCheckpoint ? `<button class="btn gold big" id="toCheckpoint">回本章起点</button><button class="btn big" id="toAssist" title="回满生命，并可做一次等价值装备交换；本局记为援助通关">使用援助整备后重试</button>` : ''}
+        ${!won ? `<button class="btn big" id="endCampaign">结束战役</button>` : ''}
+        <button class="btn ${won || !canCheckpoint ? 'gold' : ''} big" id="again">重新开始</button>
+        <button class="btn big" id="toTitle">返回标题</button>
+      </div></div>`;
     $('again').onclick = () => { sfx.click(); this.newGame(); };
     $('toTitle').onclick = () => { this.showTitle(); };
+    const endBtn = document.getElementById('endCampaign');
+    if (endBtn) endBtn.onclick = () => { sfx.click(); this.showTitle('战役已结束。'); };
+    const asBtn = document.getElementById('toAssist');
+    if (asBtn) asBtn.onclick = () => this.guard(() => {
+      if (this.act(() => g.retryWithAssistance())) {
+        this.closeOverlay();
+        this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+        this.render(); this.showAssistSwap();
+      }
+    });
+    const cpBtn = document.getElementById('toCheckpoint');
+    if (cpBtn) cpBtn.onclick = () => this.guard(() => {
+      if (this.act(() => g.restoreChapterCheckpoint())) {
+        this.closeOverlay();
+        this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+        this.render();
+      }
+    });
+  }
+
+  /** 依次弹出剧情 / 符文 / 专精 / 结局选择 */
+  showPendingModals() {
+    const g = this.game; if (!g) return;
+    const s = g.s;
+    if (s.pendingRoute) { this.showRoutePick(); return; }
+    if (s.pendingEventId) { this.showEventModal(); return; }
+    if (s.pendingUpgrade) { this.showUpgradePick(); return; }
+    if (s.pendingStoryId) { this.showStoryModal(s.pendingStoryId); return; }
+    if (s.pendingRuneChoices?.length) { this.showRunePick(); return; }
+    if (s.pendingDoctrineChoices?.length) { this.showDoctrinePick(); return; }
+    if (s.pendingRelicChoices?.length) { this.showRelicPick(); return; }
+    if (s.pendingChoice) { this.showQuestChoice(); return; }
+    if (s.level === 45 && !s.endingChoice) { this.showEndingPick(); return; }
+  }
+  showRoutePick() {
+    const g = this.game!, s = g.s, lv = getLevel(s.level);
+    const base = MONSTER_BASE[lv.monster];
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>🗺 路线选择 · 第${s.level}关</h2>
+      <p style="line-height:1.6">本关可选<strong>普通</strong>或<strong>精英</strong>分支。精英：敌人生命×1.25、胜利金币×1.4，并额外三选一遗物；敌人机制更强。</p>
+      <p class="muted">普通对手：${esc(lv.title)}（${esc(base?.name ?? lv.monster)}）${lv.mechSummary ? ' · ' + esc(lv.mechSummary) : ''}</p>
+      <div class="btns col" style="gap:8px;margin-top:12px">
+        <button class="btn gold big" id="routeNormal">普通路线</button>
+        <button class="btn big" id="routeElite">精英路线（高风险高回报）</button>
+      </div></div>`;
+    $('routeNormal').onclick = () => this.guard(() => {
+      if (this.act(() => g.chooseRoute(false))) {
+        this.closeOverlay();
+        this.scene.setPreview(getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: false, levelNo: g.s.level });
+        this.render(); this.showPendingModals();
+      }
+    });
+    $('routeElite').onclick = () => this.guard(() => {
+      if (this.act(() => g.chooseRoute(true))) {
+        this.closeOverlay();
+        const lv = applyEliteOverlay(getLevel(g.s.level), g.s.level);
+        this.scene.setPreview(lv, g.s.hp, g.s.maxHp, { eliteActive: true, levelNo: g.s.level });
+        this.render(); this.showPendingModals();
+      }
+    });
+  }
+  showEventModal() {
+    const g = this.game!, s = g.s;
+    const def = EVENTS_MAP[s.pendingEventId!];
+    if (!def) { g.skipEvent(); this.render(); this.showPendingModals(); return; }
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>🎲 ${esc(def.name)}</h2>
+      <p style="line-height:1.6;white-space:pre-wrap">${esc(def.body)}</p>
+      <div class="lootRow">${def.options.map(o => {
+        const bad = (o.cost?.gold && s.gold < o.cost.gold) || (o.cost?.hp && s.hp - o.cost.hp < 1);
+        const cost = [o.cost?.gold ? `${o.cost.gold}金` : '', o.cost?.hp ? `${o.cost.hp}生命` : ''].filter(Boolean).join(' / ');
+        return `<button class="lootCard" data-ev="${o.id}" ${bad ? 'disabled' : ''}><div class="sName">${esc(o.label)}</div>
+          <div class="sDesc">${esc(o.desc)}${cost ? `（花费 ${cost}）` : ''}${bad ? ' · 无法支付' : ''}</div></button>`;
+      }).join('')}</div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-ev]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.resolveEvent(b.dataset.ev!))) { this.closeOverlay(); this.render(); this.showPendingModals(); }
+    }));
+  }
+  showUpgradePick() {
+    const g = this.game!, s = g.s, pu = s.pendingUpgrade!;
+    const cands = s.items.filter(i => i.kind !== 'burden' && i.level === pu.fromLevel);
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>⬆ 选择升级装备</h2>
+      <p class="muted">将一件 ${pu.fromLevel} 级装备升到 ${pu.fromLevel + 1} 级。</p>
+      <div class="lootRow">${cands.map(i =>
+        `<button class="lootCard" data-up="${i.id}"><div class="sName">${esc(itemLabel(i))}</div><div class="sDesc">→ Lv${i.level + 1}</div></button>`
+      ).join('') || '<p class="muted">没有可升级的装备。请整理背包后再试（可点跳过放弃）。</p>'}</div>
+      <div class="btns"><button class="btn" id="upSkip">放弃升级</button></div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-up]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.confirmUpgrade(b.dataset.up!))) { this.closeOverlay(); this.render(); this.showPendingModals(); }
+    }));
+    $('upSkip').onclick = () => this.guard(() => {
+      if (this.act(() => g.skipUpgrade())) { this.closeOverlay(); this.render(); this.showPendingModals(); }
+    });
+  }
+  showQuestChoice() {
+    const g = this.game!, s = g.s, pc = s.pendingChoice!;
+    const def = QUEST_CHOICES[pc.id as ChoiceId];
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>📜 ${esc(def.title)}</h2><p style="line-height:1.6">${esc(def.body)}</p>
+      <div class="lootRow">${def.options.map(o => {
+        const bad = (o.cost.gold && s.gold < o.cost.gold) || (o.cost.hp && s.hp - o.cost.hp < 1);
+        return `<button class="lootCard" data-choice="${o.id}" ${bad ? 'disabled' : ''}><div class="sName">${esc(o.label)}</div><div class="sDesc">${esc(o.desc)}${bad ? '（当前无法支付）' : ''}</div></button>`;
+      }).join('')}</div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-choice]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.resolveChoice(b.dataset.choice!))) { this.closeOverlay(); this.render(); this.showPendingModals(); }
+    }));
+  }
+  showAssistSwap() {
+    const g = this.game!, s = g.s, a = s.assist;
+    if (!a || a.used) { this.showPendingModals(); return; }
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>🤝 援助整备</h2><p class="muted">生命已回满。可选一次交换：候选基础价值不高于被换装备；也可以不换。重复援助只回到同一起点，不叠加。</p>
+      <div class="lootRow">${a.options.map((o, i) => `<div class="lootCard" style="cursor:default"><div class="sName">${ITEMS[o.kind].name} Lv${o.level}</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">${g.bagItems.filter(it => buyPrice(o.kind, o.level) <= buyPrice(it.kind, it.level)).slice(0, 5)
+          .map(it => `<button class="btn small" data-as="${i}" data-item="${it.id}">替换 ${itemLabel(it)}</button>`).join('') || '<span class="muted">无可等价替换的装备</span>'}</div></div>`).join('')}</div>
+      <div class="btns"><button class="btn gold" id="asSkip">不交换</button></div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-as]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.assistSwap(b.dataset.item!, +b.dataset.as!))) { this.closeOverlay(); this.render(); this.showPendingModals(); }
+    }));
+    $('asSkip').onclick = () => { this.closeOverlay(); this.render(); this.showPendingModals(); };
+  }
+  showStoryModal(id: string) {
+    const g = this.game!;
+    const endingCtx = id.startsWith('ending_') ? {
+      ending: id.slice('ending_'.length) as EndingId,
+      heroClass: g.s.heroClass,
+      questStates: g.s.questStates,
+      npcStates: g.s.npcStates,
+    } : undefined;
+    const { title, body } = resolveStoryText(id, { heroClass: g.s.heroClass, endingCtx });
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>📜 ${esc(title)}</h2>${npcPortraitHtml(body)}<p style="line-height:1.6;white-space:pre-wrap">${esc(body)}</p><div style="clear:both"></div>
+      <div class="btns"><button class="btn gold big" id="storyOk">继续</button></div></div>`;
+    // 跳过文字不跳过选择：只清除 pendingStoryId
+    $('storyOk').onclick = () => {
+      g.dismissStory(); this.closeOverlay(); this.render(); this.showPendingModals();
+    };
+  }
+  showStoryLog() {
+    const g = this.game;
+    if (!g) return;
+    const ids = g.s.storyLog ?? [];
+    const rows = ids.length ? ids.map(id => {
+      const endingCtx = id.startsWith('ending_') ? {
+        ending: id.slice('ending_'.length) as EndingId,
+        heroClass: g.s.heroClass, questStates: g.s.questStates, npcStates: g.s.npcStates,
+      } : undefined;
+      const { title, body } = resolveStoryText(id, { heroClass: g.s.heroClass, endingCtx });
+      return `<div style="margin:8px 0;padding:8px;border:1px solid #3a3050;border-radius:8px"><b>${esc(title)}</b><div class="muted" style="margin-top:4px;line-height:1.5">${esc(body)}</div></div>`;
+    }).join('') : '<p class="muted">尚无已记录的剧情。</p>';
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal" style="max-height:80vh;overflow:auto"><h2>📜 剧情日志</h2>
+      <p class="muted">已见主线可回看；跳过文字不会跳过选择或标记。</p>
+      ${rows}
+      <div class="btns"><button class="btn gold" id="logClose">关闭</button></div></div>`;
+    $('logClose').onclick = () => { this.closeOverlay(); this.render(); this.showPendingModals(); };
+  }
+  showRunePick() {
+    const g = this.game!, s = g.s;
+    const choices = s.pendingRuneChoices ?? [];
+    const hosts = s.items;
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>✨ 铭刻符文（三选一）</h2>
+      <p class="muted">最多2枚；可附着到合法装备，或暂存（暂存不生效）。</p>
+      <div class="lootRow">${choices.map(id => {
+        const d = RUNES[id as RuneId]; if (!d) return '';
+        return `<div class="lootCard" style="cursor:default"><div class="sName">${d.name}</div><div class="sDesc">${d.desc}</div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+            ${hosts.filter(w => runeLegalForItem(id as RuneId, w.kind)).slice(0, 5).map(w =>
+              `<button class="btn small" data-rune="${id}" data-item="${w.id}">附着到 ${itemLabel(w)}</button>`
+            ).join('') || '<span class="muted">无合法装备</span>'}
+            <button class="btn small" data-rune="${id}" data-item="">暂存（不附着）</button>
+          </div></div>`;
+      }).join('')}</div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-rune]').forEach(b => b.onclick = () => this.guard(() => {
+      const rid = b.dataset.rune!, iid = b.dataset.item || null;
+      if (this.act(() => g.chooseRune(rid, iid || null))) {
+        this.closeOverlay(); this.render(); this.showPendingModals();
+      }
+    }));
+  }
+  showDoctrinePick() {
+    const g = this.game!, s = g.s;
+    const choices = s.pendingDoctrineChoices ?? [];
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>⚔ 战术专精（三选一）</h2>
+      <p class="muted">本局只能保留一项专精。</p>
+      <div class="lootRow">${choices.map(id => {
+        const d = DOCTRINES[id as keyof typeof DOCTRINES]; if (!d) return '';
+        return `<button class="lootCard" data-doc="${id}"><div class="sName">${d.name}</div><div class="sDesc">${d.desc}</div></button>`;
+      }).join('')}</div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-doc]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.chooseDoctrine(b.dataset.doc!))) {
+        this.closeOverlay(); this.render(); this.showPendingModals();
+      }
+    }));
+  }
+  showRelicPick() {
+    const g = this.game!, s = g.s;
+    const choices = s.pendingRelicChoices ?? [];
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>🔮 遗物（三选一，最多3件）</h2>
+      <p class="muted">当前持有 ${s.relics.length}/3</p>
+      <div class="lootRow">${choices.map(id => {
+        const d = V3_RELICS[id as RelicId]; if (!d) return '';
+        return `<button class="lootCard" data-rel="${id}"><div class="sName">${d.name}</div><div class="sDesc">${d.desc}${d.implemented ? '' : '（效果待深化）'}</div></button>`;
+      }).join('')}</div>
+      <div class="btns"><button class="btn" id="skipRelic">放弃</button></div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-rel]').forEach(b => b.onclick = () => this.guard(() => {
+      if (this.act(() => g.chooseRelic(b.dataset.rel!))) {
+        this.closeOverlay(); this.render(); this.showPendingModals();
+      }
+    }));
+    const sk = document.getElementById('skipRelic');
+    if (sk) sk.onclick = () => this.guard(() => {
+      if (this.act(() => g.skipRelic())) { this.closeOverlay(); this.render(); this.showPendingModals(); }
+    });
+  }
+  showEndingPick() {
+    const g = this.game!, s = g.s;
+    const av = endingAvailability(s);
+    const ov = $('overlay'); ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h2>⚖ 最终处置原则</h2>
+      <p class="muted">第45关：确认后不可无代价更改；三种方案都必须打第50关。当前证据 ${evidenceOf(s.questStates)} 份；商队：${s.questStates.rescue ?? '未知'}；工坊：${s.questStates.forge ?? '未知'}。</p>
+      <div class="lootRow">${ENDING_IDS.map(id => {
+        const e = ENDING_CHOICES[id]; const a = av[id];
+        return `<button class="lootCard" data-end="${id}" ${a.ok ? '' : 'disabled'}><div class="sName">${e.title}</div><div class="sDesc">${e.summary}<br/><span class="muted">${esc(e.conditionHint)}</span>${a.ok ? '' : `<br><b>不可选：</b>${esc(a.reason ?? '')}`}</div></button>`;
+      }).join('')}</div></div>`;
+    ov.querySelectorAll<HTMLElement>('[data-end]').forEach(b => b.onclick = () => this.guard(() => {
+      if (!confirm('确认后不能更改，确定吗？')) return;
+      if (this.act(() => g.chooseEnding(b.dataset.end as EndingId))) {
+        this.closeOverlay(); this.render(); this.showPendingModals();
+      }
+    }));
   }
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
@@ -495,7 +877,7 @@ export class App {
       <div class="btns col"><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;
     ($('sSound') as HTMLInputElement).onchange = e => { this.settings.sound = (e.target as HTMLInputElement).checked; this.saveSettings(); this.render(); };
-    $('sClose').onclick = () => { this.closeOverlay(); const ph = this.game?.s.phase; if (ph === 'loot') this.showLoot(); else if (ph === 'victory' || ph === 'defeat') this.showEnd(ph === 'victory'); else if (!this.game) this.showTitle(); };
+    $('sClose').onclick = () => { this.closeOverlay(); const ph = this.game?.s.phase; if (ph === 'loot') this.showLoot(); else if (ph === 'camp') this.showCamp(); else if (ph === 'victory' || ph === 'defeat') this.showEnd(ph === 'victory'); else if (!this.game) this.showTitle(); };
     $('sTut').onclick = () => { this.closeOverlay(); this.tutStep = 0; this.render(); };
     $('sTitle').onclick = () => { if (this.game?.s.phase === 'battle') { this.scene.combat = null; } this.showTitle(); };
     $('sRestart').onclick = () => { if (confirm('确定放弃当前进度并重新开始？')) { this.scene.combat = null; this.newGame(); } };

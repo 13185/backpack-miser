@@ -1,0 +1,236 @@
+{
+  "strategy": "adjacency",
+  "strategyName": "武器邻接流（游侠）",
+  "seed": 1,
+  "heroClass": "ranger",
+  "mode": "story",
+  "starter": [
+    "匕首",
+    "匕首",
+    "红宝石"
+  ],
+  "result": "victory",
+  "reached": 50,
+  "retries": 0,
+  "deaths": [],
+  "assistanceUsed": false,
+  "completion": "pure",
+  "relics": [
+    "A02",
+    "A01",
+    "C04"
+  ],
+  "runes": [
+    "U01",
+    "U08"
+  ],
+  "doctrine": "T03",
+  "doctrineRerolled": false,
+  "camps": [
+    "L5营地:forge:盾牌",
+    "L10营地:forge:匕首",
+    "L15营地:forge:匕首",
+    "L20营地:forge:匕首",
+    "L25营地:rest",
+    "L30营地:rest",
+    "L35营地:rest",
+    "L40营地:rest",
+    "L45营地:rest",
+    "L49整备:rest"
+  ],
+  "choices": {
+    "L19:0": "take",
+    "L23:1": "evidence",
+    "L34:2": "give",
+    "L39:3": "evidence"
+  },
+  "ending": "public_ledger",
+  "chapters": [
+    {
+      "chapter": 1,
+      "level": 5,
+      "hp": 89,
+      "maxHp": 90,
+      "gold": 35,
+      "retries": 0
+    },
+    {
+      "chapter": 2,
+      "level": 10,
+      "hp": 89,
+      "maxHp": 90,
+      "gold": 45,
+      "retries": 0
+    },
+    {
+      "chapter": 3,
+      "level": 15,
+      "hp": 78,
+      "maxHp": 90,
+      "gold": 23,
+      "retries": 0
+    },
+    {
+      "chapter": 4,
+      "level": 20,
+      "hp": 79,
+      "maxHp": 90,
+      "gold": 80,
+      "retries": 0
+    },
+    {
+      "chapter": 5,
+      "level": 25,
+      "hp": 90,
+      "maxHp": 90,
+      "gold": 70,
+      "retries": 0
+    },
+    {
+      "chapter": 6,
+      "level": 30,
+      "hp": 90,
+      "maxHp": 90,
+      "gold": 73,
+      "retries": 0
+    },
+    {
+      "chapter": 7,
+      "level": 35,
+      "hp": 90,
+      "maxHp": 90,
+      "gold": 72,
+      "retries": 0
+    },
+    {
+      "chapter": 8,
+      "level": 40,
+      "hp": 84,
+      "maxHp": 90,
+      "gold": 80,
+      "retries": 0
+    },
+    {
+      "chapter": 9,
+      "level": 45,
+      "hp": 90,
+      "maxHp": 90,
+      "gold": 99,
+      "retries": 0
+    },
+    {
+      "chapter": 10,
+      "level": 49,
+      "hp": 90,
+      "maxHp": 90,
+      "gold": 57,
+      "retries": 0
+    },
+    {
+      "chapter": 10,
+      "level": 50,
+      "hp": 57,
+      "maxHp": 90,
+      "gold": 100,
+      "retries": 0
+    }
+  ],
+  "goldCurve": [
+    13,
+    8,
+    13,
+    12,
+    11,
+    15,
+    9,
+    22,
+    7,
+    11,
+    22,
+    17,
+    19,
+    14,
+    24,
+    21,
+    11,
+    23,
+    13,
+    20,
+    22,
+    15,
+    22,
+    20,
+    24,
+    38,
+    20,
+    23,
+    19,
+    23,
+    33,
+    24,
+    25,
+    19,
+    18,
+    33,
+    42,
+    20,
+    23,
+    22,
+    50,
+    54,
+    61,
+    22,
+    37,
+    72,
+    43,
+    24,
+    21,
+    20
+  ],
+  "skipLoot21": 9,
+  "loot21": 20,
+  "buildChanges21": 9,
+  "bossResults": {
+    "5": {
+      "win": 1,
+      "loss": 0
+    },
+    "10": {
+      "win": 1,
+      "loss": 0
+    },
+    "15": {
+      "win": 1,
+      "loss": 0
+    },
+    "20": {
+      "win": 1,
+      "loss": 0
+    },
+    "25": {
+      "win": 1,
+      "loss": 0
+    },
+    "30": {
+      "win": 1,
+      "loss": 0
+    },
+    "35": {
+      "win": 1,
+      "loss": 0
+    },
+    "40": {
+      "win": 1,
+      "loss": 0
+    },
+    "45": {
+      "win": 1,
+      "loss": 0
+    },
+    "50": {
+      "win": 1,
+      "loss": 0
+    }
+  },
+  "wallMs": 71
+}
