@@ -275,3 +275,95 @@ img.icon { object-fit: contain; }
 @keyframes chainBreak { 60% { transform: scaleX(1); } to { transform: scaleX(1.3); opacity: 0.3; } }
 @keyframes throneCrack { to { transform: scale(0.92) rotate(-3deg); filter: grayscale(0.4); } }
 @keyframes heartStop { 30% { transform: scale(1.06); } to { transform: scale(0.7); filter: grayscale(0.8); opacity: 0.4; } }
+.cinStage { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.cinPlate { position: absolute; width: 124%; height: 124%; left: -12%; top: -8%; object-fit: cover; object-position: center 28%; opacity: 0; transform-origin: 50% 40%; }
+.cinema.hasPlate .cinPlate { opacity: 1; animation: kenDrift 8s ease-out forwards; }
+.cinema.open-mine.hasPlate .cinPlate, .cinema.open-tax.hasPlate .cinPlate, .cinema.open-pack.hasPlate .cinPlate { animation-duration: 5s; }
+.open-mine.hasPlate .cinPlate { animation-name: kenMine; }
+.open-tax.hasPlate .cinPlate { animation-name: kenTax; }
+.open-pack.hasPlate .cinPlate { animation-name: kenPack; }
+.van-chest.hasPlate .cinPlate { animation-name: kenChest; }
+.van-kneel.hasPlate .cinPlate { animation-name: kenKneel; filter: hue-rotate(24deg) saturate(0.58) sepia(0.28) brightness(0.96); }
+.van-legs.hasPlate .cinPlate { animation-name: kenLegs; }
+.van-crown.hasPlate .cinPlate { animation-name: kenCrown; }
+.van-lamp.hasPlate .cinPlate { animation-name: kenLamp; }
+.van-mirror.hasPlate .cinPlate { animation-name: kenMirror; }
+.van-furnace.hasPlate .cinPlate { animation-name: kenFurnace; }
+.van-chain.hasPlate .cinPlate { animation-name: kenChain; }
+.van-throne.hasPlate .cinPlate { animation-name: kenThrone; }
+.van-heart.hasPlate .cinPlate { animation-name: kenHeart; }
+.cinema .cinBack, .cinema .cinMid, .cinema .cinFront { display: none; }
+.cinema.noPlate .cinBack, .cinema.noPlate .cinMid, .cinema.noPlate .cinFront { display: block; }
+.cinema.noPlate .cinPlate, .cinema.noPlate .cinShade, .cinema.noPlate .cinFx { display: none; }
+.cinShade { position: absolute; inset: 0; background:
+  radial-gradient(ellipse at 50% 42%, transparent 42%, #05060acc 78%),
+  linear-gradient(transparent 46%, #05060ae8 78%); }
+.cinFx { position: absolute; inset: 0; }
+.cinFx i { position: absolute; display: block; }
+.cinema.hasPlate .cinCard { left: 0; right: 0; bottom: 0; border: none; border-radius: 0; background: linear-gradient(transparent, #07080cf2 36%); box-shadow: none; padding: 36px 18px 18px; }
+@keyframes kenMine { from { transform: scale(1.04) translate(1%, 1%); } to { transform: scale(1.14) translate(-2%, -3%); } }
+@keyframes kenTax { from { transform: scale(1.06) translate(0, 0); } to { transform: scale(1.12) translate(-1%, -2%); } }
+@keyframes kenPack { from { transform: scale(1.05) translate(-1%, 2%); } to { transform: scale(1.13) translate(2%, -1%); } }
+@keyframes kenChest { 0% { transform: scale(1.04) rotate(0deg); } 8% { transform: scale(1.05) rotate(-0.4deg); } 16% { transform: scale(1.05) rotate(0.5deg); } 100% { transform: scale(1.12) translateY(-2%) rotate(0deg); } }
+@keyframes kenKneel { from { transform: scale(1.05); } to { transform: scale(1.1) translateY(2%); } }
+@keyframes kenLegs { from { transform: scale(1.04); } to { transform: scale(1.1) translateY(-1%); filter: saturate(0.45); } }
+@keyframes kenCrown { 0% { transform: scale(1.02); filter: brightness(1.4); } 18% { filter: brightness(1); } 100% { transform: scale(1.12) translateY(3%); } }
+@keyframes kenLamp { 0%, 40% { filter: brightness(1.05); } 55% { filter: brightness(0.7); } 70% { filter: brightness(1.1); } 100% { transform: scale(1.08); filter: brightness(0.35); } }
+@keyframes kenMirror { from { transform: scale(1.03); } to { transform: scale(1.1) translateX(1%); } }
+@keyframes kenFurnace { from { filter: saturate(1.2) brightness(1.05); } to { transform: scale(1.08); filter: saturate(0.2) brightness(0.55) sepia(0.3); } }
+@keyframes kenChain { from { transform: scale(1.04); } 70% { transform: scale(1.08); } to { transform: scale(1.1) translateX(1%); } }
+@keyframes kenThrone { from { transform: scale(1.05) translateY(1%); } to { transform: scale(1.12) translateY(-2%); } }
+@keyframes kenHeart { 0%, 20% { transform: scale(1.04); filter: brightness(1.05); } 28% { transform: scale(1.07); } 40% { transform: scale(1.03); } 55% { transform: scale(1.06); filter: brightness(0.8); } 100% { transform: scale(1.08); filter: brightness(0.45) saturate(0.4); } }
+@keyframes kenDrift { from { transform: scale(1.04); } to { transform: scale(1.1); } }
+.open-mine .cinFx::before, .open-pack .cinFx::before { content: ''; position: absolute; width: 90px; height: 90px; left: 10%; top: 16%; background: radial-gradient(circle, #ffb45acc, transparent 68%); mix-blend-mode: screen; animation: lantern 1.3s ease-in-out infinite; }
+.open-tax .cinFx::before, .open-mine .cinFx i, .open-tax .cinFx i, .open-pack .cinFx i { width: 3px; height: 3px; border-radius: 50%; background: #efe6d4; opacity: 0.4; animation: dust 7s linear infinite; }
+.open-mine .cinFx i:nth-child(1) { left: 12%; top: 20%; animation-duration: 6s; }
+.open-mine .cinFx i:nth-child(2) { left: 40%; top: 10%; animation-duration: 8s; }
+.open-mine .cinFx i:nth-child(3) { left: 70%; top: 30%; animation-duration: 5.5s; }
+.open-tax .cinFx i:nth-child(1) { left: 20%; } .open-tax .cinFx i:nth-child(2) { left: 55%; } .open-tax .cinFx i:nth-child(3) { left: 78%; }
+.open-pack .cinFx i:nth-child(1) { left: 18%; } .open-pack .cinFx i:nth-child(2) { left: 48%; } .open-pack .cinFx i:nth-child(3) { left: 72%; }
+@keyframes dust { from { transform: translateY(10vh); opacity: 0; } 20% { opacity: 0.45; } to { transform: translateY(-30vh); opacity: 0; } }
+.van-chest .cinFx i { width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff1b8, #e2b04a 50%, #8a5a12); animation: coinFall 2.4s linear infinite; }
+.van-chest .cinFx i:nth-child(1) { left: 22%; animation-delay: 0s; }
+.van-chest .cinFx i:nth-child(2) { left: 38%; animation-delay: .4s; }
+.van-chest .cinFx i:nth-child(3) { left: 51%; animation-delay: .8s; }
+.van-chest .cinFx i:nth-child(4) { left: 63%; animation-delay: 1.1s; }
+.van-chest .cinFx i:nth-child(5) { left: 30%; animation-delay: 1.5s; }
+.van-chest .cinFx i:nth-child(6) { left: 72%; animation-delay: .2s; }
+@keyframes coinFall { from { top: 28%; opacity: 0; } 15% { opacity: 1; } to { top: 72%; opacity: 0.2; transform: rotate(200deg); } }
+.van-kneel .cinFx::before { content: ''; position: absolute; left: 30%; right: 30%; top: 18%; height: 46%; background: radial-gradient(ellipse at 50% 80%, #ffffff55, transparent 70%); filter: blur(6px); animation: steam 3.2s ease-in infinite; mix-blend-mode: screen; }
+@keyframes steam { from { transform: translateY(12px); opacity: 0.2; } to { transform: translateY(-36px); opacity: 0.7; } }
+.van-legs .cinFx::before { content: ''; position: absolute; inset: 18% 18% 40%; background: repeating-linear-gradient(90deg, #d7a0ff55 0 2px, transparent 2px 14px); mix-blend-mode: screen; animation: glyphOut 8s ease forwards; }
+@keyframes glyphOut { 30% { opacity: 1; } to { opacity: 0; } }
+.van-crown .cinFx::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 32%, #fff6c8, transparent 42%); mix-blend-mode: screen; animation: crownFlash 1.4s ease forwards; }
+@keyframes crownFlash { 0% { opacity: 0.9; } to { opacity: 0; } }
+.van-lamp .cinFx::before { content: ''; position: absolute; left: 38%; top: 22%; width: 24%; height: 28%; background: radial-gradient(circle, #ffe08acc, transparent 70%); mix-blend-mode: screen; animation: lampFlick 8s ease forwards; }
+@keyframes lampFlick { 0%, 45% { opacity: 0.8; } 52% { opacity: 0.15; } 62% { opacity: 0.7; } 100% { opacity: 0; } }
+.van-mirror .cinFx i { width: 14px; height: 8px; background: linear-gradient(#e8f4ff, #8aa4b8); opacity: 0.85; animation: shard 1.8s ease-out forwards; }
+.van-mirror .cinFx i:nth-child(1) { left: 42%; top: 36%; transform: rotate(20deg); }
+.van-mirror .cinFx i:nth-child(2) { left: 55%; top: 40%; animation-delay: .15s; }
+.van-mirror .cinFx i:nth-child(3) { left: 48%; top: 48%; animation-delay: .3s; }
+.van-mirror .cinFx i:nth-child(4) { left: 60%; top: 34%; animation-delay: .05s; }
+.van-mirror .cinFx i:nth-child(5) { left: 36%; top: 44%; animation-delay: .4s; }
+.van-mirror .cinFx i:nth-child(6) { left: 52%; top: 30%; animation-delay: .22s; }
+@keyframes shard { to { transform: translate(40px, 80px) rotate(80deg); opacity: 0; } }
+.van-furnace .cinFx::before { content: ''; position: absolute; inset: 0; background: #ff7a32; mix-blend-mode: color; animation: ashFade 8s ease forwards; }
+@keyframes ashFade { 0% { opacity: 0.45; } 100% { opacity: 0; background: #6a645c; } }
+.van-chain .cinFx i { width: 16px; height: 10px; border: 2px solid #d7d7d7; border-radius: 6px; animation: linkBurst 1.2s ease-out forwards; }
+.van-chain .cinFx i:nth-child(odd) { top: 46%; }
+.van-chain .cinFx i:nth-child(even) { top: 48%; }
+.van-chain .cinFx i:nth-child(1) { left: 30%; } .van-chain .cinFx i:nth-child(2) { left: 42%; } .van-chain .cinFx i:nth-child(3) { left: 54%; }
+.van-chain .cinFx i:nth-child(4) { left: 66%; } .van-chain .cinFx i:nth-child(5) { left: 36%; } .van-chain .cinFx i:nth-child(6) { left: 60%; }
+@keyframes linkBurst { to { transform: translateY(40px) rotate(30deg); opacity: 0; } }
+.van-throne .cinFx i { width: 18px; height: 12px; background: #f3e6c8; box-shadow: 0 0 0 1px #8a7040; animation: pageFly 2.6s ease-in infinite; }
+.van-throne .cinFx i:nth-child(1) { left: 20%; animation-delay: 0s; }
+.van-throne .cinFx i:nth-child(2) { left: 40%; animation-delay: .4s; }
+.van-throne .cinFx i:nth-child(3) { left: 58%; animation-delay: .8s; }
+.van-throne .cinFx i:nth-child(4) { left: 72%; animation-delay: .2s; }
+.van-throne .cinFx i:nth-child(5) { left: 30%; animation-delay: 1.1s; }
+.van-throne .cinFx i:nth-child(6) { left: 50%; animation-delay: 1.4s; }
+@keyframes pageFly { from { top: 58%; opacity: 0; transform: rotate(-8deg); } 20% { opacity: 1; } to { top: 12%; opacity: 0; transform: rotate(16deg) translateX(20px); } }
+.van-heart .cinFx::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 40%, transparent 20%, #05060a 72%); animation: heartDim 8s ease forwards; }
+.van-heart .cinFx::after { content: ''; position: absolute; left: 42%; top: 34%; width: 16%; height: 12%; border-radius: 50%; box-shadow: 0 0 24px 8px #ffd45c; animation: heartPulse 1.1s ease-in-out 4; }
+@keyframes heartDim { to { opacity: 0.85; } }
+@keyframes heartPulse { 50% { transform: scale(1.15); opacity: 0.35; } to { opacity: 0.05; } }

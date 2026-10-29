@@ -721,7 +721,7 @@ export class App {
     if (!beat) { onDone(); return; }
     this.playCinema([beat], onDone);
   }
-  private playCinema(beats: { id: string; ms: number; line: string; look: string; title: string }[], onDone: () => void) {
+  private playCinema(beats: { id: string; ms: number; line: string; look: string; title: string; plate?: string }[], onDone: () => void) {
     if (this.cinemaOn) return;
     this.cinemaOn = true;
     if (this.scene) this.scene.paused = true;
@@ -732,6 +732,12 @@ export class App {
     let i = 0;
     let timer = 0;
     let finished = false;
+    const warm = (plate?: string) => {
+      if (!plate) return;
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = webAsset(`art/cinema/${plate}.jpg`);
+    };
     const finish = () => {
       if (finished) return;
       finished = true;
@@ -746,11 +752,21 @@ export class App {
     const show = () => {
       const b = beats[i];
       if (!b) { finish(); return; }
+      warm(beats[i + 1]?.plate);
       root.innerHTML = `<div class="cinema ${b.look}" role="dialog" aria-label="${b.id}">
+        <div class="cinStage"><img class="cinPlate" alt=""><div class="cinShade"></div><div class="cinFx" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         <div class="cinLayer cinBack"></div><div class="cinLayer cinMid"></div><div class="cinLayer cinFront"></div>
         <div class="cinCard"><div class="cinId">${b.id} · ${b.title}</div><p class="cinLine">${b.line}</p>
         <div class="btns"><button class="btn" id="cinNext">继续</button><button class="btn" id="cinSkip">跳过</button></div></div>
       </div>`;
+      const stage = root.querySelector('.cinema') as HTMLElement;
+      const img = root.querySelector('.cinPlate') as HTMLImageElement;
+      if (!b.plate) stage.classList.add('noPlate');
+      else {
+        img.onerror = () => stage.classList.add('noPlate');
+        img.onload = () => stage.classList.add('hasPlate');
+        img.src = webAsset(`art/cinema/${b.plate}.jpg`);
+      }
       $('cinSkip').onclick = () => finish();
       $('cinNext').onclick = () => { i++; show(); };
       window.clearTimeout(timer);
@@ -1097,7 +1113,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.4.2 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.4.3 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;

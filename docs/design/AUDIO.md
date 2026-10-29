@@ -12,4 +12,4 @@
 
 交叉淡入大约 1.1 秒，淡出大约 1.0 秒。主音量增益 0.18。对白时 `duckBgm` 把主音量收到 0.05，对白结束回到 0.18。设置里的音效开关同时关掉音效和音乐。切到后台时 `visibilitychange` 会 `suspend` 这个 `AudioContext`，回到前台再 `resume`。战斗场景同一事件里把 `paused` 设为真，逻辑时间停住。2 倍速只加大 `stepCombat` 的步长和 Phaser 的 `timeScale`，不改音乐的 `playbackRate`。
 
-没有录制的角色配音。字幕就是对白。开场和首领落败也没有绘制插画，只有 CSS 色块。
+没有录制的角色配音。字幕就是对白。开场和首领落败用 `public/art/cinema` 的画，图画加载失败时才退回色块。

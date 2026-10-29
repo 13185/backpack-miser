@@ -10,6 +10,7 @@ describe('开场与首领落败', () => {
     expect(openingBeats('guard')[2].line).toContain('命令');
     expect(openingBeats('ranger')[2].line).toContain('脚印');
     expect(merchant[2].line).not.toBe(openingBeats('guard')[2].line);
+    expect(merchant.map(b => b.plate)).toEqual(['OPEN01', 'OPEN02', 'OPEN03']);
   });
   it('十个首领各有不同的消失样式，台词来自已有战后句', () => {
     const looks = new Set<string>();
@@ -20,6 +21,8 @@ describe('开场与首领落败', () => {
       looks.add(beat!.look);
     }
     expect(looks.size).toBe(10);
+    expect(bossCinema(5)?.plate).toBe('BOSS01_post');
+    expect(bossCinema(50)?.plate).toBe('BOSS10_post');
     expect(bossCinema(19)).toBeNull();
     expect(isBossStory('boss_post_4')).toBe(true);
     expect(isBossStory('ch1_intro')).toBe(false);

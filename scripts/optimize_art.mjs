@@ -72,6 +72,14 @@ export async function optimizeArt() {
     }
   }
 
+  const cinema = path.join(ROOT, 'cinema');
+  if (fs.existsSync(cinema)) {
+    for (const fn of fs.readdirSync(cinema)) {
+      if (!/\.jpe?g$/i.test(fn)) continue;
+      add(path.join(cinema, fn), path.join(OUT, 'cinema', fn.replace(/\.jpe?g$/i, '.webp')), { width: 768, quality: 72 });
+    }
+  }
+
   const npc = path.join(ROOT, 'npc');
   if (fs.existsSync(npc)) {
     for (const fn of fs.readdirSync(npc)) {
