@@ -1,6 +1,6 @@
 import { npcPortraitHtml } from '../art/npcArt';
 import Phaser from 'phaser';
-import { BALANCE_VERSION, ECONOMY, FORGE_SAFE_COST } from '../config/economy';
+import { BALANCE_VERSION, ECONOMY, FORGE_SAFE_COST, winHealAmount } from '../config/economy';
 import { LV4_GAMBLE, LV5_GAMBLE, gamblePct, type GambleOdds } from '../config/gamble';
 import { ITEMS } from '../config/items';
 import { MONSTER_BASE } from '../config/monsters';
@@ -111,7 +111,7 @@ export class App {
     ov.className = 'show title';
     ov.innerHTML = `<div class="titleCard">
       <div class="logo">${iconSvg('moneybag')}<h1>背包守财奴</h1>${iconSvg('greatsword')}</div>
-      <p class="sub">整理背包 · 合成装备 · 自动战斗 · <b>地狱难度</b></p>
+      <p class="sub">整理背包 · 合成装备 · 自动战斗 · <b>故事战役</b></p>
       ${message ? `<p class="warn">${esc(message)}</p>` : ''}
       ${corrupt ? `<p class="warn">⚠ ${esc(corrupt)}请开始新的冒险。</p>` : ''}
       <div class="classPick" id="classPick" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0">
@@ -167,7 +167,7 @@ export class App {
       });
     };
     const sub = ov.querySelector('.sub');
-    if (sub) sub.innerHTML = `V3 战役 · ${CAMPAIGN_LENGTH}关 / 10章 · <b style="color:#ff8866">地狱难度</b> · 第50关终局`;
+    if (sub) sub.innerHTML = `V3 战役 · ${CAMPAIGN_LENGTH}关 / 10章 · <b style="color:#ff8866">故事战役</b> · 第50关终局`;
     void isV2Enabled;
     document.getElementById('boot')?.setAttribute('hidden', '');
     if (this.scene?.artReady) this.scene.setPreview(getLevel(1), 100, 100, { eliteActive: false, levelNo: 1 });
@@ -723,7 +723,7 @@ export class App {
     ov.innerHTML = `<div class="modal"><h2>🏆 第${l.level}关胜利！</h2>
       ${midBanner}
       <div class="goldGain"><span class="coin big"></span> +${l.baseGold + l.bagGold} 金币 <small>（胜利${l.baseGold}${l.bagGold ? ` + 钱袋${l.bagGold}` : ''}）</small></div>
-      <div class="muted">生命恢复 ${Math.round(s.maxHp * ECONOMY.healAfterWin)} 点（当前 ${s.hp}/${s.maxHp}）</div>
+      <div class="muted">生命恢复 ${s.relics.includes('K02') ? 0 : winHealAmount(s.maxHp, isBossLevel(l.level))} 点（当前 ${s.hp}/${s.maxHp}）</div>
       ${this.statsHtml(l)}
       <h3>选择一件战利品（三选一）</h3>
       <div class="lootRow">${loot.options.map((o, i) => { const d = ITEMS[o.kind]; return `<button class="lootCard" data-loot="${i}"><div class="detIcon lv${o.level}" style="--c:${d.color}">${iconSvg(o.kind)}<div class="lvBadge">Lv${o.level}</div></div><div class="sName">${d.name} Lv${o.level}</div><div class="sDesc">${d.desc(d.values[o.level - 1])}</div></button>`; }).join('')}</div>
