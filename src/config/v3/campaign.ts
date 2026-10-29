@@ -121,7 +121,7 @@ export const V3_STAGES_BASE: StageBudget[] = [
  * 五段：1–10 逐步，10–20 每关明显更硬，20–30 大步，30–40 再抬一倍手感，40–50 再翻上去。
  * 挂机应在 8–12 关倒下；随手买武器的人卡在 10–20；每一关都在算的人后期经常剩不到三成血。
  */
-export const HARD_TUNE_VERSION = '3.6.1-tight' as const;
+export const HARD_TUNE_VERSION = '3.6.2-double' as const;
 
 interface Pressure { hp: number; dmg: number; interval: number; gold: number }
 const PRESSURE_BANDS = [
@@ -345,7 +345,18 @@ function applyProgressFloor(stages: StageBudget[]): StageBudget[] {
 export const HELL_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
   V3_STAGES_BASE.map(applyLateTune).map(applyHardTune),
 ));
-export const V3_STAGES: StageBudget[] = applyPressure(applyStoryBudgets(V3_STAGES_BASE));
+/**
+ * 3.6.2：玩家实际打到的最终预算再乘一档。
+ * 首领生命和攻击都 ×2。普通关和精英底稿的生命 ×2，攻击不动。
+ * 精英再乘自己的 ELITE_HP_MULT，所以精英血量也跟着翻倍。
+ */
+export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
+  return stages.map(s => s.boss
+    ? { ...s, hp: s.hp * 2, damage: s.damage * 2 }
+    : { ...s, hp: s.hp * 2 });
+}
+
+export const V3_STAGES: StageBudget[] = applyJackDouble(applyPressure(applyStoryBudgets(V3_STAGES_BASE)));
 export function stageOf(level: number): StageBudget {
   const s = V3_STAGES[level - 1];
   if (!s) throw new Error(`无效关卡 ${level}`);

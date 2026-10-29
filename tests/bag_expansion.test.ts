@@ -17,14 +17,16 @@ const mem = () => {
 };
 
 describe('背包扩容 3.3', () => {
-  it('四次扩容到 6×7：前两次金币，后两次献祭', () => {
+  it('四次扩容到 6×7：前三次金币，最后一次献祭，不能再往上', () => {
     expect(ECONOMY.expansions.map(e => e.axis)).toEqual(['row', 'row', 'col', 'row']);
     expect(ECONOMY.expansions.map(e => e.unlockAfterLevel)).toEqual([3, 7, 17, 32]);
     expect(expansionCost(0)).toBe(28);
     expect(expansionCost(1)).toBe(42);
     expect(expansionCost(2)).toBe(75);
     expect(expansionCost(3)).toBeNull();
+    expect(ECONOMY.expansions[3].itemCost).toEqual([{ lv3: 4 }, { lv4: 2 }, { lv5: 1 }]);
     expect(expansionCost(4)).toBeNull();
+    expect(ECONOMY.expansions.length).toBe(4);
     let rows = 4, cols = 5;
     for (const e of ECONOMY.expansions) { if (e.axis === 'row') rows++; else cols++; }
     expect(cols).toBe(6);

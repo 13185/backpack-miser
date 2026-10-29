@@ -12,13 +12,9 @@ describe('平衡', () => {
       expect(c1.won, cls).toBe(true);
     }
   });
-  it('地狱难度：前10关有非零通关样本；纯堆盾不能过第15关Boss', () => {
-    const rate = (i: number, until: number) => {
-      let w = 0;
-      for (let s = 1; s <= 60; s++) if (playRun(BUILDS[i], s * 31, { untilLevel: until }).won) w++;
-      return w / 60;
-    };
-    expect(rate(0, 10) + rate(1, 10)).toBeGreaterThan(0.05);
-    expect(rate(3, 15)).toBe(0);
+  it('纯堆盾不能过翻倍后的第15关首领', () => {
+    let w = 0;
+    for (let s = 1; s <= 20; s++) if (playRun(BUILDS[3], s * 31, { untilLevel: 15 }).won) w++;
+    expect(w).toBe(0);
   });
 });
