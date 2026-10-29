@@ -1,4 +1,4 @@
-export const BALANCE_VERSION = '3.4.0-think';
+export const BALANCE_VERSION = '3.6.0-late';
 export const FORGE_SAFE_COST = 60;
 export const FORGE_RISK_UNLOCK = 12;
 export const FORGE_LEGEND_UNLOCK = 25;
@@ -9,25 +9,36 @@ export function winHealAmount(maxHp: number, boss: boolean): number {
   return Math.max(6, Math.floor(maxHp * 0.08));
 }
 
+/** 后期扩容三选一。种类可以混，必须在背包里。 */
+export type ItemSacrifice = { lv3: 4 } | { lv4: 2 } | { lv5: 1 };
+
 export interface BagExpansion {
+  /** 金币价。有 itemCost 时为 0，不能用金币买。 */
   cost: number;
   axis: 'row' | 'col';
   /** 击败该关首领后才可购买；0 表示开局即可买 */
   unlockAfterLevel: number;
+  /** 玩家从这几档里选一档献祭，不能改用金币。 */
+  itemCost?: readonly ItemSacrifice[];
 }
+
+export const ITEM_SACRIFICES: readonly ItemSacrifice[] = [
+  { lv3: 4 },
+  { lv4: 2 },
+  { lv5: 1 },
+];
 
 export const ECONOMY = {
   startHp: 100, startGold: 13, startCols: 5, startRows: 4,
   /**
-   * 附录 A06。5×4 起，通关后按顺序购买，终点 7×8。解锁不强迫购买。
+   * 5×4 起，四次扩容到 6×7。前三次用金币（第 3 次更贵）；通关 32 后的最后一行只能献祭。
+   * 旧档如果已经到 7×7 或 7×8，尺寸保留，但不能再扩。
    */
   expansions: [
-    { cost: 20, axis: 'row', unlockAfterLevel: 3 },
-    { cost: 30, axis: 'row', unlockAfterLevel: 7 },
-    { cost: 45, axis: 'col', unlockAfterLevel: 12 },
-    { cost: 60, axis: 'row', unlockAfterLevel: 17 },
-    { cost: 80, axis: 'col', unlockAfterLevel: 24 },
-    { cost: 100, axis: 'row', unlockAfterLevel: 32 },
+    { cost: 28, axis: 'row', unlockAfterLevel: 3 },
+    { cost: 42, axis: 'row', unlockAfterLevel: 7 },
+    { cost: 75, axis: 'col', unlockAfterLevel: 17 },
+    { cost: 0, axis: 'row', unlockAfterLevel: 32, itemCost: ITEM_SACRIFICES },
   ] as const satisfies readonly BagExpansion[],
   refreshBase: 4, refreshStep: 2,
   lvl2Mult: 2.25, lvl3Mult: 5.2, sellRate: 0.38,

@@ -9,10 +9,35 @@ import { runeLegalForItem, type RuneId } from '../src/config/v3/runes';
 import type { HeroClass, ItemInstance, ItemKind } from '../src/models/types';
 import { simulate } from '../src/systems/combat';
 import { FORGE_SAFE_COST } from '../src/config/economy';
-import { buyPrice, expansionCost, refreshCost, sellPrice } from '../src/systems/economy';
+import { buyPrice, expansionCost, expansionOffer, refreshCost, sellPrice } from '../src/systems/economy';
 import { Game, endingAvailability, newGameState } from '../src/systems/game';
 import { canMerge } from '../src/systems/merge';
 import { canPlace, findSpot, inBag, occupiedCells } from '../src/systems/placement';
+
+/** 专家才献祭：某一档比要交的多出至少一件，并且留下最后一把武器。 */
+function tryItemExpand(g: Game) {
+  const offer = expansionOffer(g.s.expansions);
+  if (!offer?.itemCost || g.s.level <= offer.unlockAfterLevel) return;
+  const bag = g.bagItems.filter(i => i.kind !== 'burden');
+  const isWeapon = (i: ItemInstance) => {
+    const cat = ITEMS[i.kind].category;
+    return cat === 'weapon' || cat === 'needle';
+  };
+  const take = (level: number, n: number, have: number) => {
+    if (bag.filter(i => i.level === level).length < have) return null;
+    const picked: string[] = [];
+    let weapons = bag.filter(isWeapon).length;
+    for (const it of bag.filter(i => i.level === level)) {
+      if (picked.length >= n) break;
+      if (isWeapon(it) && weapons <= 1) continue;
+      picked.push(it.id);
+      if (isWeapon(it)) weapons--;
+    }
+    return picked.length === n ? picked : null;
+  };
+  const ids = take(3, 4, 5) ?? take(4, 2, 3) ?? take(5, 1, 2);
+  if (ids) g.expand(ids);
+}
 
 export interface Strategy {
   id: string;
@@ -279,6 +304,7 @@ export function playStrategy(st: Strategy, seed: number, opts: RunOpts = {}): Ru
       // 扩容
       const c = expansionCost(s.expansions);
       if (c !== null && s.gold >= c + 8 && s.level >= 3) g.expand();
+      else tryItemExpand(g);
       // 商店
       const keepGold = s.level >= 45 ? 0 : 6;
       for (let pass = 0; pass < 3; pass++) {

@@ -112,42 +112,42 @@ function mechFor(stage: StageBudget, kind: MonsterKind): Partial<LevelDef> {
   }
   if (kind === 'mirror_auditor' || stage.level === 30) {
     return {
-      echo: { every: 2, delayMs: 1200, pct: 0.65 },
-      phaseShields: { thresholds: [0.65, 0.35], shield: 95 },
-      heavyStrike: { every: 4, mult: 1.7, windupMs: 1800 },
-      mechSummary: '每2击后1.2秒追加65%回响；65%/35%各获95盾；每4击1.7倍蓄力击。',
+      echo: { every: 2, delayMs: 1200, pct: 0.70 },
+      phaseShields: { thresholds: [0.65, 0.35], shield: 110 },
+      heavyStrike: { every: 4, mult: 1.8, windupMs: 1800 },
+      mechSummary: '每2击后1.2秒追加70%回响；65%/35%各获110盾；每4击1.8倍蓄力击。',
     };
   }
   if (kind === 'furnace_colossus' || stage.level === 35) {
     return {
       overheat: { every: 2, mult: 2.2, pauseMs: 2200 },
-      heavyStrike: { every: 5, mult: 2.0, windupMs: 2000 },
-      phaseShields: { thresholds: [0.5], shield: 100 },
-      mechSummary: '护甲5；每2次普攻后×2.2过热（停手2.2秒破甲）；半血100盾；每5击2.0倍蓄力。',
+      heavyStrike: { every: 4, mult: 2.0, windupMs: 2000 },
+      phaseShields: { thresholds: [0.5], shield: 140 },
+      mechSummary: '护甲4；每2次普攻后×2.2过热（停手2.2秒破甲）；半血140盾；每4击2.0倍蓄力。',
     };
   }
   if (kind === 'silence_warden' || stage.level === 40) {
     return {
-      pray: { intervalMs: 5000, shield: 40 },
-      prayShare: 0.28,
-      heavyStrike: { every: 3, mult: 1.9, windupMs: 1600 },
-      phaseShields: { thresholds: [0.55, 0.25], shield: 110 },
-      mechSummary: '祝祷者占28%预算（5秒/40盾）；55%/25%各获110盾；每3击1.9倍蓄力。',
+      pray: { intervalMs: 4500, shield: 58 },
+      prayShare: 0.32,
+      heavyStrike: { every: 3, mult: 2.1, windupMs: 1600 },
+      phaseShields: { thresholds: [0.55, 0.25], shield: 160 },
+      mechSummary: '祝祷者占32%预算（4.5秒/58盾）；55%/25%各获160盾；每3击2.1倍蓄力。',
     };
   }
   if (kind === 'debt_regent' || stage.level === 45) {
     return {
-      echo: { every: 3, delayMs: 1100, pct: 0.55 },
-      phaseShields: { thresholds: [0.70, 0.40, 0.15], shield: 120 },
-      heavyStrike: { every: 3, mult: 2.0, windupMs: 1500 },
-      mechSummary: '护甲4；每3击后55%回响；70%/40%/15%各获120盾；每3击2.0倍蓄力。',
+      echo: { every: 3, delayMs: 1100, pct: 0.70 },
+      phaseShields: { thresholds: [0.70, 0.40, 0.15], shield: 180 },
+      heavyStrike: { every: 3, mult: 2.2, windupMs: 1500 },
+      mechSummary: '护甲4；每3击后70%回响；70%/40%/15%各获180盾；每3击2.2倍蓄力。',
     };
   }
   if (kind === 'golden_heart' || stage.level === 50) {
     return {
       heartPhases: { enabled: true },
-      heavyStrike: { every: 3, mult: 2.0, windupMs: 2200 },
-      mechSummary: '三阶段70%/35%：①重击 ②回响 ③过热；换阶段各获盾；每3击2.0倍蓄力。',
+      heavyStrike: { every: 3, mult: 2.3, windupMs: 2200 },
+      mechSummary: '三阶段70%/35%：①重击 ②回响 ③过热；换阶段各获90盾；每3击2.3倍蓄力。40关后36秒狂暴。',
     };
   }
 
@@ -276,6 +276,7 @@ export function stageToLevelDef(stage: StageBudget): LevelDef {
   return {
     monster,
     title: stage.name,
+    level: stage.level,
     hp: stage.hp,
     atk: stage.damage,
     interval: stage.interval,

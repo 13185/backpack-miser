@@ -17,20 +17,18 @@ const mem = () => {
 };
 
 describe('背包扩容 3.3', () => {
-  it('通关 3/7/12/17/24/32 后按行、行、列、行、列、行扩到 7×8', () => {
-    expect(ECONOMY.expansions.map(e => e.axis)).toEqual(['row', 'row', 'col', 'row', 'col', 'row']);
-    expect(ECONOMY.expansions.map(e => e.unlockAfterLevel)).toEqual([3, 7, 12, 17, 24, 32]);
-    expect(expansionCost(0)).toBe(20);
-    expect(expansionCost(2)).toBe(45);
-    expect(expansionCost(5)).toBe(100);
-    expect(expansionCost(6)).toBeNull();
+  it('四次扩容到 6×7：前两次金币，后两次献祭', () => {
+    expect(ECONOMY.expansions.map(e => e.axis)).toEqual(['row', 'row', 'col', 'row']);
+    expect(ECONOMY.expansions.map(e => e.unlockAfterLevel)).toEqual([3, 7, 17, 32]);
+    expect(expansionCost(0)).toBe(28);
+    expect(expansionCost(1)).toBe(42);
+    expect(expansionCost(2)).toBe(75);
+    expect(expansionCost(3)).toBeNull();
+    expect(expansionCost(4)).toBeNull();
     let rows = 4, cols = 5;
     for (const e of ECONOMY.expansions) { if (e.axis === 'row') rows++; else cols++; }
-    expect(cols).toBe(7);
-    expect(rows).toBe(8);
-    expect(5 * 4).toBe(20);
-    expect(6 * 7).toBe(42);
-    expect(7 * 8).toBe(56);
+    expect(cols).toBe(6);
+    expect(rows).toBe(7);
   });
 
   it('未击败首领不能买后续扩容；击败后花钱才变大', () => {
@@ -44,15 +42,16 @@ describe('背包扩容 3.3', () => {
     expect(g.s.cols).toBe(5);
     const locked = g.expand();
     expect(locked.ok).toBe(false);
-    expect(locked.ok === false && locked.msg).toContain('第12关');
+    expect(locked.ok === false && locked.msg).toContain('第17关');
     expect(g.s.cols).toBe(5);
-    expect(expansionUnlocked(12, 2)).toBe(false);
-    expect(expansionUnlocked(13, 2)).toBe(true);
-    g.s.level = 13;
-    expect(expansionLabel(13, g.s.rows, g.s.cols, g.s.expansions).text).toContain('第6列');
+    expect(expansionUnlocked(17, 2)).toBe(false);
+    expect(expansionUnlocked(18, 2)).toBe(true);
+    g.s.level = 18;
+    g.s.gold = 75;
+    expect(expansionLabel(18, g.s.rows, g.s.cols, g.s.expansions).text).toContain('第6列');
     expect(g.expand().ok).toBe(true);
     expect(g.s.cols).toBe(6);
-    expect(g.s.rows).toBe(6);
+    expect(g.s.gold).toBe(0);
   });
 
   it('旧 v3 存档补 expansions，保留原来的行列', () => {

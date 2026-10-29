@@ -39,8 +39,8 @@ export const HEART_TUNE = {
   /** 规格 §15：70% / 35%；护盾各 80。pass4 若过难再微调并记入 BALANCE_REPORT */
   phase2At: 0.70,
   phase3At: 0.35,
-  phase2Shield: 55,
-  phase3Shield: 55,
+  phase2Shield: 90,
+  phase3Shield: 90,
 } as const;
 /** 后期 Boss HP 倍率再降一档（章9/10），缓解 B45/B50 个位数通关 */
 export const LATE_TUNE_PASS4_BOSS = {
@@ -121,7 +121,7 @@ export const V3_STAGES_BASE: StageBudget[] = [
  * 五段：1–10 逐步，10–20 每关明显更硬，20–30 大步，30–40 再抬一倍手感，40–50 再翻上去。
  * 挂机应在 8–12 关倒下；随手买武器的人卡在 10–20；每一关都在算的人后期经常剩不到三成血。
  */
-export const HARD_TUNE_VERSION = '3.4.0-think' as const;
+export const HARD_TUNE_VERSION = '3.6.0-late' as const;
 
 interface Pressure { hp: number; dmg: number; interval: number; gold: number }
 const PRESSURE_BANDS = [
@@ -166,14 +166,36 @@ export function applyPressure(stages: StageBudget[]): StageBudget[] {
     }
     if (s.boss && s.level >= 40) { hpM *= 0.72; dmgM *= 0.64; }
     else if (s.boss && s.level >= 20) { hpM *= 0.82; dmgM *= 0.74; }
+    let hp = Math.max(1, Math.round(s.hp * hpM));
+    let damage = Math.max(1, Math.round(s.damage * dmgM));
+    let interval = Math.max(1.55, Math.round(s.interval * p.interval * 100) / 100);
+    if (s.level >= 31) {
+      const spike = lateSpike(s);
+      hp = Math.max(1, Math.round(hp * spike.hp));
+      damage = Math.max(1, Math.round(damage * spike.dmg));
+      interval = Math.max(1.55, Math.round(interval * spike.interval * 100) / 100);
+    }
     return {
       ...s,
-      hp: Math.max(1, Math.round(s.hp * hpM)),
-      damage: Math.max(1, Math.round(s.damage * dmgM)),
-      interval: Math.max(1.55, Math.round(s.interval * p.interval * 100) / 100),
+      hp,
+      damage,
+      interval,
       gold: Math.max(4, Math.round(s.gold * p.gold)),
     };
   });
+}
+
+/** 只加在 31 关之后。1–30 关的倍率不动。首领比同章杂兵抬得更多。 */
+function lateSpike(s: StageBudget): { hp: number; dmg: number; interval: number } {
+  if (s.boss) {
+    if (s.level >= 50) return { hp: 1.60, dmg: 1.08, interval: 0.94 };
+    if (s.level >= 45) return { hp: 1.40, dmg: 1.08, interval: 0.94 };
+    if (s.level >= 40) return { hp: 1.35, dmg: 1.06, interval: 0.96 };
+    if (s.level >= 35) return { hp: 1.10, dmg: 1.06, interval: 0.97 };
+    return { hp: 1.12, dmg: 1.05, interval: 0.98 };
+  }
+  if (s.level >= 41) return { hp: 1.12, dmg: 1.06, interval: 0.97 };
+  return { hp: 1.06, dmg: 1.04, interval: 0.98 };
 }
 
 /** 附录 A04：故事战役首领的最终预算，不再叠地狱倍率。 */

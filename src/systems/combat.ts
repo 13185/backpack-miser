@@ -123,6 +123,8 @@ export interface CombatState {
   c07Used: boolean;
   heroClass: string | null;
   guardBonusUsed: boolean;
+  enrageAt: number;
+  enrageBonus: number;
 }
 export interface CombatMods {
   runes?: RuneInstance[];
@@ -429,10 +431,12 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     furnaceEnraged: false, iceSlowUntil: 0, iceSlowPct: 0,
     c01Hits: 0, r01Absorbed: 0, r05Hits: 0, r06Stacks: 0, c07Used: false,
     heroClass: mods.heroClass ?? null, guardBonusUsed: false,
+    enrageAt: lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt,
+    enrageBonus: lv.boss && (lv.level ?? 0) >= 40 ? 0.14 : ECONOMY.enrageBonus,
   };
 }
 
-export function enrageMult(stage: number): number { return 1 + stage * ECONOMY.enrageBonus; }
+export function enrageMult(stage: number, bonus = ECONOMY.enrageBonus): number { return 1 + stage * bonus; }
 export function applyDamageToPlayer(hp: number, shield: number, dmg: number): { hp: number; shield: number; absorbed: number; hpLoss: number } {
   const absorbed = Math.min(shield, dmg);
   const hpLoss = Math.min(hp, dmg - absorbed);
@@ -512,9 +516,9 @@ function tickPoison(s: CombatState, ev: CombatEvent[]) {
 }
 function processTimeline(s: CombatState, ev: CombatEvent[]) {
   if (s.t >= ms(ECONOMY.timeout)) { finish(s, ev, false, `战斗超过${ECONOMY.timeout}秒仍未分出胜负，冒险失败：火力不足，被怪物拖垮了。`); return; }
-  const stage = s.t >= ms(ECONOMY.enrageAt) ? 1 + Math.floor((s.t - ms(ECONOMY.enrageAt)) / ms(ECONOMY.enrageStep)) : 0;
+  const stage = s.t >= ms(s.enrageAt) ? 1 + Math.floor((s.t - ms(s.enrageAt)) / ms(ECONOMY.enrageStep)) : 0;
   if (stage > s.enrageStage) {
-    s.enrageStage = stage; ev.push({ t: s.t, type: 'enrage', stage, mult: enrageMult(stage) });
+    s.enrageStage = stage; ev.push({ t: s.t, type: 'enrage', stage, mult: enrageMult(stage, s.enrageBonus) });
     if (hasRelic(s.relics, 'A01') && s.chargeEvents < 2) {
       s.chargeEvents++;
       const cap = Math.floor(s.maxHp * s.shieldCapRate);
@@ -590,7 +594,7 @@ function processTimeline(s: CombatState, ev: CombatEvent[]) {
   }
 }
 function nextTimelineAt(s: CombatState): number {
-  const e = ms(ECONOMY.enrageAt) + s.enrageStage * ms(ECONOMY.enrageStep);
+  const e = ms(s.enrageAt) + s.enrageStage * ms(ECONOMY.enrageStep);
   let next = Math.min(e, ms(ECONOMY.timeout));
   if (s.tideCycle) {
     const mod = s.t % TIDE_PERIOD;
@@ -809,7 +813,7 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
   } else {
     // 过热停火窗口
     if (s.overheatPausedUntil > s.t) return;
-    let mult = enrageMult(s.enrageStage);
+    let mult = enrageMult(s.enrageStage, s.enrageBonus);
     let overheated = false;
     let heavy = false;
     if (s.heavyStrike && s.heavyPending) {

@@ -38,21 +38,27 @@ export function refreshCost(refreshes: number, doctrine?: string | null, heroCla
 export function expansionOffer(expansions: number): BagExpansion | null {
   return ECONOMY.expansions[expansions] ?? null;
 }
+/** 金币价。献祭扩容返回 null，避免被当成 0 金白送。 */
 export function expansionCost(expansions: number): number | null {
-  return expansionOffer(expansions)?.cost ?? null;
+  const offer = expansionOffer(expansions);
+  if (!offer || offer.itemCost) return null;
+  return offer.cost;
 }
 export function expansionUnlocked(level: number, expansions: number): boolean {
   const offer = expansionOffer(expansions);
   return !!offer && level > offer.unlockAfterLevel;
 }
 /** 按钮文案：当前尺寸、下一格是行还是列、未解锁时写明首领条件 */
-export function expansionLabel(level: number, rows: number, cols: number, expansions: number): { text: string; canBuy: boolean; locked: boolean } {
+export function expansionLabel(level: number, rows: number, cols: number, expansions: number): { text: string; canBuy: boolean; locked: boolean; itemCost: boolean } {
   const offer = expansionOffer(expansions);
-  if (!offer) return { text: `背包已扩容至最大（${cols}×${rows}）`, canBuy: false, locked: false };
+  if (!offer) return { text: `背包已到本局上限（${cols}×${rows}）`, canBuy: false, locked: false, itemCost: false };
   const what = offer.axis === 'col' ? `第${cols + 1}列` : `第${rows + 1}行`;
   if (level <= offer.unlockAfterLevel) {
-    return { text: `通关第${offer.unlockAfterLevel}关解锁${what}`, canBuy: false, locked: true };
+    return { text: `通关第${offer.unlockAfterLevel}关解锁${what}`, canBuy: false, locked: true, itemCost: !!offer.itemCost };
   }
-  return { text: `扩容：新增${what}（${cols}×${rows}） · ${offer.cost} 金币`, canBuy: true, locked: false };
+  if (offer.itemCost) {
+    return { text: `献祭扩容：新增${what}（${cols}×${rows}） · 4件Lv3 或 2件Lv4 或 1件Lv5`, canBuy: true, locked: false, itemCost: true };
+  }
+  return { text: `扩容：新增${what}（${cols}×${rows}） · ${offer.cost} 金币`, canBuy: true, locked: false, itemCost: false };
 }
 export function canAfford(gold: number, cost: number): boolean { return cost >= 0 && gold >= cost; }

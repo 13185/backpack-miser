@@ -334,7 +334,7 @@ export class App {
         <div class="eName">${lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
         ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
-        <div class="eAbil">✦ ${abil}${lv.mechSummary ? `<br/>⚙ ${lv.mechSummary}` : ''}<br/>⚠ ${ECONOMY.enrageAt}秒后狂暴（+10%，之后每${ECONOMY.enrageStep}秒再+10%）；${ECONOMY.timeout}秒未击败即失败。</div>
+        <div class="eAbil">✦ ${abil}${lv.mechSummary ? `<br/>⚙ ${lv.mechSummary}` : ''}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
       </div>
       <div class="actions">
         ${battle ? `<div class="hint">⚔ 自动战斗中……背包已锁定</div>
@@ -377,12 +377,13 @@ export class App {
     $('rotBtn').onclick = () => { if (this.selected) this.act(() => g.rotate(this.selected!)); };
     const exp = expansionLabel(s.level, s.rows, s.cols, s.expansions);
     const offer = expansionOffer(s.expansions);
-    const poor = !!offer && s.gold < offer.cost;
+    const poor = !!offer && !exp.itemCost && s.gold < offer.cost;
     const mark = `<span class="knitMark">吉利达</span>`;
     $('expand').innerHTML = !exp.canBuy
       ? `<div class="expMax">${exp.text}</div>${mark}`
-      : `<button class="expandRow ${!poor && s.phase === 'prep' ? '' : 'disabled'}" id="expBtn" style="width:${Math.min(s.cols * c, 360)}px">➕ ${exp.text}${poor ? ' · 金币不足' : ''}</button>${mark}`;
+      : `<button class="expandRow ${(!poor && s.phase === 'prep') ? '' : 'disabled'}" id="expBtn" style="width:${Math.min(s.cols * c, 360)}px">➕ ${exp.text}${poor ? ' · 金币不足' : ''}</button>${mark}`;
     if (exp.canBuy) $('expBtn').onclick = () => this.guard(() => {
+      if (exp.itemCost) { this.showSacrificeExpand(); return; }
       const before = g.s.expansions;
       if (this.act(() => g.expand(), sfx.coin) && g.s.expansions > before) {
         $('bagWrap')?.classList.add('bagGrow');
@@ -390,6 +391,55 @@ export class App {
       }
     });
     bag.querySelectorAll<HTMLElement>('.item').forEach(el => el.addEventListener('pointerdown', e => this.onDown(e, el.dataset.id!, 'bag')));
+  }
+  /** 后期扩容：三档献祭里选一档，点背包里的装备凑齐再确认。 */
+  private showSacrificeExpand() {
+    const g = this.game!;
+    const offer = expansionOffer(g.s.expansions);
+    if (!offer?.itemCost || g.s.phase !== 'prep') return;
+    const what = offer.axis === 'col' ? `第 ${g.s.cols + 1} 列` : `第 ${g.s.rows + 1} 行`;
+    const modes = [
+      { level: 3 as const, need: 4, label: '4 件任意 Lv3' },
+      { level: 4 as const, need: 2, label: '2 件任意 Lv4' },
+      { level: 5 as const, need: 1, label: '1 件任意 Lv5' },
+    ];
+    let mode = modes[0];
+    const picked = new Set<string>();
+    const ov = $('overlay');
+    ov.className = 'show';
+    const draw = () => {
+      const bag = g.bagItems.filter(i => i.kind !== 'burden' && i.level === mode.level);
+      const ready = picked.size === mode.need;
+      ov.innerHTML = `<div class="modal"><h2>献祭扩容 · ${what}</h2>
+        <p>这一格不能用金币买。从下面三档里选一档，再点背包中的装备。临时区不算。</p>
+        <div class="btns">${modes.map(m => `<button class="btn ${m.level === mode.level ? 'gold' : ''}" data-sac="${m.level}">${m.label}</button>`).join('')}</div>
+        <p class="muted">已选 ${picked.size} / ${mode.need}。背包里有 ${bag.length} 件 Lv${mode.level}。</p>
+        <div class="lootRow">${bag.map(i => `<button class="lootCard ${picked.has(i.id) ? 'on' : ''}" data-item="${i.id}"><div class="sName">${esc(itemLabel(i))}</div><div class="sDesc">${picked.has(i.id) ? '已选，再点取消' : '点选献祭'}</div></button>`).join('') || '<p class="muted">背包里没有这一级的装备。</p>'}</div>
+        <div class="btns"><button class="btn gold" id="sacOk" ${ready ? '' : 'disabled'}>确认献祭并扩容</button><button class="btn" id="sacNo">取消</button></div></div>`;
+      ov.querySelectorAll<HTMLElement>('[data-sac]').forEach(b => b.onclick = () => {
+        mode = modes.find(m => m.level === Number(b.dataset.sac)) ?? mode;
+        picked.clear();
+        draw();
+      });
+      ov.querySelectorAll<HTMLElement>('[data-item]').forEach(b => b.onclick = () => {
+        const id = b.dataset.item!;
+        if (picked.has(id)) picked.delete(id);
+        else if (picked.size < mode.need) picked.add(id);
+        draw();
+      });
+      $('sacNo').onclick = () => { this.closeOverlay(); this.render(); };
+      $('sacOk').onclick = () => {
+        if (picked.size !== mode.need) return;
+        const ids = [...picked];
+        this.closeOverlay();
+        const before = g.s.expansions;
+        if (this.act(() => g.expand(ids), sfx.coin) && g.s.expansions > before) {
+          $('bagWrap')?.classList.add('bagGrow');
+          setTimeout(() => $('bagWrap')?.classList.remove('bagGrow'), 900);
+        }
+      };
+    };
+    draw();
   }
   renderTemp() {
     const g = this.game!;
@@ -1202,7 +1252,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.5.1 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.6.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

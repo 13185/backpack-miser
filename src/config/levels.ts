@@ -15,6 +15,8 @@ export interface SummonMech { atSec: number[]; hpPct: number; maxAlive: number; 
 export interface LevelDef {
   monster: MonsterKind;
   title: string;
+  /** 战役关卡号。缺省时狂暴仍用全局 45 秒。 */
+  level?: number;
   hp: number;
   atk: number;
   interval: number;

@@ -287,8 +287,8 @@ export class BattleScene extends Phaser.Scene {
         const ev = stepCombat(c, dt);
         if (ev.length) { this.render(ev, c); this.hooks?.onEvents(ev, c); }
         this.target = { hp: c.hp, maxHp: c.maxHp, shield: c.shield, mHp: c.mHp, mMax: c.mMaxHp };
-        const left = ECONOMY.enrageAt - c.t / 1000;
-        this.timerText.setText(`⏱ ${(c.t / 1000).toFixed(1)}s  ${left > 0 ? `${Math.ceil(left)}秒后狂暴` : `🔥狂暴 ×${(1 + c.enrageStage * ECONOMY.enrageBonus).toFixed(2)}  ${Math.ceil(ECONOMY.timeout - c.t / 1000)}秒后超时`}`);
+        const left = c.enrageAt - c.t / 1000;
+        this.timerText.setText(`⏱ ${(c.t / 1000).toFixed(1)}s  ${left > 0 ? `${Math.ceil(left)}秒后狂暴` : `🔥狂暴 ×${(1 + c.enrageStage * c.enrageBonus).toFixed(2)}  ${Math.ceil(ECONOMY.timeout - c.t / 1000)}秒后超时`}`);
         if (c.over) this.endTimer = 1100;
       } else if (this.endTimer > 0) {
         this.endTimer -= dt;

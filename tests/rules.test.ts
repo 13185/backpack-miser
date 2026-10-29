@@ -48,9 +48,9 @@ describe('背包放置', () => {
   it('通关第7关后可买两行，第12关前不能买列', () => {
     const g = new Game(newGameState(2)); g.s.gold = 200; g.s.level = 8;
     expect(canPlace(g.s.items, 5, g.s.rows, 'potion', 0, 4, false)).toBe(false);
-    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(5); expect(g.s.gold).toBe(200 - 20);
+    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(5); expect(g.s.gold).toBe(200 - 28);
     const p = g.s.items[2]; expect(g.move(p.id, 0, 4, false).ok).toBe(true);
-    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(6); expect(g.s.gold).toBe(200 - 20 - 30);
+    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(6); expect(g.s.gold).toBe(200 - 28 - 42);
     expect(g.expand().ok).toBe(false); expect(g.s.rows).toBe(6);
   });
   it('初始装备自动合法摆放', () => {

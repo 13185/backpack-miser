@@ -425,23 +425,41 @@ export class Game {
     this.s.gold -= c; this.s.shop.refreshes++; rollShop(this.s);
     return this.commit();
   }
-  expand(): Result {
+  expand(sacrificeIds?: string[]): Result {
     const g = this.prepOnly(); if (g) return g;
     const offer = expansionOffer(this.s.expansions);
-    if (!offer) return fail('背包已扩容到最大。');
+    if (!offer) return fail('背包已到本局上限。');
     if (this.s.level <= offer.unlockAfterLevel) {
       const what = offer.axis === 'col' ? `第${this.s.cols + 1}列` : `第${this.s.rows + 1}行`;
       return fail(`通关第${offer.unlockAfterLevel}关后可解锁${what}。`);
     }
-    if (!canAfford(this.s.gold, offer.cost)) return fail('金币不足。');
-    this.s.gold -= offer.cost;
+    const ids = sacrificeIds ?? [];
+    if (offer.itemCost) {
+      const picked = ids.map(id => this.s.items.find(i => i.id === id));
+      if (new Set(ids).size !== ids.length || picked.some(i => !i || !inBag(i) || i.kind === 'burden')) {
+        return fail('献祭的装备必须在背包里，且不能重复。');
+      }
+      const levels = picked.map(i => i!.level);
+      const ok = (levels.length === 4 && levels.every(l => l === 3))
+        || (levels.length === 2 && levels.every(l => l === 4))
+        || (levels.length === 1 && levels[0] === 5);
+      if (!ok) return fail('需要 4 件 Lv3，或 2 件 Lv4，或 1 件 Lv5。');
+      const drop = new Set(ids);
+      this.s.items = this.s.items.filter(i => !drop.has(i.id));
+      this.s.runes = this.s.runes.map(rn => (rn.itemId && drop.has(rn.itemId)) ? { ...rn, itemId: null } : rn);
+    } else {
+      if (ids.length) return fail('这次扩容用金币，不用献祭。');
+      if (!canAfford(this.s.gold, offer.cost)) return fail('金币不足。');
+      this.s.gold -= offer.cost;
+    }
     this.s.expansions++;
     if (offer.axis === 'col') this.s.cols++;
     else this.s.rows++;
     const size = `${this.s.cols}×${this.s.rows}`;
+    const paid = offer.itemCost ? '献祭完成' : `${offer.cost}金`;
     const msg = offer.axis === 'col'
-      ? `背包扩容！新增第${this.s.cols}列（${size}）`
-      : `背包扩容！新增第${this.s.rows}行（${size}）`;
+      ? `背包扩容！新增第${this.s.cols}列（${size}，${paid}）`
+      : `背包扩容！新增第${this.s.rows}行（${size}，${paid}）`;
     return this.commit({ ok: true, msg });
   }
 
