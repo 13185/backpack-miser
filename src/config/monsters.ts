@@ -35,7 +35,7 @@ export const MONSTER_BASE: Record<MonsterKind, { name: string; ability: string }
   furnace_guard: { name: '炉甲守卫', ability: '护甲3；每第3次攻击后过热停手2秒且护甲归零。' },
   iron_warden: { name: '铸铁看守', ability: '首领：护甲5；每3击2倍重击（蓄力2秒），其后2秒护甲归零。' },
   spider_queen: { name: '孵化蛛后', ability: '首领：第8/20秒召唤弱蛛；死后停召。' },
-  tax_lord: { name: '税金领主', ability: '首领：70%/35%各获60盾；每4击1.5倍重击。' },
+  tax_lord: { name: '税金领主', ability: '首领：70%／35%各获60盾，仅一次；每4击1.5倍重击，提前3秒。' },
   furnace_colossus: { name: '熔炉巨像', ability: '首领：护甲5；过热×1.8后停手3秒护甲归零；残血×2.0。' },
   silence_warden: { name: '缄默典狱长', ability: '首领：弱祝祷者+每4击1.5倍蓄力。' },
   debt_regent: { name: '债契摄政王', ability: '首领：护甲4；每4击40%回响；60%/30%各获70盾。' },

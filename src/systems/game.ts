@@ -1,4 +1,4 @@
-import { ECONOMY } from '../config/economy';
+import { BALANCE_VERSION, ECONOMY, FORGE_LEGEND_UNLOCK, FORGE_RISK_UNLOCK, FORGE_SAFE_COST, FORGE_VOUCHER_LEVELS, winHealAmount } from '../config/economy';
 import { ITEMS, ITEM_KINDS, itemUnlockLevel } from '../config/items';
 import {
   CAMPAIGN_LENGTH, CAMPAIGN_VERSION, V3_CHAPTERS, campAfterBoss, chapterOf,
@@ -81,6 +81,7 @@ export function newGameState(seed: number, opts: NewGameOpts = {}): GameState {
   const s: GameState = {
     version: SAVE_VERSION, phase: 'prep', level: 1, hp: cls.maxHp, maxHp: cls.maxHp, gold: cls.gold,
     rows: ECONOMY.startRows, cols: ECONOMY.startCols, expansions: 0, items: [], nextId: 1, rng: seed >>> 0,
+    forgeRng: (seed ^ 0x9e3779b9) >>> 0, forgeVouchers: 0, forgeVoucherGranted: [], bossPrep: [], a10Compensated: false,
     loot: null, shop: { level: 1, slots: [], refreshes: 0 }, battleToken: 0, settledToken: 0,
     stats: { kills: 0, goldEarned: 0, contribution: {} }, last: null,
     ...emptyCampaignFields(),
@@ -99,7 +100,16 @@ export function newGameState(seed: number, opts: NewGameOpts = {}): GameState {
 }
 function rollShop(s: GameState) {
   const r = new Rng(s.rng);
-  s.shop.slots = rollItems(r, s.level, 3).map(o => ({ ...o, bought: false }));
+  const held = s.items.some(i => i.kind === 'luck_charm');
+  const slots = rollItems(r, s.level, 3).map(o => {
+    if (o.kind !== 'luck_charm') return o;
+    if (held) {
+      const alt = rollItems(r, s.level, 4).find(x => x.kind !== 'luck_charm');
+      return alt ?? { kind: 'potion' as const, level: 1 as const };
+    }
+    return { kind: 'luck_charm' as const, level: 1 as const };
+  });
+  s.shop.slots = slots.map(o => ({ ...o, bought: false }));
   s.rng = r.state;
 }
 
@@ -202,11 +212,34 @@ function questOnWin(s: GameState, lv: number) {
   }
 }
 
+function grantForgeVoucher(s: GameState, milestone: number) {
+  const got = s.forgeVoucherGranted ?? [];
+  if (got.includes(milestone)) return;
+  s.forgeVoucherGranted = [...got, milestone];
+  s.forgeVouchers = (s.forgeVouchers ?? 0) + 1;
+}
+
+/** 首领关第一次进入准备：生命低于 60% 则补到 60%。嗜战契约不触发。 */
+export function applyBossPrep(s: GameState) {
+  if (s.phase !== 'prep' || !isBossLevel(s.level)) return;
+  const done = s.bossPrep ?? [];
+  if (done.includes(s.level)) return;
+  s.bossPrep = [...done, s.level];
+  if (s.relics.includes('K02')) return;
+  const floorHp = Math.floor(s.maxHp * 0.6);
+  if (s.hp < floorHp) s.hp = floorHp;
+}
+
+function countWeapons(items: { kind: ItemKind; id: string }[], remove: string[]): number {
+  return items.filter(i => !remove.includes(i.id) && (ITEMS[i.kind].category === 'weapon' || ITEMS[i.kind].category === 'needle')).length;
+}
+
 function advanceAfterLoot(s: GameState, cleared: number) {
   s.level++;
   s.currentChapter = chapterOf(s.level);
   s.shop = { level: s.level, slots: [], refreshes: 0 }; rollShop(s);
-  if (cleared === 10 || cleared === 20 || cleared === 30 || cleared === 40) s.pendingBagToast = cleared;
+  if ([3, 7, 12, 17, 24, 32].includes(cleared)) s.pendingBagToast = cleared;
+  if ((FORGE_VOUCHER_LEVELS as readonly number[]).includes(cleared)) grantForgeVoucher(s, cleared);
   if (campAfterBoss(cleared) && isBossLevel(cleared)) {
     // 章节营地：检查点延后到营地结束
     s.phase = 'camp'; s.campKind = 'chapter';
@@ -225,6 +258,7 @@ function advanceAfterLoot(s: GameState, cleared: number) {
     s.pendingCheckpointAfterCamp = false;
   } else {
     s.phase = 'prep'; s.campKind = null;
+    applyBossPrep(s);
     // 非 Boss 清关后：尝试抽一则本章未见表事件（可跳过）
     if (!isBossLevel(cleared) && !s.pendingEventId) {
       const r2 = new Rng(s.rng);
@@ -309,9 +343,16 @@ export class Game {
     if (a.kind === 'burden' || b.kind === 'burden') return fail('负担物不可合成。');
     const check = canMerge(a, b);
     if (!check.ok || !check.gamble) return fail(check.ok ? '这不是对赌合成。' : check.reason);
+    if (a.level === 3 && this.s.level <= FORGE_RISK_UNLOCK) return fail(`通关第${FORGE_RISK_UNLOCK}关后才能冒险锻造。`);
+    if (a.level === 4 && this.s.level <= FORGE_LEGEND_UNLOCK) return fail(`通关第${FORGE_LEGEND_UNLOCK}关后才能传说锻造。`);
+    const worst = a.level === 4 ? [sourceId, targetId] : [sourceId];
+    if (countWeapons(this.s.items, worst) < 1 && (ITEMS[a.kind].category === 'weapon' || ITEMS[a.kind].category === 'needle')) {
+      return fail('最坏结果会让你没有武器。先留一把备用武器。');
+    }
     const odds = a.level === 4 ? LV5_GAMBLE : LV4_GAMBLE;
-    const [roll, next] = nextRandom(this.s.rng);
-    this.s.rng = next;
+    const stream = this.s.forgeRng ?? this.s.rng;
+    const [roll, next] = nextRandom(stream);
+    this.s.forgeRng = next;
     const name = ITEMS[a.kind].name;
     const outcome = gambleOutcome(roll, odds);
     if (outcome === 'loseBoth') {
@@ -326,6 +367,24 @@ export class Game {
       return this.commit({ ok: true, msg: `赌成了：${name} Lv${b.level}` });
     }
     return this.commit({ ok: true, msg: `赌输了：一件${name}消失了，另一件 Lv${b.level} 还在` });
+  }
+  /** 两件 Lv3 + 60 金，或一张锻造券。100% 得到 Lv4。 */
+  safeForge(sourceId: string, targetId: string): Result {
+    const g = this.prepOnly(); if (g) return g;
+    const a = this.find(sourceId), b = this.find(targetId);
+    if (!a || !b) return fail('找不到装备。');
+    const check = canMerge(a, b);
+    if (!check.ok || !check.gamble || a.level !== 3) return fail(check.ok ? '稳妥锻造只接受两件 Lv3。' : check.reason);
+    if (this.s.level <= FORGE_RISK_UNLOCK) return fail(`通关第${FORGE_RISK_UNLOCK}关后才能稳妥锻造。`);
+    const vouchers = this.s.forgeVouchers ?? 0;
+    if (vouchers <= 0 && !canAfford(this.s.gold, FORGE_SAFE_COST)) return fail(`稳妥锻造需要 ${FORGE_SAFE_COST} 金币或一张锻造券。`);
+    if (vouchers > 0) this.s.forgeVouchers = vouchers - 1;
+    else this.s.gold -= FORGE_SAFE_COST;
+    this.s.items = this.s.items.filter(i => i.id !== sourceId);
+    this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
+    b.level = 4;
+    const paid = vouchers > 0 ? '用掉锻造券' : `-${FORGE_SAFE_COST}金`;
+    return this.commit({ ok: true, msg: `稳妥锻成：${ITEMS[b.kind].name} Lv4（${paid}）` });
   }
   sell(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -464,7 +523,7 @@ export class Game {
       s.storyFlags = { ...s.storyFlags, midActSeen: true };
       queueStoryOnce(s, MID_ACT_STORY.id);
     }
-    if (!s.relics.includes('K02')) s.hp = Math.min(s.maxHp, s.hp + Math.round(s.maxHp * ECONOMY.healAfterWin));
+    if (!s.relics.includes('K02')) s.hp = Math.min(s.maxHp, s.hp + winHealAmount(s.maxHp, isBossLevel(lv)));
     const r = new Rng(s.rng);
     s.loot = { level: lv, options: rollItems(r, lv + 1, 3), claimed: false };
     // 精英胜利：额外遗物三选一（若未满）
@@ -637,6 +696,7 @@ export class Game {
     if (this.s.phase !== 'camp') return fail('当前不在营地。');
     if (this.s.campServiceUsed) return fail('本次营地主服务已使用。');
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
+    if (it.kind === 'luck_charm') return fail('吉利达幸运符不可升级。');
     if (it.level >= 3) return fail('营地最多锻到 Lv3。Lv4 用两件 Lv3 对赌，Lv5 用两件 Lv4 对赌。');
     const cost = this.forgeCost(it.level);
     if (!canAfford(this.s.gold, cost)) return fail('金币不足。');
@@ -741,6 +801,7 @@ export class Game {
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
     if (it.kind === 'burden') return fail('负担物不可升级。');
     if (it.level !== pu.fromLevel) return fail(`请选择${pu.fromLevel}级装备。`);
+    if (it.kind === 'luck_charm') return fail('吉利达幸运符不可升级。');
     if (it.level >= 3) return fail('营地和事件最多升到 Lv3。Lv4 用两件 Lv3 对赌，Lv5 用两件 Lv4 对赌。');
     it.level = (it.level + 1) as Level;
     this.s.pendingUpgrade = null;
@@ -778,6 +839,7 @@ export class Game {
       this.s.storyFlags = { ...this.s.storyFlags, doctrineRerollUsed: true };
     }
     this.s.phase = 'prep'; this.s.campKind = null;
+    applyBossPrep(this.s);
     if (wasFinal) this.s.storyFlags = { ...this.s.storyFlags, finalPrepDone: true };
     maybeOfferSystems(this.s);
     if (this.s.pendingCheckpointAfterCamp) {

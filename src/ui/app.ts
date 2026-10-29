@@ -1,6 +1,6 @@
 import { npcPortraitHtml } from '../art/npcArt';
 import Phaser from 'phaser';
-import { ECONOMY } from '../config/economy';
+import { BALANCE_VERSION, ECONOMY, FORGE_SAFE_COST } from '../config/economy';
 import { LV4_GAMBLE, LV5_GAMBLE, gamblePct, type GambleOdds } from '../config/gamble';
 import { ITEMS } from '../config/items';
 import { MONSTER_BASE } from '../config/monsters';
@@ -10,7 +10,7 @@ import type { GameState, ItemInstance, ItemKind, Level, Settings } from '../mode
 import { gemBonus, weaponDamage, weaponsBoostedBy } from '../systems/adjacency';
 import type { CombatEvent, CombatState } from '../systems/combat';
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
-import { Game, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
+import { Game, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
 import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
 import { canMerge } from '../systems/merge';
 import { canPlace, inBag, itemAt, itemSize, occupiedCells } from '../systems/placement';
@@ -176,6 +176,7 @@ export class App {
     this.loadState(st);
   }
   loadState(st: GameState) {
+    applyBossPrep(st);
     this.game = new Game(st, this.persist);
     this.selected = null; this.closeOverlay();
     this.scene.setPreview(st.eliteActive ? applyEliteOverlay(getLevel(st.level), st.level) : getLevel(st.level), st.hp, st.maxHp, { eliteActive: !!st.eliteActive, levelNo: st.level });
@@ -236,7 +237,7 @@ export class App {
       const offer = expansionOffer(s.expansions);
       s.pendingBagToast = undefined;
       const what = offer?.axis === 'col' ? '新的一列' : '新的一行';
-      this.toast(`击败第${lv}关首领！可以花钱解锁${what}`);
+      this.toast(`通关第${lv}关！可以花钱解锁${what}`);
       this.persist(s);
     }
     this.renderMid(); this.renderBag(); this.renderTemp(); this.renderDetails(); this.renderShop(); this.renderStats(); this.renderTutorial();
@@ -251,7 +252,7 @@ export class App {
         <div class="eName">${lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
         ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
-        <div class="eAbil">✦ ${abil}${lv.mechSummary ? `<br/>⚙ ${lv.mechSummary}` : ''}<br/>⚠ ${ECONOMY.enrageAt}秒后狂暴，每${ECONOMY.enrageStep}秒伤害提升；${ECONOMY.timeout}秒未击败即失败。</div>
+        <div class="eAbil">✦ ${abil}${lv.mechSummary ? `<br/>⚙ ${lv.mechSummary}` : ''}<br/>⚠ ${ECONOMY.enrageAt}秒后狂暴（+10%，之后每${ECONOMY.enrageStep}秒再+10%）；${ECONOMY.timeout}秒未击败即失败。</div>
       </div>
       <div class="actions">
         ${battle ? `<div class="hint">⚔ 自动战斗中……背包已锁定</div>
@@ -552,12 +553,26 @@ export class App {
     const risk = both > 0
       ? `<b>${gamblePct(odds.success)}%</b> 合成一件 Lv${up}（数值 ${stat}），<b>${gamblePct(odds.loseOne)}%</b> 只消失拖过去的那一件，<b>${both}%</b> 两件都消失。`
       : `<b>${gamblePct(odds.success)}%</b> 合成一件 Lv${up}（数值 ${stat}），<b>${gamblePct(odds.loseOne)}%</b> 只消失拖过去的那一件，另一件 Lv${it.level} 留在原地。`;
+    const vouchers = g.s.forgeVouchers ?? 0;
+    const safe = it.level === 3
+      ? `<button class="btn gold" id="forgeSafe">稳妥锻造${vouchers > 0 ? '（用锻造券）' : `（${FORGE_SAFE_COST}金）`}</button>`
+      : '';
     const ov = $('overlay');
     ov.className = 'show';
-    ov.innerHTML = `<div class="modal"><h3>赌一把 Lv${up}</h3>
-      <p>两件 <b>${name} Lv${it.level}</b>：${risk}结果马上写入存档，刷新不能重来。</p>
-      <div class="btns"><button class="btn" id="gambleNo">取消</button><button class="btn danger" id="gambleYes">赌一把</button></div></div>`;
+    ov.innerHTML = `<div class="modal"><h3>${it.level === 4 ? '传说锻造' : '锻造'} Lv${up}</h3>
+      <p>两件 <b>${name} Lv${it.level}</b>。冒险：${risk}拖过去的是材料，失败时先消失它。结果马上写入存档，刷新不能重来。腾出 ${ITEMS[it.kind].w * ITEMS[it.kind].h} 格。</p>
+      <div class="btns">${safe}<button class="btn danger" id="gambleYes">冒险锻造</button><button class="btn" id="gambleNo">取消</button></div></div>`;
     $('gambleNo').onclick = () => { this.closeOverlay(); this.render(); };
+    if (it.level === 3) $('forgeSafe').onclick = () => {
+      this.closeOverlay();
+      const r = g.safeForge(sourceId, targetId);
+      if (!r.ok) { sfx.error(); this.toast(r.msg, true); this.render(); return; }
+      sfx.merge();
+      this.selected = targetId;
+      this.toast(r.msg ?? '稳妥锻成');
+      this.render();
+      this.flashMerge(targetId);
+    };
     $('gambleYes').onclick = () => {
       this.closeOverlay();
       const r = g.gambleMerge(sourceId, targetId);
@@ -958,6 +973,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
+      <p class="muted">版本 3.3.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <div class="btns col"><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;

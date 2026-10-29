@@ -38,7 +38,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '沿矿道下行，宝箱怪守住出口。',
     outcome: '宝箱裂开，露出通往牢城的铁轨。债契印章尚热。',
     bossPre: '黄金宝箱怪堵住矿道出口。它不吃金币，只吃你们还没签下的明天。战前看清暴怒阈值，别被金光晃晕。',
-    bossPost: '箱盖碎裂。深处铁轨延伸向牢城，一张未填完的欠条贴在内侧，火漆还烫。',
+    bossPost: '货……都在这里。那个带路的姑娘……被押进牢城了……箱盖再也合不上。',
   },
   2: {
     id: 'ch2_intro', title: '铁锈牢城',
@@ -52,7 +52,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '牢城通道狭窄，铸铁看守堵住中央厅。',
     outcome: '看守倒下，露米获救；更深处的巢穴气味渗出。',
     bossPre: '铸铁看守踏出中央厅。护甲厚重，每第三次攻击是蓄力重击——破绽就在重击之后那两秒。',
-    bossPost: '铁甲塌成一堆。露米从侧室踉跄出来，手里还攥着半页被撕碎的押送单，墨未干。',
+    bossPost: '名单上写着欠税……我只负责关门。可那些人，明明已经交过钱……',
   },
   3: {
     id: 'ch3_intro', title: '幽毒巢穴',
@@ -61,7 +61,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '巢穴深处，蛛后孵化着下一轮“抵押品”。',
     outcome: '样本到手。工坊的炉火气味开始出现在风里。',
     bossPre: '孵化蛛后护着卵囊。第八秒与第二十秒会放出弱蛛——先清召唤，再打本体，别被缠住。',
-    bossPost: '蛛后倒下，卵囊冷却。伊芙接过样本，说灰烬工坊的订单上还写着断臂与欠款。',
+    bossPost: '你们送来的药……他们拿去养墨了。王库里的账，是活的……纹路一盏盏灭掉。',
   },
   4: {
     id: 'ch4_intro', title: '黄金王库',
@@ -70,7 +70,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '账房、金库、领主宝座依次打开。',
     outcome: '王冠碎裂，管道显形；金冠背后还有心脏。',
     bossPre: '税金领主端坐宝座。生命跌破七成与三成半时会叠护盾，第四击是蓄力重击。别被金光晃花。',
-    bossPost: '王冠碎裂的瞬间，你们看见更深处的管道：王库只是收税站，黄金心脏仍在跳动。',
+    bossPost: '你以为……我是收钱的人？我也只是账上的一个名字。去商港……船还没走。',
   },
   5: {
     id: 'ch5_intro', title: '沉没商港',
@@ -79,7 +79,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '潮甲与蓄力在港口交错出现；船长守在雾心。',
     outcome: '船长沉入浪里。救援或证据的选择开始回收。',
     bossPre: '盐雾船长踏着潮甲上来。八秒一轮潮汐，第三次攻击是一点六倍重击。看清潮汐条再出手。',
-    bossPost: '船长的帽檐沉入浪中。雾散处，商队的灯火或清单的墨迹，都取决于你们先前的选择。',
+    bossPost: '我运的从来不只是金币……最早的契约，在镜砂里。拿着印记，去找。',
   },
   6: {
     id: 'ch6_intro', title: '镜砂遗迹',
@@ -88,7 +88,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '哨兵与弩手教学回响；审计官把规则推到极限。',
     outcome: '镜子碎裂，账本真伪可辨；工坊的烟尘压过来。',
     bossPre: '镜砂审计官抬起双镜。每第三次攻击后追加半额回响；半血时会获得护盾。死亡即取消回响。',
-    bossPost: '双镜同时裂开。乌先生点头：这一页对得上港口的账，可以继续往下追。',
+    bossPost: '副本可以撕掉……原契却一直生效。工坊每铸一枚金币，就有人多欠一天。',
   },
   7: {
     id: 'ch7_intro', title: '灰烬工坊',
@@ -97,7 +97,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '过热与护甲归零窗口交替出现；巨像是最终考题。',
     outcome: '炉火按你们的选择熄灭或炸裂；圣堂的静默已在前方。',
     bossPre: '熔炉巨像撑起炉门。基础护甲五，三次普攻后一点八倍过热击，随后护甲归零三秒。残血时过热更狠。',
-    bossPost: '炉门落下。若你们援助过停炉，老铆还能笑；若硬拆，烟里只剩半句谢意与余温。',
+    bossPost: '铸造……已停止。债契仍存于圣堂。权限钥匙……交接。炉膛黑了下去。',
   },
   8: {
     id: 'ch8_intro', title: '静默圣堂',
@@ -106,7 +106,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '祝祷与蓄力逼你们做目标选择；保管室的门在最后打开。',
     outcome: '典狱长倒下。证据与救援的取舍写入终局选项。',
     bossPre: '缄默典狱长与一名弱祝祷者同时出现。祝祷者占两成生命预算；典狱长第四击蓄力。先拆辅助，或用范围压过去。',
-    bossPost: '圣堂铃不再响。墙上的签名与名单只够带走一样——你们已经选过，或即将抉择。',
+    bossPost: '我们守着契约……却忘了签名的人还活着。去王庭。有人还在替所有人续约。',
   },
   9: {
     id: 'ch9_intro', title: '逆流王庭',
@@ -115,7 +115,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '熟悉机制两两组合；摄政王是债契的代言人。',
     outcome: '原则已定。通往黄金心脏的门向外打开。',
     bossPre: '债契摄政王展开卷宗。基础护甲四，第四击后四成回响；六成与三成生命时各获七十护盾。稳住输出，别被利息拖死。',
-    bossPost: '卷宗焚成灰。你们确认的原则已写入心脏的门扉——第50关只执行，不再改判。',
+    bossPost: '毁掉它，还是成为下一个掌管它的人？进去吧。别到最后，才决定自己为何而来。',
   },
   10: {
     id: 'ch10_intro', title: '黄金心脏',
@@ -124,7 +124,7 @@ export const CHAPTER_STORIES: Record<number, ChapterStory> = {
     progress: '重访熟悉考题；第49关最后整备；第50关一战收束。',
     outcome: '心脏停跳或改律。结局按断契／公账／接管与支线结果展开。',
     bossPre: '黄金心脏显露三层律动。七成换回响，三成半换过热；每阶段只保留当前技能。活着走出这里，才算把选择写进世界。',
-    bossPost: '跳动停了一拍。矿灯、铁门、潮水与炉火的回声叠在一起——世界按你们的原则重新记账。',
+    bossPost: '契约……失去执行者。此后的明天……由谁书写？金线从核心上脱落。',
   },
 };
 

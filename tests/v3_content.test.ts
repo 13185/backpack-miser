@@ -18,7 +18,7 @@ const mk = (kind: ItemInstance['kind'], id: string, level: 1 | 2 | 3 = 1, x = 0,
 
 describe('新装备', () => {
   it('12 种 ItemKind 均有配置与解锁关', () => {
-    expect(ITEM_KINDS.length).toBe(19); // 6基础+5 V2+7 V3+burden
+    expect(ITEM_KINDS.length).toBe(20); // 6基础+5 V2+7 V3+burden+吉利达幸运符
     expect(itemUnlockLevel('spear')).toBe(21);
     expect(itemUnlockLevel('compass')).toBe(26);
     expect(itemUnlockLevel('firework_crossbow')).toBe(31);

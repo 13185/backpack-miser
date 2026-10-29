@@ -29,7 +29,7 @@ describe('Boss 机制对齐规格', () => {
     expect(lv.heavyStrike?.every).toBe(3);
     expect(lv.heavyStrike?.mult).toBe(2);
     expect(lv.heavyStrike?.armorBreakMs).toBe(2000);
-    expect(lv.armor).toBe(5);
+    expect(lv.armor).toBe(3);
   });
   it('B15 有三次召唤+蓄力', () => {
     const lv = getLevel(15);
@@ -37,11 +37,17 @@ describe('Boss 机制对齐规格', () => {
     expect(lv.summons?.maxAlive).toBe(2);
     expect(lv.heavyStrike?.mult).toBeGreaterThanOrEqual(1.7);
   });
-  it('B20 三阶段盾与重击', () => {
+  it('B20 只保留 70%/35% 盾和每4击1.5倍重击', () => {
     const lv = getLevel(20);
-    expect(lv.phaseShields?.thresholds).toEqual([0.75, 0.45, 0.2]);
-    expect(lv.heavyStrike?.every).toBe(3);
-    expect(lv.heavyStrike!.mult).toBeGreaterThanOrEqual(1.8);
+    expect(lv.hp).toBe(1100);
+    expect(lv.atk).toBe(22);
+    expect(lv.armor).toBe(3);
+    expect(lv.openMShieldPct).toBeUndefined();
+    expect(lv.phaseShields?.thresholds).toEqual([0.7, 0.35]);
+    expect(lv.phaseShields?.shield).toBe(60);
+    expect(lv.heavyStrike?.every).toBe(4);
+    expect(lv.heavyStrike?.mult).toBe(1.5);
+    expect(lv.heavyStrike?.windupMs).toBeGreaterThanOrEqual(3000);
   });
   it('B25 潮汐+阶段盾+高频重击', () => {
     const lv = getLevel(25);
@@ -57,9 +63,9 @@ describe('Boss 机制对齐规格', () => {
     expect(lv.phaseShields?.thresholds).toEqual([0.65, 0.35]);
     expect(lv.heavyStrike?.mult).toBeGreaterThanOrEqual(1.7);
   });
-  it('B35 护甲5、过热更频、半血盾', () => {
+  it('B35 护甲4、过热更频、半血盾', () => {
     const lv = getLevel(35);
-    expect(lv.armor).toBe(5);
+    expect(lv.armor).toBe(4);
     expect(lv.overheat?.every).toBe(2);
     expect(lv.overheat!.mult).toBeGreaterThanOrEqual(2.2);
     expect(lv.phaseShields?.thresholds).toEqual([0.5]);

@@ -1,4 +1,4 @@
-:root { --cell: 60px; --gold: #e8b64c; --gold2: #ffd45c; --bg: #15101e; --panel: #241a30; --panel2: #2e2240; --text: #f5e6c4; --muted: #b8a88a; }
+:root { --cell: 60px; --gold: #e8b64c; --gold2: #ffd45c; --bg: #1a140f; --panel: #2a2118; --panel2: #3a2c20; --text: #f6efe2; --muted: #cbbba4; --knit: #243452; --leather: #6b4124; --stitch: #f3e6cf; --brass: #d7b15a; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: radial-gradient(ellipse at top, #2c2040, var(--bg) 70%) fixed; color: var(--text); font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; overscroll-behavior: none; }
 body { min-height: 100vh; user-select: none; -webkit-user-select: none; }
@@ -69,7 +69,7 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .ptitle small { color: var(--muted); font-weight: normal; font-size: 12px; }
 #bag { position: relative; touch-action: none; margin: 0 auto; }
 #bag.locked .item { cursor: default; }
-.cell { position: absolute; width: var(--cell); height: var(--cell); border: 1px solid #6b5230; background: radial-gradient(#4a3828, #34261a); border-radius: 6px; box-shadow: inset 0 0 6px #0007; }
+.cell { position: absolute; width: var(--cell); height: var(--cell); border: 2px solid var(--leather); background: repeating-linear-gradient(90deg, #2a3d62 0 3px, #243552 3px 7px); border-radius: 8px; box-shadow: inset 0 0 0 1px var(--stitch), inset 0 0 8px #0008; pointer-events: none; }
 .cell.newRow { background: radial-gradient(#4a4228, #34301a); border-color: #a88a40; }
 #preview { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
 .pv { position: absolute; width: var(--cell); height: var(--cell); border-radius: 6px; }

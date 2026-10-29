@@ -21,11 +21,13 @@ const S: Partial<Record<ItemKind, string>> = {
   war_banner: `<rect x="14" y="8" width="6" height="48" fill="#8a6a3a"/><path d="M20 10 H48 L40 22 L48 34 H20 Z" fill="#e8b060" stroke="#8a5010" stroke-width="2"/>`,
   burden: `<rect x="18" y="14" width="28" height="36" rx="3" fill="#6a5060" stroke="#c8a0b0" stroke-width="2"/><path d="M24 24 H40 M24 32 H36 M24 40 H38" stroke="#c8a0b0" stroke-width="2"/>`,
   poison_needle: `<g transform="rotate(-45 32 32)"><rect x="30" y="8" width="4" height="36" fill="#b8e080" stroke="#4a6a2a"/><path d="M28 8 L36 8 L32 2 Z" fill="#d0f0a0"/><rect x="24" y="44" width="16" height="6" rx="2" fill="#5a8a3a"/><circle cx="40" cy="20" r="4" fill="#7dff9a" opacity=".7"/></g>`,
+  luck_charm: `<path d="M32 6 L56 18 L50 46 L32 58 L14 46 L8 18 Z" fill="#1a3058" stroke="#e8b64c" stroke-width="3"/><text x="32" y="38" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffd45c">吉</text>`,
 };
 /** 手绘装备图标（统一画风，128px 透明 PNG，public/art/items/<kind>.png）；SVG 仅作缺图回退 */
 const PAINTED: ReadonlySet<ItemKind> = new Set<ItemKind>([
   'dagger', 'greatsword', 'shield', 'potion', 'ruby', 'moneybag', 'spear', 'compass', 'firework_crossbow',
   'fold_wall', 'travel_lamp', 'emergency_ledger', 'poison_needle', 'crossbow', 'chain_hammer', 'warhammer', 'ice_crystal', 'war_banner',
+  'luck_charm',
 ]);
 function svgIcon(kind: ItemKind): string {
   return `<svg viewBox="0 0 64 64" class="icon" aria-hidden="true">${S[kind] ?? ''}</svg>`;

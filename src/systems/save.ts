@@ -32,6 +32,22 @@ export function migrateV3(s: any) {
   if (typeof s.expansions !== 'number') {
     s.expansions = Math.max(0, s.rows - 4) + Math.max(0, s.cols - 5);
   }
+  if (typeof s.forgeRng !== 'number') s.forgeRng = ((s.rng ?? 1) ^ 0x9e3779b9) >>> 0;
+  if (typeof s.forgeVouchers !== 'number') s.forgeVouchers = 0;
+  if (!Array.isArray(s.forgeVoucherGranted)) s.forgeVoucherGranted = [];
+  if (!Array.isArray(s.bossPrep)) s.bossPrep = [];
+  // A10：15–20 关且仍是 30 格及以下，免费补到至少 6×6，回满一次，补发已到的锻造券。
+  if (s.a10Compensated === undefined && typeof s.level === 'number' && s.level >= 15 && s.level <= 20 && s.rows * s.cols <= 30) {
+    s.cols = Math.max(s.cols, 6);
+    s.rows = Math.max(s.rows, 6);
+    s.expansions = Math.max(s.expansions, Math.max(0, s.rows - 4) + Math.max(0, s.cols - 5));
+    if (typeof s.hp === 'number' && typeof s.maxHp === 'number') s.hp = s.maxHp;
+    if (s.level > 12 && !s.forgeVoucherGranted.includes(12)) {
+      s.forgeVoucherGranted.push(12);
+      s.forgeVouchers += 1;
+    }
+    s.a10Compensated = true;
+  } else if (s.a10Compensated === undefined) s.a10Compensated = false;
 }
 
 function backupOld(st: Storage, raw: string, ver: number) {

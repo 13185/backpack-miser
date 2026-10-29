@@ -120,7 +120,30 @@ export const V3_STAGES_BASE: StageBudget[] = [
  * 3.3.0：背包在首领后继续长大，后期数值按新战力曲线回缩。
  * 段形仍是五段（1–10 逐步 / 10–20 明显 / 20–30 巨大 / 30–40 再抬 / 40–50 再抬）。无难度选择。
  */
-export const HARD_TUNE_VERSION = '3.3.0-lv5-gamble' as const;
+export const HARD_TUNE_VERSION = '3.3.0-story-growth' as const;
+
+/** 附录 A04：故事战役首领的最终预算，不再叠地狱倍率。 */
+export const STORY_BOSS_BUDGET: Record<number, { hp: number; damage: number; interval: number; armor: number }> = {
+  5: { hp: 160, damage: 8, interval: 3.0, armor: 0 },
+  10: { hp: 340, damage: 12, interval: 3.0, armor: 3 },
+  15: { hp: 600, damage: 16, interval: 3.0, armor: 2 },
+  20: { hp: 1100, damage: 22, interval: 3.0, armor: 3 },
+  25: { hp: 1300, damage: 24, interval: 2.9, armor: 3 },
+  30: { hp: 1500, damage: 25, interval: 2.9, armor: 4 },
+  35: { hp: 1750, damage: 26, interval: 3.0, armor: 4 },
+  40: { hp: 1950, damage: 27, interval: 2.9, armor: 4 },
+  45: { hp: 2200, damage: 28, interval: 2.9, armor: 4 },
+  50: { hp: 2500, damage: 30, interval: 2.9, armor: 4 },
+};
+
+/** 故事战役：底稿普通关 + A04 首领。地狱乘区另存为 HELL_STAGES，不进入默认对局。 */
+export function applyStoryBudgets(stages: StageBudget[]): StageBudget[] {
+  return stages.map(s => {
+    const b = STORY_BOSS_BUDGET[s.level];
+    if (!b) return { ...s };
+    return { ...s, hp: b.hp, damage: b.damage, interval: b.interval, boss: true };
+  });
+}
 
 /**
  * 段形仍是五段。1–10 步长不动。10–20 略松，第 6 列买下后 19 关能打完。
@@ -242,9 +265,10 @@ function applyProgressFloor(stages: StageBudget[]): StageBudget[] {
   return out;
 }
 
-export const V3_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
+export const HELL_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
   V3_STAGES_BASE.map(applyLateTune).map(applyHardTune),
 ));
+export const V3_STAGES: StageBudget[] = applyStoryBudgets(V3_STAGES_BASE);
 export function stageOf(level: number): StageBudget {
   const s = V3_STAGES[level - 1];
   if (!s) throw new Error(`无效关卡 ${level}`);

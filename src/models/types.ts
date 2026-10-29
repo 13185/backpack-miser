@@ -3,7 +3,7 @@ export type ItemKind =
   | 'spear' | 'compass' | 'firework_crossbow' | 'fold_wall' | 'travel_lamp'
   | 'emergency_ledger' | 'poison_needle'
   | 'crossbow' | 'chain_hammer' | 'warhammer' | 'ice_crystal' | 'war_banner'
-  | 'burden';
+  | 'burden' | 'luck_charm';
 export type Level = 1 | 2 | 3 | 4 | 5;
 /** 装备实例：位于背包时有 x,y；临时区时为 null */
 export interface ItemInstance {
@@ -86,8 +86,17 @@ export interface GameState {
   rows: number;
   cols: number;
   expansions: number;
-  /** 刚击败 10/20/30/40 首领，界面提示一次后清除 */
+  /** 刚解锁下一档背包，界面提示一次后清除 */
   pendingBagToast?: number;
+  /** 锻造专用随机流，与掉落、商店分开 */
+  forgeRng?: number;
+  forgeVouchers?: number;
+  /** 已发放的锻造券关卡：12 / 25 / 35 */
+  forgeVoucherGranted?: number[];
+  /** 已经做过首领整备的关卡 */
+  bossPrep?: number[];
+  /** 附录 A10 旧档补偿只做一次 */
+  a10Compensated?: boolean;
   items: ItemInstance[];
   nextId: number;
   rng: number;

@@ -115,29 +115,19 @@ describe('遗物 A01/A07/A08/A11/A12', () => {
 
 
 describe('后期调参', () => {
-  it('全战役 = LATE_TUNE(≥21) + HARD_TUNE 分段地狱压 + 进度地板', async () => {
-    const { V3_STAGES, V3_STAGES_BASE, LATE_TUNE, HARD_TUNE, HARD_BANDS, hardParams, applyLateTune, applyHardTune } = await import('../src/config/v3/campaign');
-    // L1 无地板干扰：应等于 applyHardTune(applyLateTune(base))
-    const l1 = applyHardTune(applyLateTune(V3_STAGES_BASE[0]));
-    expect(V3_STAGES[0].hp).toBe(l1.hp);
-    expect(V3_STAGES[0].gold).toBe(l1.gold);
-    // 分段：中期倍率显著高于前期，后期再抬
-    expect(hardParams(25).hp).toBeGreaterThan(hardParams(10).hp);
-    expect(hardParams(40).hp).toBeGreaterThan(hardParams(25).hp * 1.5);
-    expect(hardParams(50).hp).toBeGreaterThan(hardParams(40).hp);
-    expect(HARD_BANDS.length).toBe(5);
-    // 进度地板：普通关不低于上一关 92%
-    for (let i = 1; i < V3_STAGES.length; i++) {
-      const prev = V3_STAGES[i - 1], cur = V3_STAGES[i];
-      if (!cur.boss) expect(cur.hp).toBeGreaterThanOrEqual(Math.round(prev.hp * 0.85));
-      else expect(cur.hp).toBeGreaterThanOrEqual(Math.round(prev.hp * 1.28));
+  it('故事战役首领使用附录 A04 预算，不再叠地狱倍率', async () => {
+    const { V3_STAGES, V3_STAGES_BASE, STORY_BOSS_BUDGET, HARD_BANDS, hardParams } = await import('../src/config/v3/campaign');
+    expect(V3_STAGES[0].hp).toBe(V3_STAGES_BASE[0].hp);
+    expect(V3_STAGES[19].hp).toBe(1100);
+    expect(V3_STAGES[19].damage).toBe(22);
+    expect(V3_STAGES[19].interval).toBe(3);
+    for (const [lv, b] of Object.entries(STORY_BOSS_BUDGET)) {
+      const stage = V3_STAGES[Number(lv) - 1];
+      expect(stage.hp).toBe(b.hp);
+      expect(stage.damage).toBe(b.damage);
     }
-    // 前期必须显著高于底稿（地狱）
-    expect(V3_STAGES[0].hp).toBeGreaterThan(Math.round(V3_STAGES_BASE[0].hp * 1.5));
-    expect(HARD_TUNE.hp[0]).toBeGreaterThan(1.5);
-    expect(LATE_TUNE.normalHp[0]).toBeGreaterThan(1);
-    // 金币稀缺
-    expect(hardParams(25).gold).toBeLessThan(0.55);
+    expect(HARD_BANDS.length).toBe(5);
+    expect(hardParams(50).hp).toBeGreaterThan(hardParams(1).hp);
   });
 });
 

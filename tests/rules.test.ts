@@ -9,7 +9,7 @@ import { buyPrice, sellPrice, refreshCost } from '../src/systems/economy';
 import { Game, newGameState } from '../src/systems/game';
 import { loadGame, saveGame, SAVE_KEY } from '../src/systems/save';
 import { LEVELS } from '../src/config/levels';
-import { ECONOMY } from '../src/config/economy';
+import { ECONOMY, winHealAmount } from '../src/config/economy';
 import { winGoldFor } from '../src/config/v3/levels';
 
 let n = 0;
@@ -45,12 +45,12 @@ describe('背包放置', () => {
     g.s.items[1].x = 3;
     expect(g.rotate(g.s.items[0].id).ok).toBe(true);
   });
-  it('扩容后新行可用，最多两次', () => {
-    const g = new Game(newGameState(2)); g.s.gold = 200;
+  it('通关第7关后可买两行，第12关前不能买列', () => {
+    const g = new Game(newGameState(2)); g.s.gold = 200; g.s.level = 8;
     expect(canPlace(g.s.items, 5, g.s.rows, 'potion', 0, 4, false)).toBe(false);
-    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(5); expect(g.s.gold).toBe(200 - 32);
+    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(5); expect(g.s.gold).toBe(200 - 20);
     const p = g.s.items[2]; expect(g.move(p.id, 0, 4, false).ok).toBe(true);
-    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(6); expect(g.s.gold).toBe(200 - 32 - 52);
+    expect(g.expand().ok).toBe(true); expect(g.s.rows).toBe(6); expect(g.s.gold).toBe(200 - 20 - 30);
     expect(g.expand().ok).toBe(false); expect(g.s.rows).toBe(6);
   });
   it('初始装备自动合法摆放', () => {
@@ -252,8 +252,30 @@ describe('经济与流程', () => {
     const g = new Game(newGameState(7, { heroClass: 'ranger' })); g.s.hp = 60; g.startBattle(); const c = g.makeCombat(); simulate(c);
     expect(c.won).toBe(true);
     g.settle(c);
-    const heal = Math.round(g.s.maxHp * ECONOMY.healAfterWin);
+    const heal = winHealAmount(g.s.maxHp, false);
     expect(g.s.hp).toBe(Math.min(g.s.maxHp, c.hp + heal));
+  });
+});
+
+describe('吉利达幸运符', () => {
+  it('只在第一次实际加盾时额外+6，第二次不再触发；临时区不生效', () => {
+    const bag = [mk('shield', 0, 0), mk('luck_charm', 2, 0)];
+    const c = createCombat(bag, 100, 100, lv({ hp: 40, atk: 0, interval: 10 }));
+    stepCombat(c, 3300);
+    expect(c.luckCharmUsed).toBe(true);
+    expect(c.stats.luckShield).toBe(6);
+    const mid = c.shield;
+    stepCombat(c, 3300);
+    expect(c.stats.luckShield).toBe(6);
+    expect(c.shield).toBe(mid + ITEMS.shield.values[0]);
+    const temp = [mk('shield', 0, 0), mk('luck_charm', null, null)];
+    const c2 = createCombat(temp, 100, 100, lv({ hp: 40, atk: 0, interval: 10 }));
+    stepCombat(c2, 3300);
+    expect(c2.luckCharm).toBe(false);
+    expect(c2.stats.luckShield).toBe(0);
+    expect(sellPrice('luck_charm', 1)).toBe(8);
+    expect(buyPrice('luck_charm', 1)).toBe(20);
+    expect(canMerge(mk('luck_charm', 0, 0), mk('luck_charm', 1, 0)).ok).toBe(false);
   });
 });
 

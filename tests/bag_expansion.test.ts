@@ -17,12 +17,12 @@ const mem = () => {
 };
 
 describe('背包扩容 3.3', () => {
-  it('开局两次加行，之后按 10/20/30/40 首领交替加列加行，终点 7×8', () => {
+  it('通关 3/7/12/17/24/32 后按行、行、列、行、列、行扩到 7×8', () => {
     expect(ECONOMY.expansions.map(e => e.axis)).toEqual(['row', 'row', 'col', 'row', 'col', 'row']);
-    expect(ECONOMY.expansions.map(e => e.unlockAfterLevel)).toEqual([0, 0, 10, 20, 30, 40]);
-    expect(expansionCost(0)).toBe(32);
-    expect(expansionCost(2)).toBe(80);
-    expect(expansionCost(5)).toBe(230);
+    expect(ECONOMY.expansions.map(e => e.unlockAfterLevel)).toEqual([3, 7, 12, 17, 24, 32]);
+    expect(expansionCost(0)).toBe(20);
+    expect(expansionCost(2)).toBe(45);
+    expect(expansionCost(5)).toBe(100);
     expect(expansionCost(6)).toBeNull();
     let rows = 4, cols = 5;
     for (const e of ECONOMY.expansions) { if (e.axis === 'row') rows++; else cols++; }
@@ -33,6 +33,7 @@ describe('背包扩容 3.3', () => {
   it('未击败首领不能买后续扩容；击败后花钱才变大', () => {
     const g = new Game(newGameState(1));
     g.s.gold = 500;
+    g.s.level = 8;
     expect(g.expand().ok).toBe(true);
     expect(g.s.rows).toBe(5);
     expect(g.expand().ok).toBe(true);
@@ -40,12 +41,12 @@ describe('背包扩容 3.3', () => {
     expect(g.s.cols).toBe(5);
     const locked = g.expand();
     expect(locked.ok).toBe(false);
-    expect(locked.ok === false && locked.msg).toContain('第10关');
+    expect(locked.ok === false && locked.msg).toContain('第12关');
     expect(g.s.cols).toBe(5);
-    expect(expansionUnlocked(10, 2)).toBe(false);
-    expect(expansionUnlocked(11, 2)).toBe(true);
-    g.s.level = 11;
-    expect(expansionLabel(11, g.s.rows, g.s.cols, g.s.expansions).text).toContain('第6列');
+    expect(expansionUnlocked(12, 2)).toBe(false);
+    expect(expansionUnlocked(13, 2)).toBe(true);
+    g.s.level = 13;
+    expect(expansionLabel(13, g.s.rows, g.s.cols, g.s.expansions).text).toContain('第6列');
     expect(g.expand().ok).toBe(true);
     expect(g.s.cols).toBe(6);
     expect(g.s.rows).toBe(6);
@@ -87,7 +88,9 @@ describe('背包扩容 3.3', () => {
     }
     const pair = (rng: number) => {
       const g = new Game(newGameState(1));
+      g.s.level = 13;
       g.s.rng = rng;
+      g.s.forgeRng = rng;
       g.s.items = [
         { id: 'a', kind: 'greatsword', level: 3, x: 0, y: 0, rotated: false },
         { id: 'b', kind: 'greatsword', level: 3, x: 1, y: 0, rotated: false },
@@ -101,7 +104,7 @@ describe('背包扩容 3.3', () => {
     expect(win.s.items).toHaveLength(1);
     expect(win.s.items[0].level).toBe(4);
     expect(win.s.items[0].id).toBe('b');
-    expect(win.s.rng).not.toBe(winSeed);
+    expect(win.s.forgeRng).not.toBe(winSeed);
     expect(ITEMS.greatsword.values[3]).toBeGreaterThan(ITEMS.greatsword.values[2]);
     expect(ITEMS.greatsword.values[4]).toBeGreaterThan(ITEMS.greatsword.values[3]);
     const st = mem();
@@ -156,54 +159,111 @@ describe('背包扩容 3.3', () => {
     expect(buckets.loseBoth / samples).toBeLessThan(0.35);
     const pair = (rng: number) => {
       const g = new Game(newGameState(1));
+      g.s.level = 26;
       g.s.rng = rng;
+      g.s.forgeRng = rng;
       g.s.items = [
         { id: 'a', kind: 'greatsword', level: 4, x: 0, y: 0, rotated: false },
         { id: 'b', kind: 'greatsword', level: 4, x: 1, y: 0, rotated: false },
+        { id: 'w', kind: 'dagger', level: 1, x: 2, y: 0, rotated: false },
       ];
       return g;
     };
     const win = pair(seeds.success);
     const ok = win.gambleMerge('a', 'b');
     expect(ok.ok && ok.msg).toContain('Lv5');
-    expect(win.s.items).toEqual([expect.objectContaining({ id: 'b', level: 5, x: 1 })]);
-    expect(win.s.rng).not.toBe(seeds.success);
+    expect(win.s.items.find(i => i.id === 'b')).toMatchObject({ level: 5, x: 1 });
+    expect(win.s.forgeRng).not.toBe(seeds.success);
     const st = mem();
     saveGame(st, win.s);
     const loaded = loadGame(st);
     expect(loaded.status).toBe('ok');
     if (loaded.status === 'ok') {
-      expect(loaded.state.items.map(i => i.level)).toEqual([5]);
+      expect(loaded.state.items.find(i => i.id === 'b')?.level).toBe(5);
       expect(loaded.state.rng).toBe(win.s.rng);
     }
     const one = pair(seeds.loseOne);
     const mid = one.gambleMerge('a', 'b');
     expect(mid.ok && mid.msg).toContain('另一件');
-    expect(one.s.items).toEqual([expect.objectContaining({ id: 'b', level: 4, x: 1 })]);
+    expect(one.s.items.find(i => i.id === 'b')).toMatchObject({ level: 4, x: 1 });
+    expect(one.s.items.find(i => i.id === 'a')).toBeUndefined();
     const stMid = mem();
     saveGame(stMid, one.s);
     const loadedMid = loadGame(stMid);
     expect(loadedMid.status).toBe('ok');
     if (loadedMid.status === 'ok') {
-      expect(loadedMid.state.items).toHaveLength(1);
-      expect(loadedMid.state.items[0].level).toBe(4);
-      expect(loadedMid.state.rng).toBe(one.s.rng);
+      expect(loadedMid.state.items.find(i => i.id === 'b')?.level).toBe(4);
+      expect(loadedMid.state.items.find(i => i.id === 'a')).toBeUndefined();
+      expect(loadedMid.state.forgeRng).toBe(one.s.forgeRng);
     }
     const both = pair(seeds.loseBoth);
     const bad = both.gambleMerge('a', 'b');
     expect(bad.ok && bad.msg).toContain('都消失');
-    expect(both.s.items).toHaveLength(0);
+    expect(both.s.items.map(i => i.id)).toEqual(['w']);
     const stBoth = mem();
     saveGame(stBoth, both.s);
     const loadedBoth = loadGame(stBoth);
     expect(loadedBoth.status).toBe('ok');
     if (loadedBoth.status === 'ok') {
-      expect(loadedBoth.state.items).toHaveLength(0);
-      expect(loadedBoth.state.rng).toBe(both.s.rng);
+      expect(loadedBoth.state.items.find(i => i.id === 'a' || i.id === 'b')).toBeUndefined();
+      expect(loadedBoth.state.forgeRng).toBe(both.s.forgeRng);
     }
     const plain = pair(seeds.success);
     expect(plain.merge('a', 'b').ok).toBe(false);
-    expect(plain.s.items).toHaveLength(2);
-    expect(plain.s.rng).toBe(seeds.success);
+    expect(plain.s.items).toHaveLength(3);
+    expect(plain.s.forgeRng).toBe(seeds.success);
+  });
+
+  it('稳妥锻造用 60 金或券得到 Lv4，第12关前不能锻', () => {
+    const g = new Game(newGameState(1));
+    g.s.items.push(
+      { id: 'a', kind: 'ruby', level: 3, x: null, y: null, rotated: false },
+      { id: 'b', kind: 'ruby', level: 3, x: 0, y: 0, rotated: false },
+    );
+    g.s.gold = 100;
+    expect(g.safeForge('a', 'b').ok).toBe(false);
+    g.s.level = 13;
+    expect(g.safeForge('a', 'b').ok).toBe(true);
+    expect(g.s.gold).toBe(40);
+    expect(g.s.items.find(i => i.id === 'b')?.level).toBe(4);
+    expect(g.s.items.find(i => i.id === 'a')).toBeUndefined();
+    const g2 = new Game(newGameState(2));
+    g2.s.level = 13;
+    g2.s.forgeVouchers = 1;
+    g2.s.gold = 0;
+    g2.s.items.push(
+      { id: 'a', kind: 'ruby', level: 3, x: null, y: null, rotated: false },
+      { id: 'b', kind: 'ruby', level: 3, x: 0, y: 0, rotated: false },
+    );
+    expect(g2.safeForge('a', 'b').ok).toBe(true);
+    expect(g2.s.gold).toBe(0);
+    expect(g2.s.forgeVouchers).toBe(0);
+    expect(g2.s.items.find(i => i.id === 'b')?.level).toBe(4);
+  });
+
+  it('15–20 关且不超过 30 格的旧档免费补到 6×6 并回满一次', () => {
+    const s = newGameState(4);
+    s.level = 19;
+    s.rows = 6;
+    s.cols = 5;
+    s.expansions = 2;
+    s.hp = 30;
+    delete s.a10Compensated;
+    const st = mem();
+    st.setItem(SAVE_KEY, JSON.stringify(s));
+    const loaded = loadGame(st);
+    expect(loaded.status).toBe('ok');
+    if (loaded.status !== 'ok') return;
+    expect(loaded.state.cols).toBe(6);
+    expect(loaded.state.rows).toBe(6);
+    expect(loaded.state.hp).toBe(loaded.state.maxHp);
+    expect(loaded.state.forgeVouchers).toBe(1);
+    expect(loaded.state.a10Compensated).toBe(true);
+    const again = loadGame(st);
+    st.setItem(SAVE_KEY, JSON.stringify(loaded.state));
+    const twice = loadGame(st);
+    expect(twice.status).toBe('ok');
+    if (twice.status === 'ok') expect(twice.state.forgeVouchers).toBe(1);
+    void again;
   });
 });

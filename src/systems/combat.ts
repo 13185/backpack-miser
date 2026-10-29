@@ -50,7 +50,9 @@ export interface CombatState {
   enrageStage: number;
   actors: Actor[];
   potions: { id: string; heal: number; used: boolean }[];
-  stats: { weapon: Record<string, number>; absorbed: number; healed: number };
+  stats: { weapon: Record<string, number>; absorbed: number; healed: number; luckShield?: number; luckClipped?: number };
+  luckCharm: boolean;
+  luckCharmUsed: boolean;
   tideCycle: boolean;
   baseArmor: number;
   tidePhase: 'high' | 'low' | null;
@@ -385,7 +387,9 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     t: 0, over: false, won: false, reason: '', hp: adjHp, maxHp: adjMaxHp, shield: startShield,
     mHp: startMainHp, mMaxHp: mainHp, mAtk: lv.atk, mInterval: ms(lv.interval), armor: startArmor, boss: !!lv.boss, hasted: false,
     enrageStage: 0, actors, potions,
-    stats: { weapon: {}, absorbed: 0, healed: 0 },
+    stats: { weapon: {}, absorbed: 0, healed: 0, luckShield: 0, luckClipped: 0 },
+    luckCharm: bag.some(i => i.kind === 'luck_charm'),
+    luckCharmUsed: false,
     tideCycle, baseArmor, tidePhase: tideCycle ? 'high' : null,
     compassDebuff, compassUntil: compassDebuff > 0 ? 8000 : 0,
     poisonStacks: 0, poisonCap, poisonNextAt: POISON_TICK,
@@ -771,6 +775,15 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
     s.shield += amount;
     if (a.maxUses !== undefined) a.uses = (a.uses ?? 0) + 1;
     ev.push({ t: s.t, type: 'shield', itemId: a.id, amount });
+    if (amount > 0 && s.luckCharm && !s.luckCharmUsed) {
+      s.luckCharmUsed = true;
+      const room = Math.max(0, cap - s.shield);
+      const extra = Math.min(6, room);
+      s.shield += extra;
+      s.stats.luckShield = (s.stats.luckShield ?? 0) + extra;
+      s.stats.luckClipped = (s.stats.luckClipped ?? 0) + (6 - extra);
+      ev.push({ t: s.t, type: 'shield', itemId: 'luck_charm', amount: extra });
+    }
   } else if (a.kind === 'heal') {
     if (a.maxUses !== undefined && (a.uses ?? 0) >= a.maxUses) return;
     const heal = Math.min(a.value, s.maxHp - s.hp);

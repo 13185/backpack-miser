@@ -1,7 +1,7 @@
 import type { LevelDef } from '../levels';
 import type { MonsterKind } from '../monsters';
 import { DUAL_UNIT_KINDS } from '../monsters';
-import { V3_STAGES, stageOf, type StageBudget } from './campaign';
+import { STORY_BOSS_BUDGET, V3_STAGES, stageOf, type StageBudget } from './campaign';
 
 /** 章节常备普通怪（真实 kind，非换皮） */
 const CHAPTER_MONSTERS: Record<number, MonsterKind[]> = {
@@ -97,10 +97,9 @@ function mechFor(stage: StageBudget, kind: MonsterKind): Partial<LevelDef> {
   }
   if (kind === 'tax_lord' || stage.level === 20) {
     return {
-      phaseShields: { thresholds: [0.75, 0.45, 0.20], shield: 80 },
-      heavyStrike: { every: 3, mult: 1.8, windupMs: 2400 },
-      openMShieldPct: 12,
-      mechSummary: '开场12%转盾；75%/45%/20%各获80护盾；每3击1.8倍重击（蓄力2.4秒）。',
+      phaseShields: { thresholds: [0.70, 0.35], shield: 60 },
+      heavyStrike: { every: 4, mult: 1.5, windupMs: 3000 },
+      mechSummary: '生命首次低于70%和35%时各获得60护盾；每4击1.5倍重击（提前3秒预告）。',
     };
   }
   if (kind === 'salt_captain' || stage.level === 25) {
@@ -269,7 +268,8 @@ function usesTide(kind: MonsterKind): boolean {
 
 export function stageToLevelDef(stage: StageBudget): LevelDef {
   const monster = monsterFor(stage);
-  const armor = armorFor(stage, monster);
+  const storyArmor = STORY_BOSS_BUDGET[stage.level]?.armor;
+  const armor = storyArmor === 0 ? undefined : (storyArmor ?? armorFor(stage, monster));
   const mech = mechFor(stage, monster);
   const dual = !!mech.dualUnits || DUAL_UNIT_KINDS.includes(monster) || monster === 'rats';
   const bossLevels = new Set([5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
