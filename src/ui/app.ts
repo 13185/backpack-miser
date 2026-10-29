@@ -1,4 +1,6 @@
 import { npcPortraitHtml } from '../art/npcArt';
+import { webAsset } from '../art/webAsset';
+import { V2_CLASSES } from '../config/v2/classes';
 import Phaser from 'phaser';
 import { BALANCE_VERSION, ECONOMY, FORGE_SAFE_COST, winHealAmount } from '../config/economy';
 import { LV4_GAMBLE, LV5_GAMBLE, gamblePct, type GambleOdds } from '../config/gamble';
@@ -114,14 +116,20 @@ export class App {
       <p class="sub">整理背包 · 合成装备 · 自动战斗 · <b>故事战役</b></p>
       ${message ? `<p class="warn">${esc(message)}</p>` : ''}
       ${corrupt ? `<p class="warn">⚠ ${esc(corrupt)}请开始新的冒险。</p>` : ''}
-      <div class="classPick" id="classPick" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0">
-        ${['merchant','guard','ranger'].map(id=>{
-          const names:Record<string,string>={merchant:'商旅',guard:'守卫',ranger:'游侠'};
-          const on=this.heroClass===id;
-          return `<button type="button" class="btn ${on?'gold':''}" data-class="${id}" style="min-width:88px">${names[id]}</button>`;
+      <div class="classPick" id="classPick">
+        ${V2_CLASSES.map(c => {
+          const on = this.heroClass === c.id;
+          const frames: string[] = [];
+          for (let i = 1; i <= 4; i++) frames.push(webAsset(`art/characters/${c.id}/${c.id}_idle_f${String(i).padStart(2, '0')}_512.png`));
+          for (let i = 1; i <= 6; i++) frames.push(webAsset(`art/characters/${c.id}/${c.id}_attack_f${String(i).padStart(2, '0')}_512.png`));
+          const reel = frames.map((src, n) => `<img class="${n < 4 ? 'idleF' : 'atkF'}" src="${src}" alt="" draggable="false">`).join('');
+          return `<button type="button" class="classCard ${on ? 'on' : ''}" data-class="${c.id}">
+            <span class="figReel" aria-hidden="true">${reel}</span>
+            <b class="nm">${c.name}</b>
+            <span class="blurb">${c.blurb[0]}<br>${c.blurb[1]}</span>
+          </button>`;
         }).join('')}
       </div>
-      <p class="muted" style="font-size:12px;line-height:1.55;margin:0 0 8px">商旅买价八五折、钱袋更赚，带着钱袋时武器+12%伤害。守卫最强的那面盾+25%护盾。游侠开场10点护盾，出手快25%，无视4点护甲。</p>
       <label class="toggle" style="justify-content:center"><input type="checkbox" id="tIron" ${this.ironman ? 'checked' : ''}/> 单命远征（战败即结束，无回档/援助）</label>
       <div class="btns">
         ${canContinue ? `<button class="btn gold big" id="tContinue">继续游戏（第${(lr as any).state.level}关）</button>` : ''}
@@ -1055,7 +1063,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.4.0 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.4.1 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;

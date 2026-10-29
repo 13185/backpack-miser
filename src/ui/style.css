@@ -175,6 +175,41 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .mini .icon { width: 22px; height: 22px; } .mini.lv3 { border-color: var(--gold2); } .mini.lv2 { border-color: #9fd3ff; }
 .btns { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; } .btns.col { flex-direction: column; }
 .titleCard { text-align: center; margin-top: 6vh; }
+.classPick { display: flex; gap: 8px; justify-content: center; align-items: stretch; flex-wrap: wrap; margin: 10px 0 4px; }
+.classCard {
+  flex: 1 1 108px; max-width: 168px; min-width: 96px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 6px 8px; border-radius: 14px; cursor: pointer;
+  color: var(--stitch); background: linear-gradient(#2c241c, #1a140f);
+  border: 2px solid #6b4424;
+  box-shadow: inset 0 0 0 1px #f4e7d055, 0 3px 0 #3c2818;
+}
+.classCard.on { border-color: var(--brass); background: linear-gradient(#3a2e22, #24180f); box-shadow: inset 0 0 0 1px var(--brass), 0 0 0 2px #e0bc6255, 0 3px 0 #3c2818; }
+.classCard .nm { color: var(--brass); font-size: 15px; }
+.classCard .blurb { font-size: 11px; line-height: 1.35; font-weight: normal; min-height: 2.7em; }
+.figReel { position: relative; width: 84px; height: 84px; margin-bottom: 2px; }
+.figReel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; opacity: 0; pointer-events: none; }
+.figReel img.idleF { animation: figIdle 2.2s infinite; }
+.figReel img.atkF { animation: figAtk 2.2s infinite; }
+.figReel img.idleF:nth-child(1) { animation-delay: 0s; }
+.figReel img.idleF:nth-child(2) { animation-delay: 0.28s; }
+.figReel img.idleF:nth-child(3) { animation-delay: 0.56s; }
+.figReel img.idleF:nth-child(4) { animation-delay: 0.84s; }
+.figReel img.atkF:nth-child(5) { animation-delay: 1.12s; }
+.figReel img.atkF:nth-child(6) { animation-delay: 1.30s; }
+.figReel img.atkF:nth-child(7) { animation-delay: 1.48s; }
+.figReel img.atkF:nth-child(8) { animation-delay: 1.66s; }
+.figReel img.atkF:nth-child(9) { animation-delay: 1.84s; }
+.figReel img.atkF:nth-child(10) { animation-delay: 2.02s; }
+@keyframes figIdle { 0%, 12.6% { opacity: 1; } 12.7%, 100% { opacity: 0; } }
+@keyframes figAtk { 0%, 8.1% { opacity: 1; } 8.2%, 100% { opacity: 0; } }
+@media (max-width: 420px) {
+  .classPick { gap: 6px; }
+  .classCard { flex-basis: 30%; min-width: 0; padding: 4px 3px 6px; }
+  .figReel { width: 72px; height: 72px; }
+  .classCard .nm { font-size: 13px; }
+  .classCard .blurb { font-size: 10px; }
+}
 .logo { display: flex; align-items: center; justify-content: center; gap: 8px; } .logo .icon { width: 56px; height: 56px; }
 .logo h1 { margin: 0; font-size: 40px; color: var(--gold2); text-shadow: 0 3px 0 #8a5a12, 0 0 20px #ffd45c88; letter-spacing: 4px; }
 .sub { color: var(--muted); margin: 6px 0; }
