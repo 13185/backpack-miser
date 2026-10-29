@@ -3,7 +3,7 @@
  * 播放时把音乐压低约 6 dB。跳过会停掉当前一句。
  */
 import { shoutTone, audioContext, setBarkPlayer } from './audio';
-import { barkBase } from './audioCatalog';
+import { barkBase, voiceBase } from './audioCatalog';
 import { loadAudioBuffer } from './buffers';
 import { duckForVoice } from './bgm';
 
@@ -55,6 +55,13 @@ export function stopVoice() {
 export function prefetchVoice(pathNoExt: string) {
   if (!voiceOn) return;
   void loadAudioBuffer(pathNoExt);
+}
+
+/** 只预取这一职业的开场句和喊声。 */
+export function prefetchClassVoice(hero: string) {
+  const open = voiceBase('OPEN03', hero);
+  if (open) prefetchVoice(open);
+  for (let n = 1; n <= 5; n++) prefetchVoice(barkBase(hero, n));
 }
 
 /** done 为 false 表示没播出来（静音、缺文件、解码失败）。 */

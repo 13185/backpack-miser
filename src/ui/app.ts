@@ -21,10 +21,11 @@ import { BattleScene } from '../scenes/BattleScene';
 import { AnimPreviewScene } from '../scenes/AnimPreviewScene';
 import { isV2Enabled } from '../config/v2';
 import type { HeroClassId } from '../art/types';
-import { maybeShout, monsterCue, setSound, sfx, unlockAudio } from './audio';
+import { maybeShout, monsterCue, resetShouts, setSound, sfx, unlockAudio } from './audio';
 import { duckBgm, prefetchBgm, setBgm, setMusicEnabled, startBgmIfUnlocked } from './bgm';
 import { voiceBase } from './audioCatalog';
-import { playVoice, prefetchVoice, setVoiceEnabled, setVoiceVolume } from './voice';
+import { resolveStart, restartTarget, shouldReplayOpening } from './classRun';
+import { playVoice, prefetchClassVoice, prefetchVoice, setVoiceEnabled, setVoiceVolume, stopVoice } from './voice';
 import { bossCinema, isBossStory, openingBeats } from './cinema';
 import { iconSvg } from './icons';
 
@@ -58,6 +59,8 @@ export class App {
   sellConfirm: { id: string; until: number } | null = null;
   speed = 1;
   heroClass: HeroClassId = 'merchant';
+  /** 刷新后第一次打开标题时，用存档职业点亮卡片；之后以玩家点的为准。 */
+  private titleClassSeeded = false;
   ironman = false;
   tutStep = -1;
   busy = false; // 防止快速连点
@@ -115,7 +118,10 @@ export class App {
     window.addEventListener('pointercancel', () => this.cancelDrag());
   }
   // ---------- 存档 ----------
-  private persist = (s: GameState) => saveGame(localStorage, s);
+  private persist = (s: GameState) => {
+    if (!this.game || this.game.s !== s) return;
+    saveGame(localStorage, s);
+  };
   private saveSettings() {
     saveSettings(localStorage, this.settings);
     setSound(this.settings.sound);
@@ -129,7 +135,13 @@ export class App {
   // ---------- 标题界面 ----------
   showTitle(message?: string) {
     const lr = loadGame(localStorage);
+    if (!this.titleClassSeeded) {
+      this.titleClassSeeded = true;
+      if (lr.status === 'ok') this.heroClass = lr.state.heroClass;
+    }
     const canContinue = lr.status === 'ok' && lr.state.phase !== 'victory' && lr.state.phase !== 'defeat';
+    const savedName = lr.status === 'ok' ? (V2_CLASSES.find(c => c.id === lr.state.heroClass)?.name ?? '') : '';
+    const pickedName = V2_CLASSES.find(c => c.id === this.heroClass)?.name ?? '';
     const corrupt = lr.status === 'corrupt' ? lr.message : '';
     const ov = $('overlay');
     ov.className = 'show title';
@@ -153,9 +165,10 @@ export class App {
         }).join('')}
       </div>
       <label class="toggle" style="justify-content:center"><input type="checkbox" id="tIron" ${this.ironman ? 'checked' : ''}/> 单命远征（战败即结束，无回档/援助）</label>
+      ${canContinue ? `<p class="muted">继续沿用存档里的<b>${esc(savedName)}</b>。点下面的职业再开始，是丢掉这份存档的新冒险。</p>` : ''}
       <div class="btns">
-        ${canContinue ? `<button class="btn gold big" id="tContinue">继续游戏（第${(lr as any).state.level}关）</button>` : ''}
-        <button class="btn ${canContinue ? '' : 'gold'} big" id="tNew">开始冒险</button>
+        ${canContinue ? `<button class="btn gold big" id="tContinue">继续${esc(savedName)} · 第${(lr as any).state.level}关</button>` : ''}
+        <button class="btn ${canContinue ? '' : 'gold'} big" id="tNew">以${esc(pickedName)}开始新冒险</button>
         <button class="btn" id="tArt" title="仅调试">美术预览</button>
       </div>
       <ul class="howto">
@@ -171,9 +184,16 @@ export class App {
     </div>`;
     $('tNew').onclick = () => {
       if (canContinue && !confirm('开始新冒险将覆盖当前存档，确定吗？')) return;
+      this.heroClass = resolveStart('new', lr.status === 'ok' ? lr.state : null, this.heroClass) as HeroClassId;
       sfx.click(); this.newGame();
     };
-    if (canContinue) $('tContinue').onclick = () => { sfx.click(); this.loadState((lr as any).state); };
+    if (canContinue) $('tContinue').onclick = () => {
+      this.heroClass = resolveStart('continue', lr.state, this.heroClass) as HeroClassId;
+      this.scene?.setHeroClass(this.heroClass);
+      stopVoice();
+      sfx.click();
+      this.loadState(lr.state);
+    };
     ($('tIron') as HTMLInputElement).onchange = e => { this.ironman = (e.target as HTMLInputElement).checked; };
     ($('tSound') as HTMLInputElement).onchange = e => { this.settings.sound = (e.target as HTMLInputElement).checked; this.saveSettings(); };
     ($('tVoice') as HTMLInputElement).oninput = e => {
@@ -185,6 +205,7 @@ export class App {
       (btn as HTMLElement).onclick = () => {
         this.heroClass = (btn as HTMLElement).dataset.class as HeroClassId;
         if (this.scene?.artReady) this.scene.setHeroClass(this.heroClass);
+        stopVoice();
         sfx.click(); this.showTitle();
       };
     });
@@ -211,17 +232,31 @@ export class App {
     setBgm('title');
   }
   newGame() {
+    this.silenceRun();
+    this.game = null;
     clearSave(localStorage);
     const st = newGameState((Date.now() ^ (Math.random() * 1e9)) >>> 0, { heroClass: this.heroClass, mode: this.ironman ? 'ironman' : 'story' });
     if (!st.seenDialogue.includes('ch1_intro')) st.pendingStoryId = 'ch1_intro';
     saveGame(localStorage, st);
+    this.scene?.setHeroClass(this.heroClass);
+    prefetchClassVoice(this.heroClass);
     this.tutStep = this.settings.tutorialDone ? -1 : 0;
     const start = () => this.loadState(st);
-    if (!this.settings.openingSeen) this.playOpening(this.heroClass, () => { this.settings.openingSeen = true; this.saveSettings(); start(); });
-    else start();
+    const hero = this.heroClass;
+    if (shouldReplayOpening(this.settings, hero)) {
+      this.playOpening(hero, () => {
+        this.settings.openingSeen = true;
+        this.settings.openingFor = hero;
+        this.saveSettings();
+        start();
+      });
+    } else start();
   }
   loadState(st: GameState) {
     applyBossPrep(st);
+    this.heroClass = st.heroClass;
+    this.scene?.setHeroClass(st.heroClass);
+    prefetchClassVoice(st.heroClass);
     this.game = new Game(st, this.persist);
     this.selected = null; this.closeOverlay();
     this.scene.setPreview(st.eliteActive ? applyEliteOverlay(getLevel(st.level), st.level) : getLevel(st.level), st.hp, st.maxHp, { eliteActive: !!st.eliteActive, levelNo: st.level });
@@ -920,7 +955,7 @@ export class App {
         <button class="btn ${won || !canCheckpoint ? 'gold' : ''} big" id="again">重新开始</button>
         <button class="btn big" id="toTitle">返回标题</button>
       </div></div>`;
-    $('again').onclick = () => { sfx.click(); this.newGame(); };
+    $('again').onclick = () => { sfx.click(); this.showRestartChoice(() => this.showEnd(won)); };
     $('toTitle').onclick = () => { this.showTitle(); };
     const endBtn = document.getElementById('endCampaign');
     if (endBtn) endBtn.onclick = () => { sfx.click(); this.showTitle('战役已结束。'); };
@@ -1167,7 +1202,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.5.0 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.5.1 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
@@ -1182,7 +1217,53 @@ export class App {
     $('sOpen').onclick = () => { this.closeOverlay(); this.playOpening(this.game?.s.heroClass ?? this.heroClass, () => this.showSettings()); };
     $('sTut').onclick = () => { this.closeOverlay(); this.tutStep = 0; this.render(); };
     $('sTitle').onclick = () => { if (this.game?.s.phase === 'battle') { this.scene.combat = null; } this.showTitle(); };
-    $('sRestart').onclick = () => { if (confirm('确定放弃当前进度并重新开始？')) { this.scene.combat = null; this.newGame(); } };
+    $('sRestart').onclick = () => this.showRestartChoice(() => this.showSettings());
+  }
+  /** 停掉战斗回调和正在说的话，免得旧职业的语音在新人开局后才播出来。 */
+  private silenceRun() {
+    stopVoice();
+    resetShouts();
+    duckBgm(false);
+    if (this.scene) {
+      this.scene.combat = null;
+      this.scene.paused = false;
+    }
+    const root = document.getElementById('cinema');
+    if (root) { root.hidden = true; root.innerHTML = ''; }
+    this.cinemaOn = false;
+  }
+  private abandonToTitle() {
+    this.silenceRun();
+    this.game = null;
+    this.selected = null;
+    clearSave(localStorage);
+    this.showTitle();
+  }
+  /** 局中或战败：先问是换职业，还是用当前职业重开。音量等设置不动。 */
+  private showRestartChoice(back: () => void) {
+    const current = (this.game?.s.heroClass ?? this.heroClass) as HeroClassId;
+    const name = V2_CLASSES.find(c => c.id === current)?.name ?? '';
+    const ov = $('overlay');
+    ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h3>重新开始</h3>
+      <p>现在是<b>${esc(name)}</b>。换职业或重开都会丢掉这一局的关卡、背包、临时包裹、金币和遗物。音量和音效设置会留下。</p>
+      <div class="btns col">
+        <button class="btn gold big" id="restartPick">重新选择职业</button>
+        <button class="btn big" id="restartSame">同职业再来</button>
+        <button class="btn" id="restartBack">返回</button>
+      </div></div>`;
+    $('restartPick').onclick = () => {
+      const plan = restartTarget('reselect', current);
+      if (plan.screen === 'title') this.abandonToTitle();
+    };
+    $('restartSame').onclick = () => {
+      const plan = restartTarget('same', current);
+      this.heroClass = (plan.heroClass ?? current) as HeroClassId;
+      this.scene?.setHeroClass(this.heroClass);
+      sfx.click();
+      this.newGame();
+    };
+    $('restartBack').onclick = () => back();
   }
 }
 export type { ItemKind, Level };

@@ -83,7 +83,8 @@ export function loadSettings(st: Storage): Settings {
   try {
     const s = JSON.parse(st.getItem(SETTINGS_KEY) || '{}');
     const voice = typeof s.voice === 'number' ? Math.max(0, Math.min(100, s.voice)) : 100;
-    return { sound: s.sound !== false, tutorialDone: !!s.tutorialDone, openingSeen: !!s.openingSeen, voice };
+    const openingFor = s.openingFor === 'merchant' || s.openingFor === 'guard' || s.openingFor === 'ranger' ? s.openingFor : undefined;
+    return { sound: s.sound !== false, tutorialDone: !!s.tutorialDone, openingSeen: !!s.openingSeen, voice, openingFor };
   }
   catch { return { sound: true, tutorialDone: false, openingSeen: false, voice: 100 }; }
 }

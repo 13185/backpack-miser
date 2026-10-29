@@ -23,6 +23,9 @@ export function unlockAudio() {
   }
 }
 export function audioContext(): AudioContext | null { unlockAudio(); return ctx; }
+export function resetShouts() {
+  for (const k of Object.keys(shoutAt)) delete shoutAt[k];
+}
 export function shoutTone(who: string) {
   tone(who === 'guard' ? 140 : who === 'ranger' ? 420 : 280, 0.28, 'triangle', 0.05, who === 'guard' ? -40 : 80);
 }
