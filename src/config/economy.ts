@@ -1,12 +1,12 @@
-export const BALANCE_VERSION = '3.3.0-story-growth';
+export const BALANCE_VERSION = '3.4.0-think';
 export const FORGE_SAFE_COST = 60;
 export const FORGE_RISK_UNLOCK = 12;
 export const FORGE_LEGEND_UNLOCK = 25;
 export const FORGE_VOUCHER_LEVELS = [12, 25, 35] as const;
 
 export function winHealAmount(maxHp: number, boss: boolean): number {
-  if (boss) return Math.max(10, Math.floor(maxHp * 0.20));
-  return Math.max(4, Math.floor(maxHp * 0.08));
+  if (boss) return Math.max(8, Math.floor(maxHp * 0.12));
+  return Math.max(6, Math.floor(maxHp * 0.08));
 }
 
 export interface BagExpansion {
@@ -32,11 +32,11 @@ export const ECONOMY = {
   refreshBase: 4, refreshStep: 2,
   lvl2Mult: 2.25, lvl3Mult: 5.2, sellRate: 0.38,
   winGold: (level: number) => 9 + (level - 1) * 2,
-  /** 普通胜利 max(4, 8%)；Boss 胜利 max(10, 20%)，不叠普通那一份 */
+  /** 普通胜利 max(6, 8%)；Boss 胜利 max(8, 12%)。够吃下下一关的第一击，补不满。 */
   healAfterWin: 0.08,
-  bossHealRate: 0.20,
-  bossHealFlat: 10,
-  winHealFlat: 4,
+  bossHealRate: 0.12,
+  bossHealFlat: 8,
+  winHealFlat: 6,
   /** 附录 A08：护盾上限 50%（坚守专精 60%） */
   shieldCapRate: 0.5, potionThreshold: 0.4,
   /** 45 秒狂暴，每 5 秒 +10 个百分点，90 秒超时 */

@@ -115,17 +115,14 @@ describe('遗物 A01/A07/A08/A11/A12', () => {
 
 
 describe('后期调参', () => {
-  it('故事战役首领使用附录 A04 预算，不再叠地狱倍率', async () => {
-    const { V3_STAGES, V3_STAGES_BASE, STORY_BOSS_BUDGET, HARD_BANDS, hardParams } = await import('../src/config/v3/campaign');
-    expect(V3_STAGES[0].hp).toBe(V3_STAGES_BASE[0].hp);
-    expect(V3_STAGES[19].hp).toBe(1100);
-    expect(V3_STAGES[19].damage).toBe(22);
-    expect(V3_STAGES[19].interval).toBe(3);
-    for (const [lv, b] of Object.entries(STORY_BOSS_BUDGET)) {
-      const stage = V3_STAGES[Number(lv) - 1];
-      expect(stage.hp).toBe(b.hp);
-      expect(stage.damage).toBe(b.damage);
-    }
+  it('故事战役在 A04 上再乘 3.4 压力，不再叠地狱倍率', async () => {
+    const { V3_STAGES, V3_STAGES_BASE, STORY_BOSS_BUDGET, HARD_BANDS, hardParams, applyStoryBudgets, applyPressure } = await import('../src/config/v3/campaign');
+    const pressed = applyPressure(applyStoryBudgets(V3_STAGES_BASE));
+    expect(V3_STAGES[0].hp).toBe(pressed[0].hp);
+    expect(V3_STAGES[0].hp).toBeGreaterThan(V3_STAGES_BASE[0].hp);
+    expect(STORY_BOSS_BUDGET[20].hp).toBe(1100);
+    expect(V3_STAGES[19].hp).toBe(pressed[19].hp);
+    expect(V3_STAGES[19].hp).not.toBe(1100);
     expect(HARD_BANDS.length).toBe(5);
     expect(hardParams(50).hp).toBeGreaterThan(hardParams(1).hp);
   });

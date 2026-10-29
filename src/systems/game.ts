@@ -225,14 +225,14 @@ function grantForgeVoucher(s: GameState, milestone: number) {
   s.forgeVouchers = (s.forgeVouchers ?? 0) + 1;
 }
 
-/** 首领关第一次进入准备：生命低于 60% 则补到 60%。嗜战契约不触发。 */
+/** 首领关第一次进入准备：生命低于 40% 则补到 40%。嗜战契约不触发。 */
 export function applyBossPrep(s: GameState) {
   if (s.phase !== 'prep' || !isBossLevel(s.level)) return;
   const done = s.bossPrep ?? [];
   if (done.includes(s.level)) return;
   s.bossPrep = [...done, s.level];
   if (s.relics.includes('K02')) return;
-  const floorHp = Math.floor(s.maxHp * 0.6);
+  const floorHp = Math.floor(s.maxHp * 0.40);
   if (s.hp < floorHp) s.hp = floorHp;
 }
 
@@ -409,7 +409,7 @@ export class Game {
     const g = this.prepOnly(); if (g) return g;
     const sl = this.s.shop.slots[slot]; if (!sl) return fail('没有这件商品。');
     if (sl.bought) return fail('本轮已购买过这件商品。');
-    let p = buyPrice(sl.kind, sl.level);
+    let p = buyPrice(sl.kind, sl.level, this.s.heroClass);
     if (this.s.relics.includes('C09')) p = Math.ceil(p * 0.9);
     if (this.s.relics.includes('K03')) p = Math.ceil(p * 1.2);
     const burTax = this.s.items.filter(i => i.kind === 'burden').reduce((a, i) => a + (i.burdenShopPct ?? 0), 0);
@@ -496,7 +496,7 @@ export class Game {
     this.s.settledToken = this.s.battleToken;
     const s = this.s; const lv = s.level;
     if (s.storyFlags.a06Pending) s.storyFlags = { ...s.storyFlags, a06Pending: false };
-    let bagGold = c.won ? computeBagGold(this.s.items, this.s.runes, this.s.doctrine) : 0;
+    let bagGold = c.won ? computeBagGold(this.s.items, this.s.runes, this.s.doctrine, this.s.heroClass) : 0;
     if (c.won && bagGold && this.s.relics.includes('C08')) bagGold = Math.floor(bagGold * 1.30);
     if (c.won && bagGold && this.s.relics.includes('K01')) bagGold = Math.floor(bagGold * 1.50);
     const ledgerGold = c.won ? computeLedgerBonus(this.s.items, this.s.gold) : 0;

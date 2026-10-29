@@ -32,7 +32,7 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     desc: v => `生命不高于40%时自动饮用，恢复${v}点生命。每场战斗一次，战后自动充能。` },
   ruby: { kind: 'ruby', name: '红宝石', w: 1, h: 1, rotatable: false, category: 'gem', values: v5([15, 25, 40], 48, 56), price: 10, color: '#ff5d6c',
     desc: v => `让上下左右紧贴的武器伤害+${v}%（对角无效，总加成最高100%）。` },
-  moneybag: { kind: 'moneybag', name: '钱袋', w: 1, h: 1, rotatable: false, category: 'bag', values: v5([2, 5, 8], 10, 12), price: 13, color: '#ffd45c',
+  moneybag: { kind: 'moneybag', name: '钱袋', w: 1, h: 1, rotatable: false, category: 'bag', values: v5([1, 3, 5], 7, 9), price: 13, color: '#ffd45c',
     desc: v => `开战时在背包中，胜利后额外获得${v}金币。失败无收益。吉利达织造坊出品。` },
   spear: {
     kind: 'spear', name: '贯阵长矛', w: 1, h: 4, rotatable: true, category: 'weapon',

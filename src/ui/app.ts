@@ -121,6 +121,7 @@ export class App {
           return `<button type="button" class="btn ${on?'gold':''}" data-class="${id}" style="min-width:88px">${names[id]}</button>`;
         }).join('')}
       </div>
+      <p class="muted" style="font-size:12px;line-height:1.55;margin:0 0 8px">商旅买价八五折、钱袋更赚，带着钱袋时武器+12%伤害。守卫最强的那面盾+25%护盾。游侠开场10点护盾，出手快25%，无视4点护甲。</p>
       <label class="toggle" style="justify-content:center"><input type="checkbox" id="tIron" ${this.ironman ? 'checked' : ''}/> 单命远征（战败即结束，无回档/援助）</label>
       <div class="btns">
         ${canContinue ? `<button class="btn gold big" id="tContinue">继续游戏（第${(lr as any).state.level}关）</button>` : ''}
@@ -401,7 +402,7 @@ export class App {
     const rc = refreshCost(s.shop.refreshes, s.doctrine, s.heroClass, s.level);
     $('shop').innerHTML = `<div class="ptitle">🏪 商店 <small>购买的装备进入临时区</small></div>
       <div class="shopRow">${s.shop.slots.map((sl, i) => {
-        const p = buyPrice(sl.kind, sl.level); const poor = s.gold < p; const d = ITEMS[sl.kind];
+        const p = buyPrice(sl.kind, sl.level, s.heroClass); const poor = s.gold < p; const d = ITEMS[sl.kind];
         return `<div class="shopCard ${sl.bought ? 'bought' : ''}"><div class="detIcon lv${sl.level}" style="--c:${d.color}">${iconSvg(sl.kind)}<div class="lvBadge">Lv${sl.level}</div></div>
           <div class="sName">${d.name} Lv${sl.level}</div><div class="sDesc">${d.desc(d.values[sl.level - 1])}</div>
           <button class="btn small ${sl.bought ? '' : 'gold'}" data-buy="${i}" ${sl.bought || poor || !prep ? 'disabled' : ''}>${sl.bought ? '已购买' : poor ? `金币不足（${p}）` : `<span class="coin"></span>${p} 购买`}</button></div>`;
@@ -1054,7 +1055,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.3.0 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.4.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;

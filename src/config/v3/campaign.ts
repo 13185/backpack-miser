@@ -117,10 +117,64 @@ export const V3_STAGES_BASE: StageBudget[] = [
 ];
 
 /**
- * 3.3.0：背包在首领后继续长大，后期数值按新战力曲线回缩。
- * 段形仍是五段（1–10 逐步 / 10–20 明显 / 20–30 巨大 / 30–40 再抬 / 40–50 再抬）。无难度选择。
+ * 3.4.0：在故事战役底稿上再压一档。没有难度选择。
+ * 五段：1–10 逐步，10–20 每关明显更硬，20–30 大步，30–40 再抬一倍手感，40–50 再翻上去。
+ * 挂机应在 8–12 关倒下；随手买武器的人卡在 10–20；每一关都在算的人后期经常剩不到三成血。
  */
-export const HARD_TUNE_VERSION = '3.3.0-story-growth' as const;
+export const HARD_TUNE_VERSION = '3.4.0-think' as const;
+
+interface Pressure { hp: number; dmg: number; interval: number; gold: number }
+const PRESSURE_BANDS = [
+  { to: 10, hp0: 1.10, hp1: 1.48, d0: 1.10, d1: 1.50, i0: 1.00, i1: 0.94, g0: 0.62, g1: 0.45 },
+  { to: 20, hp0: 1.48, hp1: 1.42, d0: 1.50, d1: 1.32, i0: 0.94, i1: 0.93, g0: 0.45, g1: 0.40 },
+  { to: 30, hp0: 1.42, hp1: 1.36, d0: 1.32, d1: 1.24, i0: 0.93, i1: 0.92, g0: 0.40, g1: 0.38 },
+  { to: 40, hp0: 1.36, hp1: 1.48, d0: 1.24, d1: 1.36, i0: 0.92, i1: 0.90, g0: 0.38, g1: 0.34 },
+  { to: 50, hp0: 1.48, hp1: 1.62, d0: 1.36, d1: 1.50, i0: 0.90, i1: 0.88, g0: 0.34, g1: 0.30 },
+] as const;
+
+/** 相对当前故事底稿（普通关=底稿，首领=A04）的倍率。关卡边界两边相接。 */
+export function pressureAt(level: number): Pressure {
+  const lv = Math.max(1, Math.min(50, Math.floor(level)));
+  let prev = 1;
+  for (const b of PRESSURE_BANDS) {
+    if (lv <= b.to) {
+      const span = b.to - prev;
+      const t = span <= 0 ? 1 : (lv - prev) / span;
+      const lerp = (a: number, c: number) => a + (c - a) * t;
+      return {
+        hp: Math.round(lerp(b.hp0, b.hp1) * 1000) / 1000,
+        dmg: Math.round(lerp(b.d0, b.d1) * 1000) / 1000,
+        interval: Math.round(lerp(b.i0, b.i1) * 1000) / 1000,
+        gold: Math.round(lerp(b.g0, b.g1) * 1000) / 1000,
+      };
+    }
+    prev = b.to;
+  }
+  const last = PRESSURE_BANDS[PRESSURE_BANDS.length - 1];
+  return { hp: last.hp1, dmg: last.d1, interval: last.i1, gold: last.g1 };
+}
+
+export function applyPressure(stages: StageBudget[]): StageBudget[] {
+  return stages.map(s => {
+    const p = pressureAt(s.level);
+    // 首领自带重击和护甲。20 关后不再把基础伤害按普通关的倍率整段抬上去，否则一击就把认真构筑也秒了。
+    let hpM = p.hp;
+    let dmgM = p.dmg;
+    if (!s.boss && s.level >= 20) {
+      hpM = Math.min(hpM, 1.38);
+      dmgM = Math.min(dmgM, 1.20);
+    }
+    if (s.boss && s.level >= 40) { hpM *= 0.72; dmgM *= 0.64; }
+    else if (s.boss && s.level >= 20) { hpM *= 0.82; dmgM *= 0.74; }
+    return {
+      ...s,
+      hp: Math.max(1, Math.round(s.hp * hpM)),
+      damage: Math.max(1, Math.round(s.damage * dmgM)),
+      interval: Math.max(1.55, Math.round(s.interval * p.interval * 100) / 100),
+      gold: Math.max(4, Math.round(s.gold * p.gold)),
+    };
+  });
+}
 
 /** 附录 A04：故事战役首领的最终预算，不再叠地狱倍率。 */
 export const STORY_BOSS_BUDGET: Record<number, { hp: number; damage: number; interval: number; armor: number }> = {
@@ -268,7 +322,7 @@ function applyProgressFloor(stages: StageBudget[]): StageBudget[] {
 export const HELL_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
   V3_STAGES_BASE.map(applyLateTune).map(applyHardTune),
 ));
-export const V3_STAGES: StageBudget[] = applyStoryBudgets(V3_STAGES_BASE);
+export const V3_STAGES: StageBudget[] = applyPressure(applyStoryBudgets(V3_STAGES_BASE));
 export function stageOf(level: number): StageBudget {
   const s = V3_STAGES[level - 1];
   if (!s) throw new Error(`无效关卡 ${level}`);

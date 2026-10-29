@@ -1,6 +1,6 @@
 # Boss 属性审计（3.3.0 故事战役）
 
-默认对局使用 `V3_STAGES = applyStoryBudgets(V3_STAGES_BASE)`，`getLevel` 读的就是这张表。地狱乘区仍留在 `HELL_STAGES`，不进入 `getLevel`。
+3.4.0 的默认对局是 `applyPressure(applyStoryBudgets(V3_STAGES_BASE))`。下面的 A04 表是压力倍率之前的首领底稿。`getLevel` 读的是乘过压力之后的生命、伤害、间隔和金币。技能和护甲仍按 A04 和怪物表，不另乘。地狱乘区仍留在 `HELL_STAGES`，不进入 `getLevel`。
 
 线上在改回附录 A04 之前，实际是 3.3.0 地狱曲线（`3.3.0-lv5-gamble`，第 20 关约 2105 生命、33 伤害、两套技能叠在税金领主上），不是 3.2.1。本文件记录改回 A04 之后、并且用当前 `getLevel` 复核过的来源。
 

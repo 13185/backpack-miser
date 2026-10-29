@@ -8,6 +8,7 @@ import { V3_RELICS } from '../src/config/v3/relics';
 import { runeLegalForItem, type RuneId } from '../src/config/v3/runes';
 import type { HeroClass, ItemInstance, ItemKind } from '../src/models/types';
 import { simulate } from '../src/systems/combat';
+import { FORGE_SAFE_COST } from '../src/config/economy';
 import { buyPrice, expansionCost, refreshCost, sellPrice } from '../src/systems/economy';
 import { Game, endingAvailability, newGameState } from '../src/systems/game';
 import { canMerge } from '../src/systems/merge';
@@ -125,6 +126,37 @@ function arrange(g: Game, want: ItemKind[], keep: Partial<Record<ItemKind, numbe
   for (const it of g.tempItems) g.sell(it.id);
 }
 
+/** 专家按职业花钱。商旅留两只钱袋并多刷新；守卫优先锻盾且至少留两面在跳；游侠优先锻匕首，不把盾合成掉。 */
+function expertEconomy(g: Game, st: Strategy) {
+  const s = g.s;
+  const keepBags = st.heroClass === 'merchant' ? 1 : 0;
+  if (s.level >= 8) {
+    const bags = g.bagItems.filter(i => i.kind === 'moneybag').sort((a, b) => a.level - b.level);
+    for (let i = 0; i < bags.length - keepBags; i++) g.sell(bags[i].id);
+  }
+  if (st.heroClass === 'merchant' && s.gold >= 14 + refreshCost(s.shop.refreshes, s.doctrine, s.heroClass, s.level)) {
+    g.refreshShop();
+  }
+  const held = s.items.reduce((m, it) => it.kind === 'luck_charm' ? Math.max(m, it.level) : m, 0);
+  if (g.bagItems.some(i => i.kind === 'shield' || i.kind === 'fold_wall')) {
+    const idx = s.shop.slots.findIndex(sl => !sl.bought && sl.kind === 'luck_charm' && sl.level > held);
+    if (idx >= 0) {
+      const sl = s.shop.slots[idx];
+      if (s.gold - buyPrice(sl.kind, sl.level, s.heroClass) >= 8) g.buy(idx);
+    }
+  }
+  arrange(g, st.want, st.keep);
+  // 两件同时出手通常比合成一件更赚。只在格子快满时，把职业主装备稳妥合成来腾位。
+  const free = s.cols * s.rows - g.bagItems.length;
+  if (s.level > 12 && free <= 3) {
+    const prefer = st.heroClass === 'guard' ? 'shield' : st.heroClass === 'ranger' ? 'dagger' : 'dagger';
+    const pair = g.bagItems.filter(i => i.kind === prefer && i.level === 3);
+    if (pair.length >= 3 && ((s.forgeVouchers ?? 0) > 0 || s.gold >= FORGE_SAFE_COST + 8)) {
+      g.safeForge(pair[0].id, pair[1].id);
+    }
+  }
+}
+
 export interface ChapterLine { chapter: number; level: number; hp: number; maxHp: number; gold: number; retries: number }
 export interface RunRecord {
   strategy: string; strategyName: string; seed: number; heroClass: HeroClass; mode: 'story' | 'ironman';
@@ -143,7 +175,13 @@ export interface RunRecord {
   wallMs: number;
 }
 
-export interface RunOpts { mode?: 'story' | 'ironman'; maxRetries?: number; assistAfter?: number; untilLevel?: number; game?: Game; stopWhen?: (g: Game) => boolean }
+export interface RunOpts {
+  mode?: 'story' | 'ironman'; maxRetries?: number; assistAfter?: number; untilLevel?: number; game?: Game;
+  stopWhen?: (g: Game) => boolean;
+  /** 专家：卖掉多余钱袋、补幸运符、有券或金币时稳妥锻造 */
+  forge?: boolean;
+  onFight?: (info: { won: boolean; level: number; hp: number; maxHp: number }) => void;
+}
 
 export function playStrategy(st: Strategy, seed: number, opts: RunOpts = {}): RunRecord {
   const t0 = Date.now();
@@ -248,12 +286,13 @@ export function playStrategy(st: Strategy, seed: number, opts: RunOpts = {}): Ru
           const need = (st.keep?.[sl.kind] ?? 0) > s.items.filter(x => x.kind === sl.kind).length;
           if (sl.bought || (!want.includes(sl.kind) && !need)) return;
           if (sl.kind === 'moneybag' && (s.items.filter(x => x.kind === 'moneybag').length >= 3 || s.level >= 30)) return;
-          if (s.gold - buyPrice(sl.kind, sl.level) >= keepGold) g.buy(i);
+          if (s.gold - buyPrice(sl.kind, sl.level, s.heroClass) >= keepGold) g.buy(i);
         });
         arrange(g, want, st.keep);
         if (s.gold >= 20 + refreshCost(s.shop.refreshes, s.doctrine, s.heroClass)) g.refreshShop(); else break;
       }
       arrange(g, want, st.keep);
+      if (opts.forge) expertEconomy(g, st);
       // 经济流后期把钱袋换成战力
       if (st.id === 'poison_econ' && s.level >= 36) for (const m of g.bagItems.filter(i => i.kind === 'moneybag' && i.level < 3)) { g.sell(m.id); arrange(g, want, st.keep); }
       const now = sig();
@@ -263,7 +302,9 @@ export function playStrategy(st: Strategy, seed: number, opts: RunOpts = {}): Ru
       const r = g.startBattle();
       if (!r.ok) { arrange(g, want, st.keep); if (!g.startBattle().ok) break; }
     } else if (s.phase === 'battle') {
-      const c = g.makeCombat(); simulate(c); g.settle(c);
+      const c = g.makeCombat(); simulate(c);
+      opts.onFight?.({ won: c.won, level: s.level, hp: c.hp, maxHp: c.maxHp });
+      g.settle(c);
       const lv = g.s.last!.level;
       rec.reached = Math.max(rec.reached, c.won ? lv : lv - 1);
       if (c.won && lv % 5 === 0) { rec.bossResults[lv] ??= { win: 0, loss: 0 }; rec.bossResults[lv].win++; }

@@ -2,13 +2,14 @@ import { ECONOMY, type BagExpansion } from '../config/economy';
 import { ITEMS } from '../config/items';
 import type { ItemKind, Level } from '../models/types';
 
-export function buyPrice(kind: ItemKind, level: Level): number {
-  const p = ITEMS[kind].price;
-  if (level === 1) return p;
-  if (level === 2) return Math.ceil(p * ECONOMY.lvl2Mult);
-  if (level === 3) return Math.ceil(p * ECONOMY.lvl3Mult);
-  if (level === 4) return Math.ceil(p * ECONOMY.lvl3Mult * 2);
-  return Math.ceil(p * ECONOMY.lvl3Mult * 4);
+export function buyPrice(kind: ItemKind, level: Level, heroClass?: string): number {
+  let p = ITEMS[kind].price;
+  if (level === 2) p = Math.ceil(p * ECONOMY.lvl2Mult);
+  else if (level === 3) p = Math.ceil(p * ECONOMY.lvl3Mult);
+  else if (level === 4) p = Math.ceil(p * ECONOMY.lvl3Mult * 2);
+  else if (level >= 5) p = Math.ceil(p * ECONOMY.lvl3Mult * 4);
+  if (heroClass === 'merchant') p = Math.max(1, Math.ceil(p * 0.85));
+  return p;
 }
 export function sellPrice(kind: ItemKind, level: Level): number {
   if (kind === 'luck_charm' && level === 1) return 8;
@@ -28,7 +29,7 @@ export function resolveCharmOffer(heldLevel: number, rolledLevel: Level): Level 
 export function refreshCost(refreshes: number, doctrine?: string | null, heroClass?: string, level = 1): number {
   let c = ECONOMY.refreshBase + refreshes * ECONOMY.refreshStep;
   if (doctrine === 'T06') c = Math.max(1, c - 1);
-  if (heroClass === 'merchant' && refreshes === 0) c = Math.max(1, c - 1);
+  if (heroClass === 'merchant') c = Math.max(1, c - 2);
   // pass4：31关后刷新更贵，消化闲置金币
   if (level >= 31) c += 2;
   if (level >= 41) c += 2;

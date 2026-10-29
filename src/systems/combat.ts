@@ -252,6 +252,8 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
       // R07 孤勇：武器数≤2 时 +25%
       if (hasRelic(relics, 'R07') && weaponCount <= 2) value = Math.round(value * 1.25);
       let armorIgnore = runeOn(runes, it.id, 'U02') ? 1 : 0;
+      if (mods.heroClass === 'ranger') armorIgnore += 4;
+      if (mods.heroClass === 'merchant' && bag.some(b => b.kind === 'moneybag')) value = Math.round(value * 1.12);
       const armorIgnorePct = it.kind === 'warhammer' ? 0.5 : 0;
       const shots = it.kind === 'crossbow' ? 2 : 1;
       let splashPct = it.kind === 'chain_hammer' ? (hasRelic(relics, 'R04') ? 0.75 : 0.5) : 0;
@@ -283,6 +285,11 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
         maxUses: d.maxTriggers, uses: 0,
       });
     }
+  }
+  if (mods.heroClass === 'guard') {
+    const shields = actors.filter(a => a.kind === 'shield');
+    const best = shields.reduce<typeof shields[number] | undefined>((m, a) => (!m || a.value > m.value ? a : m), undefined);
+    if (best) best.shieldMult = (best.shieldMult ?? 1) * 1.25;
   }
   for (const it of bag) {
     const d = ITEMS[it.kind];
@@ -323,6 +330,7 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
   }
   // C12 开场护盾
   let openShield = hasRelic(relics, 'C12') ? 8 : 0;
+  if (mods.heroClass === 'ranger') openShield += 10;
   // K04 脆弱水晶：伤害+30%，玩家承伤×1.2 — 在受击处处理
   let relicDmgMult = 1;
   let adjMaxHp = maxHp;
@@ -368,8 +376,8 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     startMShield = Math.max(1, Math.round(mainHp * (lv.openMShieldPct / 100)));
     startMainHp = Math.max(1, mainHp - startMShield);
   }
-  // 游侠：前5秒武器间隔-10%（首击时间按缩短后的间隔）
-  if (mods.heroClass === 'ranger') for (const a of actors) if (a.kind === 'weapon' || a.kind === 'needle') a.nextAt = Math.round(a.interval * 0.9);
+  // 游侠：武器和毒针全程间隔 ×0.84（首击也按缩短后的间隔）
+  if (mods.heroClass === 'ranger') for (const a of actors) if (a.kind === 'weapon' || a.kind === 'needle') a.nextAt = Math.round(a.interval * 0.75);
   // K01/K04/A12 最大生命惩罚已在 A12；K01 另 -15%
   if (hasRelic(relics, 'K01')) {
     adjMaxHp = Math.max(1, Math.floor(adjMaxHp * 0.85));
@@ -778,7 +786,7 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
     if (a.maxUses !== undefined && (a.uses ?? 0) >= a.maxUses) return;
     const cap = Math.floor(s.maxHp * s.shieldCapRate);
     let gen = Math.round(a.value * (a.shieldMult ?? 1));
-    if (s.heroClass === 'guard' && !s.guardBonusUsed) { gen += 1; s.guardBonusUsed = true; }
+    if (s.heroClass === 'guard') s.guardBonusUsed = true;
     const amount = Math.max(0, Math.min(gen, cap - s.shield));
     s.shield += amount;
     if (a.maxUses !== undefined) a.uses = (a.uses ?? 0) + 1;
@@ -907,8 +915,8 @@ export function stepCombat(s: CombatState, dtMs: number): CombatEvent[] {
       } else if (a.kind === 'monster' && s.overheatPausedUntil > s.t) {
         a.nextAt = s.overheatPausedUntil;
       } else {
-        const fast = s.heroClass === 'ranger' && (a.kind === 'weapon' || a.kind === 'needle') && s.t < 5000;
-        a.nextAt = s.t + (fast ? Math.round(a.interval * 0.9) : a.interval);
+        const fast = s.heroClass === 'ranger' && (a.kind === 'weapon' || a.kind === 'needle');
+        a.nextAt = s.t + (fast ? Math.round(a.interval * 0.75) : a.interval);
       }
     }
   }
@@ -943,7 +951,7 @@ export function computeWeaponCombatValue(
 }
 
 /** 结算用：钱袋金币（含 U07 / T06） */
-export function computeBagGold(items: ItemInstance[], runes: RuneInstance[], doctrine: string | null): number {
+export function computeBagGold(items: ItemInstance[], runes: RuneInstance[], doctrine: string | null, heroClass?: string): number {
   const bag = items.filter(inBag).filter(i => i.kind === 'moneybag');
   let total = 0;
   for (const i of bag) {
@@ -952,6 +960,7 @@ export function computeBagGold(items: ItemInstance[], runes: RuneInstance[], doc
     total += g;
   }
   if (doctrine === 'T06') total = Math.round(total * 1.15);
+  if (heroClass === 'merchant' && total > 0) total = Math.round(total * 1.35);
   return total;
 }
 
