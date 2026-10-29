@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "image": "ranger_keyframes.png",
+    "size": {
+      "w": 3072,
+      "h": 3072
+    },
+    "scale": 1,
+    "format": "RGBA8888",
+    "canvasSize": [
+      1024,
+      1024
+    ],
+    "footAnchor": [
+      512,
+      928
+    ],
+    "note": "KEYFRAME HOLD only — not continuous multi-frame cycles."
+  },
+  "frames": {
+    "idle": {
+      "name": "idle",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "move": {
+      "name": "move",
+      "frame": {
+        "x": 1024,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "attack": {
+      "name": "attack",
+      "frame": {
+        "x": 2048,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "defend": {
+      "name": "defend",
+      "frame": {
+        "x": 0,
+        "y": 1024,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "hurt": {
+      "name": "hurt",
+      "frame": {
+        "x": 1024,
+        "y": 1024,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "drink": {
+      "name": "drink",
+      "frame": {
+        "x": 2048,
+        "y": 1024,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "special": {
+      "name": "special",
+      "frame": {
+        "x": 0,
+        "y": 2048,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "victory": {
+      "name": "victory",
+      "frame": {
+        "x": 1024,
+        "y": 2048,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    },
+    "defeat": {
+      "name": "defeat",
+      "frame": {
+        "x": 2048,
+        "y": 2048,
+        "w": 1024,
+        "h": 1024
+      },
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 1024,
+        "h": 1024
+      },
+      "sourceSize": {
+        "w": 1024,
+        "h": 1024
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.90625
+      },
+      "footAnchorPx": [
+        512,
+        928
+      ],
+      "rotated": false,
+      "trimmed": false
+    }
+  },
+  "animations": {
+    "idle": [
+      "idle"
+    ],
+    "move": [
+      "move"
+    ],
+    "attack": [
+      "attack"
+    ],
+    "defend": [
+      "defend"
+    ],
+    "hurt": [
+      "hurt"
+    ],
+    "drink": [
+      "drink"
+    ],
+    "special": [
+      "special"
+    ],
+    "victory": [
+      "victory"
+    ],
+    "defeat": [
+      "defeat"
+    ]
+  }
+}
