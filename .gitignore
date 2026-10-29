@@ -2,5 +2,6 @@ node_modules/
 dist/
 dist-single/
 release/
+public/art/web/
 *.log
 .DS_Store

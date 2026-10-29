@@ -1,3 +1,4 @@
+import { webAsset } from '../art/webAsset';
 import type { ItemKind } from '../models/types';
 /** 本地 SVG 装备图标（viewBox 0 0 64 64） */
 const S: Partial<Record<ItemKind, string>> = {
@@ -32,5 +33,5 @@ function svgIcon(kind: ItemKind): string {
 export function iconSvg(kind: ItemKind): string {
   if (!PAINTED.has(kind)) return svgIcon(kind);
   const fb = svgIcon(kind).replace(/"/g, '&quot;');
-  return `<img src="art/items/${kind}.png" class="icon" alt="" aria-hidden="true" draggable="false" data-fb="${fb}" onerror="this.outerHTML=this.dataset.fb">`;
+  return `<img src="${webAsset(`art/items/${kind}.png`)}" class="icon" alt="" aria-hidden="true" draggable="false" data-fb="${fb}" onerror="this.outerHTML=this.dataset.fb">`;
 }

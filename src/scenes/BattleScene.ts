@@ -6,7 +6,9 @@ import { CHAPTER_BG, MONSTER_ART, MONSTER_BASE } from '../config/monsters';
 import { stepCombat, type CombatEvent, type CombatState } from '../systems/combat';
 import type { ItemInstance } from '../models/types';
 import { drawHero, drawMonster } from './art';
-import { allVariantArt, pickEnemyArt, ENEMY_FOOT_ORIGIN_Y } from '../art/enemyArt';
+import { pickEnemyArt, ENEMY_FOOT_ORIGIN_Y } from '../art/enemyArt';
+import { heroArtEntries, levelArtEntries, loadTextures } from '../art/artLoad';
+import { CAMPAIGN_LENGTH } from '../config/v3';
 import { V3_LEVELS } from '../config/v3/levels';
 import { HeroSprite } from '../art/HeroSprite';
 import type { HeroClassId } from '../art/types';
@@ -47,26 +49,16 @@ export class BattleScene extends Phaser.Scene {
   artReady = false;
   private footMark: Phaser.GameObjects.Arc | null = null;
   private monIsBoss = false;
+  private artGen = 0;
+  private heroToken = 0;
+  private combatArtClass: HeroClassId | null = null;
 
   constructor() { super('battle'); }
 
   preload() {
-    // 缺失时不阻断：create 会回退程序绘制
-    const asset = (rel: string) => rel; // vite base ./
-    for (const bg of Object.values(CHAPTER_BG)) this.load.image(bg.key, asset(bg.src));
-    for (const art of Object.values(MONSTER_ART)) {
-      if (art) this.load.image(art.key, asset(art.src));
-    }
-    for (const art of allVariantArt()) this.load.image(art.key, asset(art.src));
-    HeroSprite.preload(this, 'merchant');
-    HeroSprite.preload(this, 'guard');
-    HeroSprite.preload(this, 'ranger');
-    this.load.on('loaderror', (file: { key: string; src?: string }) => {
-      console.warn('[art] 资源缺失:', file.key, file.src || '');
-    });
-    this.load.on('complete', () => {
-      const ok = this.textures.exists('hero_merchant_idle');
-      console.info('[art] preload complete, merchant_idle=', ok, 'keys=', this.textures.getTextureKeys().filter(k => k.startsWith('hero_')).length);
+    // 启动不拉全库。缺图只警告，create 立刻继续，画面回退程序绘制。
+    this.load.on('loaderror', (file: { key?: string; src?: string }) => {
+      console.warn('[art] 资源缺失:', file?.key || '', file?.src || '');
     });
   }
 
@@ -106,6 +98,7 @@ export class BattleScene extends Phaser.Scene {
     console.info('[art] tryBuildHero', idleKey, has);
     try {
       if (has) {
+        this.tweens.killTweensOf(this.heroGfx);
         this.heroSprite?.destroy();
         this.heroSprite = new HeroSprite(this, this.heroClass, 0, 0);
         this.heroGfx?.setVisible(false);
@@ -131,6 +124,12 @@ export class BattleScene extends Phaser.Scene {
     if (!this.artReady) return;
     this.tryBuildHero();
     this.layout();
+    const token = ++this.heroToken;
+    void loadTextures(this, heroArtEntries(cls, ['idle'])).then(() => {
+      if (token !== this.heroToken) return;
+      this.tryBuildHero();
+      this.layout();
+    });
   }
 
   private layout() {
@@ -241,10 +240,39 @@ export class BattleScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.mon); this.mon.setScale(this.heroSprite ? 1 : this.heroGfx.scale);
     this.tweens.add({ targets: this.mon, scaleY: (this.mon.scaleX) * 0.94, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.inOut' });
     this.heroSprite?.play('idle', true);
+    const gen = ++this.artGen;
+    void this.finishArt(gen, this.previewLevelNo, this.eliteActive);
+  }
+
+  /** 只拉当前关 + 当前职业待机，完成后预取下一关。失败保持程序绘制。 */
+  private async finishArt(gen: number, levelNo: number, elite: boolean) {
+    try {
+      await loadTextures(this, [
+        ...levelArtEntries(levelNo, elite),
+        ...heroArtEntries(this.heroClass, ['idle']),
+      ]);
+    } catch (e) {
+      console.warn('[art] 本关素材加载失败', e);
+    }
+    if (gen !== this.artGen || !this.level) return;
+    this.applyBackground(this.level.chapter ?? 1);
+    this.applyMonsterArt(this.level);
+    this.tryBuildHero();
+    this.layout();
+    if (levelNo < CAMPAIGN_LENGTH) {
+      void loadTextures(this, levelArtEntries(levelNo + 1, false));
+    }
+  }
+
+  private ensureCombatArt() {
+    if (this.combatArtClass === this.heroClass) return;
+    this.combatArtClass = this.heroClass;
+    void loadTextures(this, heroArtEntries(this.heroClass, ['move', 'attack', 'defend', 'hurt', 'drink', 'special', 'victory', 'defeat']));
   }
 
   start(c: CombatState, items: ItemInstance[], hooks: BattleHooks) {
     this.combat = c; this.items = items; this.hooks = hooks; this.endTimer = -1;
+    this.ensureCombatArt();
     this.heroSprite?.play('idle', true);
   }
 

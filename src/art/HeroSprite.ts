@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { heroArtEntries } from './artLoad';
 import {
   HERO_ANIM_HOLD_MS, HERO_ANIM_PRIORITY, HERO_FOOT_ORIGIN,
   type HeroAnimState, type HeroClassId,
@@ -152,28 +153,10 @@ export class HeroSprite {
     this.play('idle', true);
   }
 
-  static preload(scene: Phaser.Scene, cls: HeroClassId) {
-    for (const st of STATES) {
-      const key = frameKey(cls, st);
-      if (!scene.textures.exists(key)) {
-        scene.load.image(key, `art/characters/${cls}/${cls}_${st}_512.png`);
-      }
-    }
-    // 多帧：按 MULTI 表预加载已存在帧
-    const multiCounts: Partial<Record<HeroClassId, Partial<Record<HeroAnimState, number>>>> = {
-      merchant: { idle: 4, move: 8, attack: 6, defend: 4, hurt: 3, drink: 6, special: 6, victory: 6, defeat: 6 },
-      guard: { idle: 4, move: 8, attack: 6, defend: 4, hurt: 3, drink: 6, special: 6, victory: 6, defeat: 6 },
-      ranger: { idle: 4, move: 8, attack: 6, defend: 4, hurt: 3, drink: 6, special: 6, victory: 6, defeat: 6 },
-    };
-    const counts = multiCounts[cls];
-    if (counts) {
-      for (const [st, n] of Object.entries(counts) as [HeroAnimState, number][]) {
-        for (let i = 1; i <= n; i++) {
-          const k = `hero_${cls}_${st}_f${String(i).padStart(2, '0')}`;
-          const path = `art/characters/${cls}/${cls}_${st}_f${String(i).padStart(2, '0')}_512.png`;
-          if (!scene.textures.exists(k)) scene.load.image(k, path);
-        }
-      }
+  /** Queue frames onto the scene loader. Pass states to avoid loading the whole class. */
+  static preload(scene: Phaser.Scene, cls: HeroClassId, states: readonly HeroAnimState[] = STATES) {
+    for (const e of heroArtEntries(cls, states)) {
+      if (!scene.textures.exists(e.key)) scene.load.image(e.key, e.url);
     }
   }
 

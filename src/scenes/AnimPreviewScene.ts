@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { heroArtEntries, loadTextures } from '../art/artLoad';
+import { webAsset } from '../art/webAsset';
 import { HeroSprite } from '../art/HeroSprite';
 import { HERO_CLASSES, HERO_FOOT_ORIGIN, type HeroAnimState, type HeroClassId } from '../art/types';
 
@@ -24,10 +26,8 @@ export class AnimPreviewScene extends Phaser.Scene {
   constructor() { super('animPreview'); }
 
   preload() {
-    for (const c of HERO_CLASSES) {
-      HeroSprite.preload(this, c.id);
-    }
-    this.load.image('bg_ch1', 'art/backgrounds/chapter1_mine.png');
+    HeroSprite.preload(this, 'merchant', ['idle']);
+    this.load.image('bg_ch1', webAsset('art/backgrounds/chapter1_mine.png'));
   }
 
   create() {
@@ -81,11 +81,13 @@ export class AnimPreviewScene extends Phaser.Scene {
     const i = (ids.indexOf(this.cls) + dir + ids.length) % ids.length;
     this.cls = ids[i]!;
     const w = this.scale.width, h = this.scale.height;
-    this.hero.destroy();
-    this.hero = new HeroSprite(this, this.cls, w * 0.5, h * 0.78);
-    this.hero.setDisplaySize(Math.min(360, h * 0.7));
-    this.hero.play(this.state, true);
-    this.refreshLabel();
+    void loadTextures(this, heroArtEntries(this.cls, [this.state, 'idle'])).then(() => {
+      this.hero.destroy();
+      this.hero = new HeroSprite(this, this.cls, w * 0.5, h * 0.78);
+      this.hero.setDisplaySize(Math.min(360, h * 0.7));
+      this.hero.play(this.state, true);
+      this.refreshLabel();
+    });
   }
 
   private cycleState(dir: number) {

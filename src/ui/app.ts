@@ -56,6 +56,8 @@ export class App {
     this.settings = loadSettings(localStorage);
     setSound(this.settings.sound);
     document.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
+    // 标题不等 Phaser、不等素材。静态 #boot 在 JS 到达前盖住空骨架。
+    this.showTitle();
     this.phaser = new Phaser.Game({
       type: Phaser.AUTO, parent: 'battle', backgroundColor: '#15101e', transparent: false,
       scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' }, scene: [BattleScene, AnimPreviewScene],
@@ -75,6 +77,7 @@ export class App {
           return;
         }
       } catch { /* ignore */ }
+      (window as unknown as { __bmArt?: () => string[] }).__bmArt = () => this.scene.textures.getTextureKeys();
       this.showTitle();
     };
     this.phaser.events.on('battle-ui-ready', () => bootUi());
@@ -136,7 +139,7 @@ export class App {
     document.querySelectorAll('#classPick [data-class]').forEach(btn => {
       (btn as HTMLElement).onclick = () => {
         this.heroClass = (btn as HTMLElement).dataset.class as HeroClassId;
-        this.scene.setHeroClass(this.heroClass);
+        if (this.scene?.artReady) this.scene.setHeroClass(this.heroClass);
         sfx.click(); this.showTitle();
       };
     });
@@ -158,7 +161,8 @@ export class App {
     const sub = ov.querySelector('.sub');
     if (sub) sub.innerHTML = `V3 战役 · ${CAMPAIGN_LENGTH}关 / 10章 · <b style="color:#ff8866">地狱难度</b> · 第50关终局`;
     void isV2Enabled;
-    this.scene.setPreview(getLevel(1), 100, 100, { eliteActive: false, levelNo: 1 });
+    document.getElementById('boot')?.setAttribute('hidden', '');
+    if (this.scene?.artReady) this.scene.setPreview(getLevel(1), 100, 100, { eliteActive: false, levelNo: 1 });
   }
   newGame() {
     clearSave(localStorage);
