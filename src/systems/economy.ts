@@ -40,7 +40,7 @@ export function expansionLabel(level: number, rows: number, cols: number, expans
   if (!offer) return { text: `背包已扩容至最大（${cols}×${rows}）`, canBuy: false, locked: false };
   const what = offer.axis === 'col' ? `第${cols + 1}列` : `第${rows + 1}行`;
   if (level <= offer.unlockAfterLevel) {
-    return { text: `击败第${offer.unlockAfterLevel}关首领解锁${what}`, canBuy: false, locked: true };
+    return { text: `通关第${offer.unlockAfterLevel}关解锁${what}`, canBuy: false, locked: true };
   }
   return { text: `扩容：新增${what}（${cols}×${rows}） · ${offer.cost} 金币`, canBuy: true, locked: false };
 }

@@ -214,7 +214,7 @@ export class App {
     document.body.classList.toggle('wide', wide);
     const availW = wide ? 520 : Math.min(window.innerWidth, 600) - 36;
     const availH = wide ? 560 : Math.max(200, Math.min(window.innerHeight * 0.42, 380));
-    this.cell = Math.max(28, Math.min(72, Math.floor(Math.min(availW / s.cols, availH / s.rows))));
+    this.cell = Math.max(40, Math.min(72, Math.floor(Math.min(availW / s.cols, availH / s.rows))));
     document.documentElement.style.setProperty('--cell', this.cell + 'px');
     const battle = s.phase === 'battle';
     document.body.classList.toggle('inBattle', battle);
@@ -296,9 +296,10 @@ export class App {
     const exp = expansionLabel(s.level, s.rows, s.cols, s.expansions);
     const offer = expansionOffer(s.expansions);
     const poor = !!offer && s.gold < offer.cost;
+    const mark = `<span class="knitMark">吉利达</span>`;
     $('expand').innerHTML = !exp.canBuy
-      ? `<div class="expMax">${exp.text}</div>`
-      : `<button class="expandRow ${!poor && s.phase === 'prep' ? '' : 'disabled'}" id="expBtn" style="width:${Math.min(s.cols * c, 360)}px">➕ ${exp.text}${poor ? ' · 金币不足' : ''}</button>`;
+      ? `<div class="expMax">${exp.text}</div>${mark}`
+      : `<button class="expandRow ${!poor && s.phase === 'prep' ? '' : 'disabled'}" id="expBtn" style="width:${Math.min(s.cols * c, 360)}px">➕ ${exp.text}${poor ? ' · 金币不足' : ''}</button>${mark}`;
     if (exp.canBuy) $('expBtn').onclick = () => this.guard(() => {
       const before = g.s.expansions;
       if (this.act(() => g.expand(), sfx.coin) && g.s.expansions > before) {
@@ -455,6 +456,12 @@ export class App {
       d.active = true; if (document.body.classList.contains('wide')) this.selected = d.id; else this.selected = null; sfx.pick(); this.makeGhost(); this.renderBag(); this.renderDetails();
     }
     e.preventDefault();
+    const sc = $('bagScroll');
+    if (sc) {
+      const r = sc.getBoundingClientRect();
+      if (e.clientY > r.bottom - 36) sc.scrollTop += 12;
+      else if (e.clientY < r.top + 36) sc.scrollTop -= 12;
+    }
     d.ghost!.style.transform = `translate(${e.clientX - (d.grabDx + 0.5) * this.cell}px, ${e.clientY - (d.grabDy + 0.5) * this.cell}px)`;
     this.computeDrop(e.clientX, e.clientY);
     this.renderPreview();

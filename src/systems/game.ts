@@ -425,7 +425,7 @@ export class Game {
     if (!offer) return fail('背包已扩容到最大。');
     if (this.s.level <= offer.unlockAfterLevel) {
       const what = offer.axis === 'col' ? `第${this.s.cols + 1}列` : `第${this.s.rows + 1}行`;
-      return fail(`击败第${offer.unlockAfterLevel}关首领后可解锁${what}。`);
+      return fail(`通关第${offer.unlockAfterLevel}关后可解锁${what}。`);
     }
     if (!canAfford(this.s.gold, offer.cost)) return fail('金币不足。');
     this.s.gold -= offer.cost;

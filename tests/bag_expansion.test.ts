@@ -28,6 +28,9 @@ describe('背包扩容 3.3', () => {
     for (const e of ECONOMY.expansions) { if (e.axis === 'row') rows++; else cols++; }
     expect(cols).toBe(7);
     expect(rows).toBe(8);
+    expect(5 * 4).toBe(20);
+    expect(6 * 7).toBe(42);
+    expect(7 * 8).toBe(56);
   });
 
   it('未击败首领不能买后续扩容；击败后花钱才变大', () => {
