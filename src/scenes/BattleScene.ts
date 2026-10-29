@@ -343,11 +343,17 @@ export class BattleScene extends Phaser.Scene {
         if (e.amount > 0) this.float(hx, hy - 70, `+${e.amount}护盾`, '#8fd8ff', 16);
       } else if (e.type === 'monsterAttack') {
         this.heroSprite?.play('hurt');
-        this.tweens.add({ targets: this.mon, x: mx - 40, duration: 110, yoyo: true, ease: 'Quad.out' });
+        this.tweens.add({ targets: this.mon, x: mx - (e.crit ? 70 : 40), duration: e.crit ? 160 : 110, yoyo: true, ease: 'Quad.out' });
+        if (e.crit) {
+          this.showBanner('大暴击！', '#ff4040');
+          this.float(hx, hy - 90, '大暴击', '#ffd0a0', 28);
+          this.slamFx(0xff3030);
+        }
         if (e.absorbed) this.float(hx, hy - 60, `吸收${e.absorbed}`, '#8fd8ff', 16);
-        if (e.hpLoss) this.float(hx + 10, hy - 40, `-${e.hpLoss}`, '#ff7a6a', 22);
-        const fl = this.add.circle(hx, hy, 46, 0xff4040, 0.3).setDepth(6); this.tweens.add({ targets: fl, alpha: 0, duration: 250, onComplete: () => fl.destroy() });
-        if (e.dmg >= 25) this.cameras.main.shake(140, 0.006);
+        if (e.hpLoss) this.float(hx + 10, hy - 40, `-${e.hpLoss}`, e.crit ? '#ffd24a' : '#ff7a6a', e.crit ? 30 : 22);
+        const fl = this.add.circle(hx, hy, e.crit ? 70 : 46, e.crit ? 0xffd24a : 0xff4040, 0.35).setDepth(6);
+        this.tweens.add({ targets: fl, alpha: 0, scale: e.crit ? 1.8 : 1, duration: e.crit ? 420 : 250, onComplete: () => fl.destroy() });
+        if (e.crit || e.dmg >= 25) this.cameras.main.shake(e.crit ? 220 : 140, e.crit ? 0.012 : 0.006);
       } else if (e.type === 'potion' || e.type === 'lamp') {
         this.heroSprite?.play('drink');
         this.float(hx, hy - 80, `+${e.heal}`, '#7dff9a', 24);
@@ -382,6 +388,20 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'summon') {
         this.showBanner(`🕸 施法：召唤（HP ${e.hp}）`, '#c8a0ff');
         this.castRing(0xaa66ff, 1.7, 700);
+      } else if (e.type === 'invuln') {
+        this.showBanner('无敌 · 伤害无效', '#ffe7a0');
+        const glow = this.add.circle(0, 0, 78, 0xffe7a0, 0.28).setDepth(5);
+        this.mon.add(glow);
+        this.tweens.add({ targets: glow, alpha: 0.08, yoyo: true, repeat: 6, duration: 220, onComplete: () => glow.destroy() });
+      } else if (e.type === 'fireWindup') {
+        this.showBanner('⚠ 放大火蓄力！', '#ff7722');
+        this.castRing(0xff7722, 1.6, 700);
+      } else if (e.type === 'fireBreath') {
+        this.showBanner('放大火！', '#ff4418');
+        this.slamFx(0xff4418);
+        this.heroSprite?.play('hurt');
+        this.float(hx, hy - 70, `-${e.hpLoss || e.dmg}`, '#ffb060', 30);
+        this.cameras.main.shake(260, 0.014);
       } else if (e.type === 'heartPhase') {
         const names = ['', '重击', '回响', '过热'];
         this.showBanner(`💛 黄金心脏 · 阶段${e.phase}（${names[e.phase] ?? ''}）`, '#ffd45c');

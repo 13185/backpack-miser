@@ -121,7 +121,7 @@ export const V3_STAGES_BASE: StageBudget[] = [
  * 五段：1–10 逐步，10–20 每关明显更硬，20–30 大步，30–40 再抬一倍手感，40–50 再翻上去。
  * 挂机应在 8–12 关倒下；随手买武器的人卡在 10–20；每一关都在算的人后期经常剩不到三成血。
  */
-export const HARD_TUNE_VERSION = '3.6.3-retune30' as const;
+export const HARD_TUNE_VERSION = '3.6.4-late-fire' as const;
 
 interface Pressure { hp: number; dmg: number; interval: number; gold: number }
 const PRESSURE_BANDS = [
@@ -350,11 +350,21 @@ export const HELL_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
  * 3.6.3 在那一档上再砍 30%：floor(×2 × 0.7) = floor(×1.4)。
  * 普通关攻击不动。精英仍乘自己的 ELITE_HP_MULT，所以精英血量跟着这档走。
  */
+/** 40 关起的非首领：先 ×1.30，之后每关再叠 5%。L40 若是首领则不吃这档。 */
+export function lateTrashMult(level: number): number {
+  return 1.30 * Math.pow(1.05, level - 40);
+}
+
 export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
   const cut = (n: number) => Math.floor(n * 2 * 0.7);
-  return stages.map(s => s.boss
-    ? { ...s, hp: cut(s.hp), damage: cut(s.damage) }
-    : { ...s, hp: cut(s.hp) });
+  return stages.map(s => {
+    const boss = !!s.boss;
+    let hp = cut(s.hp);
+    const damage = boss ? cut(s.damage) : s.damage;
+    if (!boss && s.level >= 40) hp = Math.floor(hp * lateTrashMult(s.level));
+    if (boss && s.level >= 50) hp *= 3;
+    return { ...s, hp, damage };
+  });
 }
 
 export const V3_STAGES: StageBudget[] = applyJackDouble(applyPressure(applyStoryBudgets(V3_STAGES_BASE)));

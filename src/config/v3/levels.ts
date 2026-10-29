@@ -147,7 +147,7 @@ function mechFor(stage: StageBudget, kind: MonsterKind): Partial<LevelDef> {
     return {
       heartPhases: { enabled: true },
       heavyStrike: { every: 3, mult: 2.3, windupMs: 2200 },
-      mechSummary: '三阶段70%/35%：①重击 ②回响 ③过热；换阶段各获90盾；每3击2.3倍蓄力。40关后36秒狂暴。',
+      mechSummary: '生命三倍。66%/33%各无敌3秒，无敌结束后放大火。普攻可大暴击。三阶段换盾；每3击2.3倍蓄力。',
     };
   }
 

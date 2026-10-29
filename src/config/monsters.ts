@@ -39,7 +39,7 @@ export const MONSTER_BASE: Record<MonsterKind, { name: string; ability: string }
   furnace_colossus: { name: '熔炉巨像', ability: '首领：每2击后×2.2过热并停手；半血100盾；每4击1.9倍蓄力。' },
   silence_warden: { name: '缄默典狱长', ability: '首领：祝祷者占26%预算；55%/25%各获120盾；每3击1.9倍蓄力。' },
   debt_regent: { name: '债契摄政王', ability: '首领：护甲4；每3击后60%回响；三档阶段盾；每3击2.0倍蓄力。' },
-  golden_heart: { name: '黄金心脏', ability: '三阶段70%/35%：重击→回响→过热；换阶段各获90盾。' },
+  golden_heart: { name: '黄金心脏', ability: '三阶段。66%/33%无敌3秒，随后放大火；普攻可大暴击；换阶段各获90盾。' },
   priest: { name: '补给祭司', ability: '祝祷：周期性有限自盾。' },
   chanter: { name: '祝祷者', ability: '每7秒给主目标加有限护盾（单目标时自盾）。' },
   amulet_attendant: { name: '护符侍从', ability: '开战将自身10%生命转为护盾。' },

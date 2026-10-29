@@ -11,7 +11,7 @@ import { inBag } from './placement';
 export type CombatEvent =
   | { t: number; type: 'weapon'; itemId: string; dmg: number; raw: number; heavy: boolean }
   | { t: number; type: 'shield'; itemId: string; amount: number }
-  | { t: number; type: 'monsterAttack'; dmg: number; absorbed: number; hpLoss: number }
+  | { t: number; type: 'monsterAttack'; dmg: number; absorbed: number; hpLoss: number; crit?: boolean }
   | { t: number; type: 'potion'; itemId: string; heal: number }
   | { t: number; type: 'lamp'; itemId: string; heal: number }
   | { t: number; type: 'poison'; stacks: number; dmg: number }
@@ -23,6 +23,9 @@ export type CombatEvent =
   | { t: number; type: 'overheat'; kind: 'strike' | 'vent' }
   | { t: number; type: 'pray'; shield: number }
   | { t: number; type: 'heartPhase'; phase: number }
+  | { t: number; type: 'invuln'; ms: number }
+  | { t: number; type: 'fireWindup' }
+  | { t: number; type: 'fireBreath'; dmg: number; hpLoss: number }
   | { t: number; type: 'addHit'; addId: string; dmg: number; hp: number }
   | { t: number; type: 'addDown'; addId: string }
   | { t: number; type: 'heavyWindup' }
@@ -125,6 +128,10 @@ export interface CombatState {
   guardBonusUsed: boolean;
   enrageAt: number;
   enrageBonus: number;
+  invulnUntil: number;
+  invulnTriggered: boolean[];
+  fireWindupUntil: number;
+  fireArmed: boolean;
   /** 游侠武器间隔系数。31 关前 0.75，之后 0.68。其他职业为 1。 */
   rangerGap: number;
 }
@@ -443,6 +450,7 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     enrageAt: lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt,
     enrageBonus: lv.boss && (lv.level ?? 0) >= 40 ? 0.14 : ECONOMY.enrageBonus,
     rangerGap,
+    invulnUntil: 0, invulnTriggered: [false, false], fireWindupUntil: 0, fireArmed: false,
   };
 }
 
@@ -526,6 +534,15 @@ function tickPoison(s: CombatState, ev: CombatEvent[]) {
 }
 function processTimeline(s: CombatState, ev: CombatEvent[]) {
   if (s.t >= ms(ECONOMY.timeout)) { finish(s, ev, false, `战斗超过${ECONOMY.timeout}秒仍未分出胜负，冒险失败：火力不足，被怪物拖垮了。`); return; }
+  if (s.fireArmed && s.fireWindupUntil > 0 && s.t >= s.fireWindupUntil && s.mHp > 0 && !s.over) {
+    s.fireArmed = false;
+    const dmg = Math.max(1, Math.round(s.maxHp * 0.35));
+    const r = applyDamageToPlayer(s.hp, s.shield, dmg);
+    s.hp = r.hp; s.shield = r.shield; s.stats.absorbed += r.absorbed;
+    ev.push({ t: s.t, type: 'fireBreath', dmg, hpLoss: r.hpLoss });
+    if (s.hp <= 0) { finish(s, ev, false, '被黄金心脏的大火吞没，冒险失败。'); return; }
+  }
+  maybeHeartInvuln(s, ev);
   const stage = s.t >= ms(s.enrageAt) ? 1 + Math.floor((s.t - ms(s.enrageAt)) / ms(ECONOMY.enrageStep)) : 0;
   if (stage > s.enrageStage) {
     s.enrageStage = stage; ev.push({ t: s.t, type: 'enrage', stage, mult: enrageMult(stage, s.enrageBonus) });
@@ -626,10 +643,36 @@ function nextTimelineAt(s: CombatState): number {
   }
   if (s.regen && s.regenNextAt < Number.MAX_SAFE_INTEGER && s.mHp > 0) next = Math.min(next, s.regenNextAt);
   if (s.iceSlowUntil > s.t) next = Math.min(next, s.iceSlowUntil);
+  if (s.fireArmed && s.fireWindupUntil > s.t) next = Math.min(next, s.fireWindupUntil);
+  if (s.invulnUntil > s.t) next = Math.min(next, s.invulnUntil);
   if (s.a09Debuff > 0 && s.a09Until > s.t) next = Math.min(next, s.a09Until);
   return next;
 }
+function bossCrit(s: CombatState): boolean {
+  if (!s.boss) return false;
+  const n = (s.monAttacks * 17 + s.heartPhase * 13) >>> 0;
+  const pct = s.heartPhases ? 28 : 20;
+  return (n % 100) < pct;
+}
+
+function maybeHeartInvuln(s: CombatState, ev: CombatEvent[]) {
+  if (!s.heartPhases || s.mHp <= 0 || s.t < s.invulnUntil) return;
+  const ratio = s.mHp / s.mMaxHp;
+  const marks = [0.66, 0.33];
+  for (let i = 0; i < marks.length; i++) {
+    if (s.invulnTriggered[i] || ratio > marks[i]) continue;
+    s.invulnTriggered[i] = true;
+    s.invulnUntil = s.t + 3000;
+    s.fireWindupUntil = s.t + 3000 + 2400;
+    s.fireArmed = true;
+    ev.push({ t: s.t, type: 'invuln', ms: 3000 });
+    ev.push({ t: s.t, type: 'fireWindup' });
+    return;
+  }
+}
+
 function applyToMonsterHp(s: CombatState, dmg: number): number {
+  if (s.invulnUntil > s.t) return 0;
   let left = dmg;
   if (s.mShield > 0) {
     const abs = Math.min(s.mShield, left);
@@ -742,6 +785,7 @@ function hitMonster(s: CombatState, a: Actor, ev: CombatEvent[], rawIn: number) 
       ev.push({ t: s.t, type: 'heartPhase', phase: 3 });
     }
   }
+  maybeHeartInvuln(s, ev);
   // 熔炉巨像残血过热×2.0（一次）
   if (s.overheat && !s.furnaceEnraged && s.mHp / s.mMaxHp <= 0.4 && s.boss) {
     s.furnaceEnraged = true;
@@ -863,12 +907,14 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
       }
     }
     let dmg = Math.round(s.mAtk * mult);
+    const crit = bossCrit(s);
+    if (crit) dmg = Math.max(dmg, Math.round(s.maxHp * (s.heartPhases ? 0.38 : 0.32)));
     if (hasRelic(s.relics, 'K04')) dmg = Math.round(dmg * 1.20);
     // 冰晶减速对伤害无影响，仅间隔
     const hpBefore = s.hp;
     const r = applyDamageToPlayer(s.hp, s.shield, dmg);
     s.hp = r.hp; s.shield = r.shield; s.stats.absorbed += r.absorbed;
-    ev.push({ t: s.t, type: 'monsterAttack', dmg, absorbed: r.absorbed, hpLoss: r.hpLoss });
+    ev.push({ t: s.t, type: 'monsterAttack', dmg, absorbed: r.absorbed, hpLoss: r.hpLoss, crit });
     if (hasRelic(s.relics, 'R01') && r.absorbed > 0) {
       s.r01Absorbed += r.absorbed;
       while (s.r01Absorbed >= 18 && !s.over) {

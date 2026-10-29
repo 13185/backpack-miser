@@ -793,7 +793,8 @@ export class App {
         if (e.type === 'weapon') maybeShout(this.game?.s.heroClass ?? 'merchant');
         (e.type === 'weapon' ? (e.heavy ? sfx.heavy : sfx.hit) : e.type === 'shield' ? sfx.shield : sfx.heal)();
         if (e.type === 'potion') document.querySelectorAll(`#bag .item[data-id="${e.itemId}"]`).forEach(el => el.classList.add('used'));
-      } else if (e.type === 'monsterAttack') { sfx.hurt(); monsterCue(getLevel(this.game?.s.level ?? 1).monster); }
+      } else if (e.type === 'monsterAttack') { (e.crit ? sfx.crit : sfx.hurt)(); monsterCue(getLevel(this.game?.s.level ?? 1).monster); }
+      else if (e.type === 'fireBreath') sfx.fire();
       else if (e.type === 'enrage' || e.type === 'bossHaste') sfx.enrage();
     }
     const hpEl = document.querySelector('.hud .hp b, #hud .hp b'); if (hpEl) hpEl.textContent = `${c.hp}/${c.maxHp}`;
@@ -1252,7 +1253,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.6.3 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.6.4 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
