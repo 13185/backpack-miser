@@ -1,20 +1,39 @@
 /** WebAudio 合成音效：首次用户交互后才创建 AudioContext（尊重自动播放限制） */
 let ctx: AudioContext | null = null;
 let enabled = true;
+let primed = false;
 const shoutAt: Record<string, number> = {};
+type BarkFn = (who: string) => boolean;
+let barkFn: BarkFn | null = null;
 export function setSound(on: boolean) { enabled = on; }
+export function setBarkPlayer(fn: BarkFn) { barkFn = fn; }
 export function unlockAudio() {
   if (!ctx) { try { ctx = new (window.AudioContext || (window as any).webkitAudioContext)(); } catch { ctx = null; } }
-  if (ctx?.state === 'suspended') ctx.resume().catch(() => {});
+  if (!ctx) return;
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  if (!primed) {
+    primed = true;
+    try {
+      const buf = ctx.createBuffer(1, 1, ctx.sampleRate);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch { /* iOS 未解锁时忽略 */ }
+  }
 }
 export function audioContext(): AudioContext | null { unlockAudio(); return ctx; }
-/** 合成短喊，不是录音配音。不使用战斗随机流。同角色 2.5 秒内只一声，约 20% 出手才出声。 */
+export function shoutTone(who: string) {
+  tone(who === 'guard' ? 140 : who === 'ranger' ? 420 : 280, 0.28, 'triangle', 0.05, who === 'guard' ? -40 : 80);
+}
+/** 同角色 2.5 秒内只一声，约 20% 出手才出声。有录音喊声就播录音，否则退回合成音。不使用战斗随机流。 */
 export function maybeShout(who: string) {
   const now = performance.now();
   if (now - (shoutAt[who] ?? 0) < 2500) return;
   if (Math.random() > 0.2) return;
   shoutAt[who] = now;
-  tone(who === 'guard' ? 140 : who === 'ranger' ? 420 : 280, 0.28, 'triangle', 0.05, who === 'guard' ? -40 : 80);
+  if (barkFn?.(who)) return;
+  shoutTone(who);
 }
 export function monsterCue(kind: string) {
   if (kind.includes('slime')) tone(90, 0.12, 'sine', 0.04, 40);

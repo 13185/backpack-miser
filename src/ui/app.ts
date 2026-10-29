@@ -14,7 +14,7 @@ import type { CombatEvent, CombatState } from '../systems/combat';
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { Game, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
 import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
-import { canMerge } from '../systems/merge';
+import { canMerge, mergeTargetIds } from '../systems/merge';
 import { canPlace, inBag, itemAt, itemSize, occupiedCells } from '../systems/placement';
 import { clearSave, loadGame, loadSettings, saveGame, saveSettings } from '../systems/save';
 import { BattleScene } from '../scenes/BattleScene';
@@ -22,7 +22,9 @@ import { AnimPreviewScene } from '../scenes/AnimPreviewScene';
 import { isV2Enabled } from '../config/v2';
 import type { HeroClassId } from '../art/types';
 import { maybeShout, monsterCue, setSound, sfx, unlockAudio } from './audio';
-import { duckBgm, setBgm, setMusicEnabled } from './bgm';
+import { duckBgm, prefetchBgm, setBgm, setMusicEnabled, startBgmIfUnlocked } from './bgm';
+import { voiceBase } from './audioCatalog';
+import { playVoice, prefetchVoice, setVoiceEnabled, setVoiceVolume } from './voice';
 import { bossCinema, isBossStory, openingBeats } from './cinema';
 import { iconSvg } from './icons';
 
@@ -66,7 +68,12 @@ export class App {
     this.settings = loadSettings(localStorage);
     setSound(this.settings.sound);
     setMusicEnabled(this.settings.sound);
-    document.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
+    setVoiceEnabled(this.settings.sound);
+    setVoiceVolume(this.settings.voice / 100);
+    document.addEventListener('pointerdown', () => {
+      unlockAudio();
+      window.setTimeout(() => startBgmIfUnlocked(), 0);
+    }, { capture: true });
     // 标题不等 Phaser、不等素材。静态 #boot 在 JS 到达前盖住空骨架。
     this.showTitle();
     this.phaser = new Phaser.Game({
@@ -109,7 +116,13 @@ export class App {
   }
   // ---------- 存档 ----------
   private persist = (s: GameState) => saveGame(localStorage, s);
-  private saveSettings() { saveSettings(localStorage, this.settings); setSound(this.settings.sound); setMusicEnabled(this.settings.sound); }
+  private saveSettings() {
+    saveSettings(localStorage, this.settings);
+    setSound(this.settings.sound);
+    setMusicEnabled(this.settings.sound);
+    setVoiceEnabled(this.settings.sound);
+    setVoiceVolume(this.settings.voice / 100);
+  }
   private cinemaOn = false;
   private battleFlip = false;
 
@@ -147,13 +160,14 @@ export class App {
       </div>
       <ul class="howto">
         <li>🎒 把装备拖进背包格子，<b>放进背包才生效</b>；手机点「旋转」，电脑按 R 键旋转。</li>
-        <li>✨ 同种同级装备拖到一起即可<b>合成升级</b>。</li>
+        <li>✨ 同种同级装备拖到一起即可<b>合成升级</b>。临时区的也可以直接拖到背包里那一件上。</li>
         <li>💎 红宝石强化<b>上下左右</b>相邻的武器。</li>
         <li>⚔ 开战后装备自动攻击，征战50关、10个章节，第20关只是中段折转，第50关才是终点！</li>
         <li>🎲 两件相同的 <b>Lv3</b> 可以赌合成：${gamblePct(LV4_GAMBLE.success)}% 得到 Lv4，${gamblePct(LV4_GAMBLE.loseOne)}% 只消失拖过去的那一件。</li>
         <li>👑 两件相同的 <b>Lv4</b> 可以再赌：${gamblePct(LV5_GAMBLE.success)}% 得到 Lv5，${gamblePct(LV5_GAMBLE.loseOne)}% 只丢一件，${gamblePct(LV5_GAMBLE.loseBoth)}% 两件都消失。结果立刻存档。</li>
       </ul>
       <label class="toggle"><input type="checkbox" id="tSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
+      <label class="voiceSlide">语音 <input type="range" id="tVoice" min="0" max="100" value="${this.settings.voice}"></label>
     </div>`;
     $('tNew').onclick = () => {
       if (canContinue && !confirm('开始新冒险将覆盖当前存档，确定吗？')) return;
@@ -162,6 +176,11 @@ export class App {
     if (canContinue) $('tContinue').onclick = () => { sfx.click(); this.loadState((lr as any).state); };
     ($('tIron') as HTMLInputElement).onchange = e => { this.ironman = (e.target as HTMLInputElement).checked; };
     ($('tSound') as HTMLInputElement).onchange = e => { this.settings.sound = (e.target as HTMLInputElement).checked; this.saveSettings(); };
+    ($('tVoice') as HTMLInputElement).oninput = e => {
+      this.settings.voice = Number((e.target as HTMLInputElement).value);
+      setVoiceVolume(this.settings.voice / 100);
+      this.saveSettings();
+    };
     document.querySelectorAll('#classPick [data-class]').forEach(btn => {
       (btn as HTMLElement).onclick = () => {
         this.heroClass = (btn as HTMLElement).dataset.class as HeroClassId;
@@ -189,6 +208,7 @@ export class App {
     void isV2Enabled;
     document.getElementById('boot')?.setAttribute('hidden', '');
     if (this.scene?.artReady) this.scene.setPreview(getLevel(1), 100, 100, { eliteActive: false, levelNo: 1 });
+    setBgm('title');
   }
   newGame() {
     clearSave(localStorage);
@@ -520,7 +540,7 @@ export class App {
     const targetEl = under?.closest('.item') as HTMLElement | null;
     const bagRect = $('bag').getBoundingClientRect();
     const inGrid = px >= bagRect.left && px < bagRect.right && py >= bagRect.top && py < bagRect.bottom;
-    // 1) 合成判断优先：指针正下方明确指向另一件装备
+    // 合成优先于放置。临时区拖到背包里同种同级的装备上，走和背包内一样的合成。
     let target: ItemInstance | undefined;
     if (inGrid) target = itemAt(g.s.items, Math.floor((px - bagRect.left) / this.cell), Math.floor((py - bagRect.top) / this.cell));
     else if (targetEl && targetEl.dataset.id && !targetEl.closest('.ghost')) target = g.find(targetEl.dataset.id);
@@ -540,7 +560,12 @@ export class App {
   private renderPreview() {
     const d = this.drag!, g = this.game!, it = g.find(d.id)!;
     const pv = $('preview'); let html = '';
-    document.querySelectorAll('.mergeTarget,.mergeBad').forEach(e => e.classList.remove('mergeTarget', 'mergeBad'));
+    document.querySelectorAll('.mergeTarget,.mergeBad,.mergeCandidate').forEach(e => e.classList.remove('mergeTarget', 'mergeBad', 'mergeCandidate'));
+    if (d.active) {
+      for (const id of mergeTargetIds(g.s.items, d.id)) {
+        document.querySelectorAll(`#bag .item[data-id="${id}"]`).forEach(e => e.classList.add('mergeCandidate'));
+      }
+    }
     $('tempWrap').classList.toggle('dropHere', d.drop?.type === 'temp');
     let tip = '';
     if (d.drop?.type === 'place') {
@@ -713,15 +738,16 @@ export class App {
     else this.showPendingModals();
   }
   private playOpening(hero: typeof this.heroClass, onDone: () => void) {
-    this.playCinema(openingBeats(hero), onDone);
+    this.playCinema(openingBeats(hero), onDone, hero);
   }
   private playBossCinema(onDone: () => void) {
     const level = this.game?.s.level ?? 0;
     const beat = bossCinema(level);
     if (!beat) { onDone(); return; }
-    this.playCinema([beat], onDone);
+    const hero = this.game?.s.heroClass ?? this.heroClass;
+    this.playCinema([beat], onDone, hero);
   }
-  private playCinema(beats: { id: string; ms: number; line: string; look: string; title: string; plate?: string }[], onDone: () => void) {
+  private playCinema(beats: { id: string; ms: number; line: string; look: string; title: string; plate?: string }[], onDone: () => void, hero: typeof this.heroClass) {
     if (this.cinemaOn) return;
     this.cinemaOn = true;
     if (this.scene) this.scene.paused = true;
@@ -731,7 +757,9 @@ export class App {
     root.hidden = false;
     let i = 0;
     let timer = 0;
+    let epoch = 0;
     let finished = false;
+    let lineStop = () => {};
     const warm = (plate?: string) => {
       if (!plate) return;
       const img = new Image();
@@ -741,7 +769,10 @@ export class App {
     const finish = () => {
       if (finished) return;
       finished = true;
+      epoch++;
       window.clearTimeout(timer);
+      lineStop();
+      lineStop = () => {};
       root.hidden = true;
       root.innerHTML = '';
       this.cinemaOn = false;
@@ -750,9 +781,16 @@ export class App {
       onDone();
     };
     const show = () => {
+      if (finished) return;
+      const ep = ++epoch;
+      window.clearTimeout(timer);
+      lineStop();
+      lineStop = () => {};
       const b = beats[i];
       if (!b) { finish(); return; }
       warm(beats[i + 1]?.plate);
+      const nextVoice = voiceBase(beats[i + 1]?.id ?? '', hero);
+      if (nextVoice) prefetchVoice(nextVoice);
       root.innerHTML = `<div class="cinema ${b.look}" role="dialog" aria-label="${b.id}">
         <div class="cinStage"><img class="cinPlate" alt=""><div class="cinShade"></div><div class="cinFx" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
         <div class="cinLayer cinBack"></div><div class="cinLayer cinMid"></div><div class="cinLayer cinFront"></div>
@@ -767,10 +805,21 @@ export class App {
         img.onload = () => stage.classList.add('hasPlate');
         img.src = webAsset(`art/cinema/${b.plate}.jpg`);
       }
+      const spoken = voiceBase(b.id, hero);
+      let voiceDone = !spoken;
+      let minDone = false;
+      const maybe = () => {
+        if (finished || ep !== epoch) return;
+        if (minDone && voiceDone) { i++; show(); }
+      };
+      if (spoken) {
+        const v = playVoice(spoken);
+        lineStop = v.stop;
+        v.done.then(() => { voiceDone = true; maybe(); });
+      }
       $('cinSkip').onclick = () => finish();
-      $('cinNext').onclick = () => { i++; show(); };
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => { i++; show(); }, b.ms);
+      $('cinNext').onclick = () => { if (ep !== epoch) return; i++; show(); };
+      timer = window.setTimeout(() => { minDone = true; maybe(); }, b.ms);
     };
     show();
   }
@@ -1008,8 +1057,13 @@ export class App {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal"><h2>📜 ${esc(title)}</h2>${npcPortraitHtml(body)}<p style="line-height:1.6;white-space:pre-wrap">${esc(body)}</p><div style="clear:both"></div>
       <div class="btns"><button class="btn gold big" id="storyOk">继续</button></div></div>`;
-    // 跳过文字不跳过选择：只清除 pendingStoryId
+    const spoken = id.startsWith('boss_pre_') ? voiceBase(id, g.s.heroClass) : null;
+    const line = spoken ? playVoice(spoken) : null;
+    if (spoken && g.s.level >= 50) prefetchBgm('final');
+    else if (spoken) prefetchBgm('boss');
+    // 跳过文字不跳过选择：只清除 pendingStoryId。点继续会停掉这一句。
     $('storyOk').onclick = () => {
+      line?.stop();
       g.dismissStory(); this.closeOverlay(); this.render(); this.showPendingModals();
     };
   }
@@ -1113,13 +1167,19 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.4.3 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.5.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
+      <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;
     ($('sSound') as HTMLInputElement).onchange = e => { this.settings.sound = (e.target as HTMLInputElement).checked; this.saveSettings(); this.render(); };
+    ($('sVoice') as HTMLInputElement).oninput = e => {
+      this.settings.voice = Number((e.target as HTMLInputElement).value);
+      setVoiceVolume(this.settings.voice / 100);
+      this.saveSettings();
+    };
     $('sClose').onclick = () => { this.closeOverlay(); const ph = this.game?.s.phase; if (ph === 'loot') this.showLoot(); else if (ph === 'camp') this.showCamp(); else if (ph === 'victory' || ph === 'defeat') this.showEnd(ph === 'victory'); else if (!this.game) this.showTitle(); };
-    $('sOpen').onclick = () => { this.closeOverlay(); this.playOpening(this.heroClass, () => this.showSettings()); };
+    $('sOpen').onclick = () => { this.closeOverlay(); this.playOpening(this.game?.s.heroClass ?? this.heroClass, () => this.showSettings()); };
     $('sTut').onclick = () => { this.closeOverlay(); this.tutStep = 0; this.render(); };
     $('sTitle').onclick = () => { if (this.game?.s.phase === 'battle') { this.scene.combat = null; } this.showTitle(); };
     $('sRestart').onclick = () => { if (confirm('确定放弃当前进度并重新开始？')) { this.scene.combat = null; this.newGame(); } };

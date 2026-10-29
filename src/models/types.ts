@@ -162,4 +162,4 @@ export interface PendingChoice { id: string; options: string[] }
 /** 援助整备：同一检查点只生成一次候选 */
 export interface AssistState { level: number; attempt: number; options: { kind: ItemKind; level: Level }[]; used: boolean }
 export interface CompletionRecord { type: 'pure' | 'assisted' | 'ironman'; ending: string | null; retries: number; level: number }
-export interface Settings { sound: boolean; tutorialDone: boolean; openingSeen?: boolean; }
+export interface Settings { sound: boolean; tutorialDone: boolean; openingSeen?: boolean; voice: number; }

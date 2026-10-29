@@ -1,5 +1,6 @@
 import { MAX_LEVEL } from '../config/items';
 import type { ItemInstance, Level } from '../models/types';
+import { inBag } from './placement';
 export type MergeCheck = { ok: true; gamble?: boolean } | { ok: false; reason: string };
 export function canMerge(a: ItemInstance, b: ItemInstance): MergeCheck {
   if (a.id === b.id) return { ok: false, reason: '不能与自身合成。' };
@@ -18,4 +19,16 @@ export function mergeItems(items: ItemInstance[], sourceId: string, targetId: st
   const result: ItemInstance = { ...tgt, level: (tgt.level + 1) as Level };
   const next = items.filter(i => i.id !== sourceId).map(i => (i.id === targetId ? result : i));
   return { items: next, result };
+}
+
+/** 拖动时可以高亮的背包目标：同种同级、未满级（含对赌）。临时区里的装备不能当目标。 */
+export function mergeTargetIds(items: ItemInstance[], sourceId: string): string[] {
+  const src = items.find(i => i.id === sourceId);
+  if (!src) return [];
+  const ids: string[] = [];
+  for (const t of items) {
+    if (t.id === sourceId || !inBag(t)) continue;
+    if (canMerge(src, t).ok) ids.push(t.id);
+  }
+  return ids;
 }

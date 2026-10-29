@@ -117,7 +117,10 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .item.sel { outline: 3px solid #fff; outline-offset: -3px; }
 .item.boosted { box-shadow: 0 0 0 3px #ff5d6c, 0 0 16px #ff5d6c; animation: pulse 1s infinite; }
 .item.dragging { opacity: .3; }
+.item.mergeCandidate { box-shadow: 0 0 0 3px #ffe08a, 0 0 12px #ffd45c99; }
 .item.mergeTarget { box-shadow: 0 0 0 4px var(--gold2), 0 0 22px var(--gold2); animation: pulse .6s infinite; }
+.voiceSlide { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.voiceSlide input { width: 140px; accent-color: var(--gold); }
 .item.mergeBad { box-shadow: 0 0 0 4px #ff6b5a; }
 .item.fire { animation: fire .3s; }
 .item.used { filter: grayscale(1) brightness(.6); }
