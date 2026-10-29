@@ -403,6 +403,11 @@ export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
       hp = Math.floor(hp * wall);
       damage = Math.floor(damage * wall);
     }
+    // 3.6.7：25–35 关（含首领和杂兵）在现有预算上再 floor(×0.95)。其他关不动。
+    if (s.level >= 25 && s.level <= 35) {
+      hp = Math.floor(hp * 0.95);
+      damage = Math.floor(damage * 0.95);
+    }
     return { ...s, hp, damage };
   });
 }
