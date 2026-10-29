@@ -116,16 +116,17 @@ describe('遗物 A01/A07/A08/A11/A12', () => {
 
 describe('后期调参', () => {
   it('故事战役在 A04 上再乘 3.4 压力，不再叠地狱倍率', async () => {
-    const { V3_STAGES, V3_STAGES_BASE, STORY_BOSS_BUDGET, HARD_BANDS, hardParams, applyStoryBudgets, applyPressure } = await import('../src/config/v3/campaign');
+    const { V3_STAGES, V3_STAGES_BASE, STORY_BOSS_BUDGET, HARD_BANDS, hardParams, applyStoryBudgets, applyPressure, wallEase } = await import('../src/config/v3/campaign');
     const pressed = applyPressure(applyStoryBudgets(V3_STAGES_BASE));
     const cut = (n: number) => Math.floor(n * 2 * 0.7);
     const ease = (n: number) => Math.floor(n * 0.9);
+    const wall = (level: number, n: number) => Math.floor(n * wallEase(level, true));
     expect(V3_STAGES[0].hp).toBe(cut(pressed[0].hp));
     expect(V3_STAGES[0].damage).toBe(pressed[0].damage);
     expect(V3_STAGES[0].hp).toBeGreaterThan(V3_STAGES_BASE[0].hp);
     expect(STORY_BOSS_BUDGET[20].hp).toBe(1100);
-    expect(V3_STAGES[19].hp).toBe(ease(cut(pressed[19].hp)));
-    expect(V3_STAGES[19].damage).toBe(ease(cut(pressed[19].damage)));
+    expect(V3_STAGES[19].hp).toBe(wall(20, ease(cut(pressed[19].hp))));
+    expect(V3_STAGES[19].damage).toBe(wall(20, ease(cut(pressed[19].damage))));
     expect(V3_STAGES[19].hp).not.toBe(1100);
     expect(HARD_BANDS.length).toBe(5);
     expect(hardParams(50).hp).toBeGreaterThan(hardParams(1).hp);

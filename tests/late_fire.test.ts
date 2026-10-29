@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import { bagCellSize } from '../src/ui/bagLayout';
 import { getLevel } from '../src/config/v3/levels';
-import { lateTrashMult } from '../src/config/v3/campaign';
+import { lateTrashMult, seasonedMult, wallEase } from '../src/config/v3/campaign';
 import { createCombat, stepCombat } from '../src/systems/combat';
 import type { ItemInstance } from '../src/models/types';
 
 const mk = (kind: ItemInstance['kind'], id: string): ItemInstance => ({ id, kind, level: 3, x: 0, y: 0, rotated: false });
+
+describe('背包格子尺寸', () => {
+  it('同一宽度下列数不变时，高度变化不会改格子', () => {
+    const a = bagCellSize(390, 6, false);
+    const b = bagCellSize(390, 6, false);
+    expect(a).toBe(b);
+    expect(a).toBeGreaterThanOrEqual(40);
+    expect(bagCellSize(390, 5, false)).toBeGreaterThan(bagCellSize(390, 6, false));
+    expect(bagCellSize(1280, 6, true)).toBe(72);
+  });
+});
 
 describe('3.6.4 后期血量与心脏', () => {
   it('40 关起的杂兵按 1.30×1.05^(关-40) 叠血，首领不吃这档', () => {
@@ -13,19 +25,28 @@ describe('3.6.4 后期血量与心脏', () => {
     expect(lateTrashMult(46)).toBeCloseTo(1.3 * 1.05 ** 6, 5);
     expect(getLevel(39).boss).toBeFalsy();
     expect(getLevel(40).boss).toBe(true);
-    expect(getLevel(40).hp).toBe(3257);
+    expect(wallEase(40, true)).toBe(0.9);
+    expect(wallEase(41, false)).toBe(1);
+    expect(getLevel(40).hp).toBe(Math.floor(3257 * wallEase(40, true)));
     expect(getLevel(41).boss).toBeFalsy();
     expect(getLevel(46).hp).toBe(Math.floor(3418 * lateTrashMult(46)));
     expect(getLevel(46).atk).toBe(35);
   });
 
-  it('13–25 关再砍 10%，30 关保持 3.6.3，终局生命再 ×3', () => {
-    expect(getLevel(15).hp).toBe(Math.floor(1218 * 0.9));
-    expect(getLevel(15).atk).toBe(Math.floor(32 * 0.9));
-    expect(getLevel(30).hp).toBe(2342);
-    expect(getLevel(30).atk).toBe(32);
+  it('13–25 关先砍 10%，砖墙首领再让一截；终局生命仍 ×3', () => {
+    expect(wallEase(15, true)).toBe(0.85);
+    expect(wallEase(30, true)).toBe(0.78);
+    expect(wallEase(50, true)).toBe(1);
+    expect(getLevel(15).hp).toBe(Math.floor(Math.floor(1218 * 0.9) * 0.85));
+    expect(getLevel(15).atk).toBe(Math.floor(Math.floor(32 * 0.9) * 0.85));
+    expect(getLevel(30).hp).toBe(Math.floor(2342 * 0.78));
+    expect(getLevel(30).atk).toBe(Math.floor(32 * 0.78));
     expect(getLevel(50).hp).toBe(6204 * 3);
     expect(getLevel(50).atk).toBe(43);
+    expect(seasonedMult(25)).toBe(1);
+    expect(seasonedMult(46)).toBeCloseTo(1 + 0.012 * 21, 5);
+    expect(seasonedMult(50)).toBeCloseTo(1.3, 5);
+    expect(getLevel(46).hp).toBe(Math.floor(3418 * lateTrashMult(46)));
   });
 
   it('首领普攻会出现大暴击，杂兵不会', () => {

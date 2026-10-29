@@ -17,6 +17,7 @@ import type { ChapterCheckpoint, GameState, HeroClass, ItemInstance, ItemKind, L
 import { createCombat, computeBagGold, computeLedgerBonus, type CombatState } from './combat';
 import { buyPrice, canAfford, expansionOffer, refreshCost, resolveCharmOffer, sellPrice } from './economy';
 import { rollItems } from './loot';
+import { rollSlot, slotCost } from './slot';
 import { canMerge, mergeItems } from './merge';
 import { canPlace, findSpot, inBag } from './placement';
 import { LV4_GAMBLE, LV5_GAMBLE, gambleOutcome } from '../config/gamble';
@@ -424,6 +425,26 @@ export class Game {
     if (!canAfford(this.s.gold, c)) return fail('金币不足。');
     this.s.gold -= c; this.s.shop.refreshes++; rollShop(this.s);
     return this.commit();
+  }
+  /**
+   * 商店摇奖。先扣金币并推进存档里的 rng，再把奖品放进临时区。
+   * 空奖也存档，避免读档重摇。临时区可以卖掉或放进背包，不会把整备卡死。
+   */
+  pullSlot(): Result {
+    const g = this.prepOnly(); if (g) return g;
+    const cost = slotCost(this.s.level);
+    if (!canAfford(this.s.gold, cost)) return fail(`金币不足。摇一次要 ${cost} 金币。`);
+    const [unit, rng1] = nextRandom(this.s.rng);
+    const [kindUnit, rng2] = nextRandom(rng1);
+    this.s.rng = rng2;
+    this.s.gold -= cost;
+    const pull = rollSlot(unit, kindUnit, this.s.level);
+    if (pull.level === 0 || !pull.kind) {
+      return this.commit({ ok: true, msg: `摇空了，-${cost}金` });
+    }
+    const it = this.addTemp(pull.kind, pull.level);
+    const label = `${ITEMS[it.kind].name} Lv${it.level}`;
+    return this.commit({ ok: true, msg: `摇出${label}，已放入临时区（-${cost}金）` });
   }
   expand(sacrificeIds?: string[]): Result {
     const g = this.prepOnly(); if (g) return g;

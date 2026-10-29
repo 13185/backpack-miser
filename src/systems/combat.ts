@@ -3,7 +3,7 @@ import { ITEMS } from '../config/items';
 import type { LevelDef } from '../config/levels';
 import { INTERVAL_SHORTEN_CAP } from '../config/v3/runes';
 import { doctrineT01Mult } from '../config/v3/doctrines';
-import { HEART_TUNE } from '../config/v3/campaign';
+import { HEART_TUNE, seasonedMult } from '../config/v3/campaign';
 import type { ItemInstance, ItemKind, RuneInstance } from '../models/types';
 import { weaponDamage, bannerShorten, gemBonus } from './adjacency';
 import { inBag } from './placement';
@@ -409,6 +409,10 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
   }
   if (hasRelic(relics, 'K02')) {
     for (const a of actors) if (a.kind === 'weapon' || a.kind === 'needle') a.value = Math.round(a.value * 1.25);
+  }
+  const skill = seasonedMult(lv.level ?? 1);
+  if (skill !== 1) {
+    for (const a of actors) if (a.kind === 'weapon' || a.kind === 'needle') a.value = Math.max(1, Math.round(a.value * skill));
   }
   if (hasRelic(relics, 'C05')) {
     for (const a of actors) if (a.kind === 'shield') a.shieldMult = (a.shieldMult ?? 1) * 1.20;

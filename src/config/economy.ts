@@ -5,8 +5,8 @@ export const FORGE_LEGEND_UNLOCK = 25;
 export const FORGE_VOUCHER_LEVELS = [12, 25, 35] as const;
 
 export function winHealAmount(maxHp: number, boss: boolean): number {
-  if (boss) return Math.max(8, Math.floor(maxHp * 0.12));
-  return Math.max(6, Math.floor(maxHp * 0.08));
+  if (boss) return Math.max(10, Math.floor(maxHp * 0.18));
+  return Math.max(8, Math.floor(maxHp * 0.14));
 }
 
 /** 后期扩容三选一。种类可以混，必须在背包里。 */
@@ -43,11 +43,11 @@ export const ECONOMY = {
   refreshBase: 4, refreshStep: 2,
   lvl2Mult: 2.25, lvl3Mult: 5.2, sellRate: 0.38,
   winGold: (level: number) => 9 + (level - 1) * 2,
-  /** 普通胜利 max(6, 8%)；Boss 胜利 max(8, 12%)。够吃下下一关的第一击，补不满。 */
-  healAfterWin: 0.08,
-  bossHealRate: 0.12,
-  bossHealFlat: 8,
-  winHealFlat: 6,
+  /** 普通胜利 max(8, 14%)；Boss 胜利 max(10, 18%)。赢下来的人带得走下一关的第一击，补不满。 */
+  healAfterWin: 0.14,
+  bossHealRate: 0.18,
+  bossHealFlat: 10,
+  winHealFlat: 8,
   /** 附录 A08：护盾上限 50%（坚守专精 60%） */
   shieldCapRate: 0.5, potionThreshold: 0.4,
   /** 45 秒狂暴，每 5 秒 +10 个百分点，90 秒超时 */

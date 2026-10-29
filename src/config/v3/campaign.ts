@@ -349,11 +349,40 @@ export const HELL_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
  * 3.6.2 先把首领生命和攻击、普通关生命都 ×2。
  * 3.6.3 在那一档上再砍 30%：floor(×2 × 0.7) = floor(×1.4)。
  * 3.6.4：13–25 关的生命和攻击再 floor(×0.9)。40 关起的非首领另叠血量坡。终局生命再 ×3。
+ * 同一版再给会打的人一条窄缝：只削挡住通关的首领（wallEase），不动杂兵坡，不动终局 ×3。
  * 13–25 以外的普通关攻击保持 3.6.3。精英仍乘自己的 ELITE_HP_MULT。
  */
 /** 40 关起的非首领：先 ×1.30，之后每关再叠 5%。L40 若是首领则不吃这档。 */
 export function lateTrashMult(level: number): number {
   return 1.30 * Math.pow(1.05, level - 40);
+}
+
+/**
+ * 26 关起，武器和毒针每关多 1.2% 伤害。1–25 关是 1。
+ * 只加成已经走进中后期的构筑。40 关杂兵血量坡、终局 ×3、暴击和大火都不改。
+ */
+export function seasonedMult(level: number): number {
+  const lv = Math.floor(level);
+  if (lv <= 25) return 1;
+  return 1 + 0.012 * (lv - 25);
+}
+
+/**
+ * 相对 3.6.4 已落地的预算，再乘到首领的生命和攻击上。普通关返回 1。
+ * 5/10 关原先不在 13–25 的九折里，是前期砖墙。15/20/25 在九折上再让一截。
+ * 30/35 是认真打也能堆尸的中期首领。40/45 只让一成，给冲到后期的人留一口气。
+ * 50 关黄金心脏不在这里面：×3、无敌、大火都保持原样。
+ */
+export function wallEase(level: number, boss: boolean): number {
+  if (!boss) return 1;
+  if (level === 5) return 0.80;
+  if (level === 10) return 0.72;
+  if (level === 15) return 0.85;
+  if (level === 20 || level === 25) return 0.88;
+  if (level === 30) return 0.78;
+  if (level === 35) return 0.82;
+  if (level === 40 || level === 45) return 0.90;
+  return 1;
 }
 
 export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
@@ -369,6 +398,11 @@ export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
     }
     if (!boss && s.level >= 40) hp = Math.floor(hp * lateTrashMult(s.level));
     if (boss && s.level >= 50) hp *= 3;
+    const wall = wallEase(s.level, boss);
+    if (wall !== 1) {
+      hp = Math.floor(hp * wall);
+      damage = Math.floor(damage * wall);
+    }
     return { ...s, hp, damage };
   });
 }

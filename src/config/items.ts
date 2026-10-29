@@ -14,7 +14,7 @@ export interface ItemDef {
 }
 /**
  * 四级、五级。武器默认 floor(Lv3×1.70) / floor(Lv3×2.40)。
- * 表内数字来自附录 A08；Lv1–3 不动。商店不卖四五级。
+ * 表内数字来自附录 A08；Lv1–3 不动。普通货架不卖四五级，摇奖机另有极低概率。
  */
 function v5(v: [number, number, number], lv4?: number, lv5?: number): [number, number, number, number, number] {
   const a = lv4 ?? (v[2] <= 0 ? 0 : Math.floor(v[2] * 1.70));

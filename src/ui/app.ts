@@ -12,6 +12,7 @@ import type { GameState, ItemInstance, ItemKind, Level, Settings } from '../mode
 import { gemBonus, weaponDamage, weaponsBoostedBy } from '../systems/adjacency';
 import type { CombatEvent, CombatState } from '../systems/combat';
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
+import { slotBlurb, slotCost } from '../systems/slot';
 import { Game, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
 import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
 import { canMerge, mergeTargetIds } from '../systems/merge';
@@ -27,6 +28,7 @@ import { voiceBase } from './audioCatalog';
 import { resolveStart, restartTarget, shouldReplayOpening } from './classRun';
 import { playVoice, prefetchClassVoice, prefetchVoice, setVoiceEnabled, setVoiceVolume, stopVoice } from './voice';
 import { bossCinema, isBossStory, openingBeats } from './cinema';
+import { bagCellSize } from './bagLayout';
 import { iconSvg } from './icons';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -65,6 +67,8 @@ export class App {
   tutStep = -1;
   busy = false; // 防止快速连点
   cell = 60;
+  /** 最近一次摇奖结果，刷新商店面板时还留在机器上。 */
+  slotMsg = '';
   private phaser!: Phaser.Game;
 
   constructor() {
@@ -293,9 +297,7 @@ export class App {
     const s = g.s;
     const wide = window.innerWidth >= 960;
     document.body.classList.toggle('wide', wide);
-    const availW = wide ? 520 : Math.min(window.innerWidth, 600) - 36;
-    const availH = wide ? 560 : Math.max(200, Math.min(window.innerHeight * 0.42, 380));
-    this.cell = Math.max(40, Math.min(72, Math.floor(Math.min(availW / s.cols, availH / s.rows))));
+    this.cell = bagCellSize(window.innerWidth, s.cols, wide);
     document.documentElement.style.setProperty('--cell', this.cell + 'px');
     const battle = s.phase === 'battle';
     document.body.classList.toggle('inBattle', battle);
@@ -529,9 +531,27 @@ export class App {
           <div class="sName">${d.name} Lv${sl.level}</div><div class="sDesc">${d.desc(d.values[sl.level - 1])}</div>
           <button class="btn small ${sl.bought ? '' : 'gold'}" data-buy="${i}" ${sl.bought || poor || !prep ? 'disabled' : ''}>${sl.bought ? '已购买' : poor ? `金币不足（${p}）` : `<span class="coin"></span>${p} 购买`}</button></div>`;
       }).join('')}</div>
-      <button class="btn small wideBtn" id="refBtn" ${s.gold < rc || !prep ? 'disabled' : ''}>🔄 刷新商店 · <span class="coin"></span>${rc}${s.gold < rc ? '（金币不足）' : ''}</button>`;
+      <button class="btn small wideBtn" id="refBtn" ${s.gold < rc || !prep ? 'disabled' : ''}>🔄 刷新商店 · <span class="coin"></span>${rc}${s.gold < rc ? '（金币不足）' : ''}</button>
+      ${this.slotHtml(prep)}`;
     $('shop').querySelectorAll<HTMLElement>('[data-buy]').forEach(b => (b.onclick = () => this.guard(() => this.act(() => g.buy(+b.dataset.buy!), sfx.coin))));
     $('refBtn').onclick = () => this.guard(() => this.act(() => g.refreshShop(), sfx.coin));
+    $('slotBtn').onclick = () => this.guard(() => this.act(() => {
+      const r = g.pullSlot();
+      if (r.ok) this.slotMsg = r.msg ?? '摇完了';
+      return r;
+    }, sfx.coin));
+  }
+  slotHtml(prep: boolean) {
+    const s = this.game!.s;
+    const cost = slotCost(s.level);
+    const poor = s.gold < cost;
+    const msg = this.slotMsg ? `<div class="slotMsg">${esc(this.slotMsg)}</div>` : '';
+    return `<div class="slotBox">
+      <div class="sName">🎰 守财奴摇奖机</div>
+      <div class="sDesc">${slotBlurb()}</div>
+      ${msg}
+      <button class="btn small gold wideBtn" id="slotBtn" ${poor || !prep ? 'disabled' : ''}>${poor ? `金币不足（${cost}）` : `摇一次 · <span class="coin"></span>${cost}`}</button>
+    </div>`;
   }
   renderStats() {
     const l = this.game!.s.last; const el = $('statsPanel');
