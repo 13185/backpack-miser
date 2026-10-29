@@ -29,8 +29,16 @@ describe('3.6.4 后期血量与心脏', () => {
     expect(wallEase(41, false)).toBe(1);
     expect(getLevel(40).hp).toBe(Math.floor(3257 * wallEase(40, true)));
     expect(getLevel(41).boss).toBeFalsy();
-    expect(getLevel(46).hp).toBe(Math.floor(3418 * lateTrashMult(46)));
-    expect(getLevel(46).atk).toBe(35);
+    const ease4346 = (n: number) => Math.floor(n * 0.965);
+    expect(getLevel(42).hp).toBe(4341);
+    expect(getLevel(43).hp).toBe(ease4346(4817));
+    expect(getLevel(43).atk).toBe(ease4346(35));
+    expect(getLevel(45).boss).toBe(true);
+    expect(getLevel(45).hp).toBe(ease4346(3339));
+    expect(getLevel(45).atk).toBe(ease4346(33));
+    expect(getLevel(46).hp).toBe(ease4346(Math.floor(3418 * lateTrashMult(46))));
+    expect(getLevel(46).atk).toBe(ease4346(35));
+    expect(getLevel(47).hp).toBe(6570);
   });
 
   it('13–25 关先砍 10%，砖墙首领再让一截；终局生命仍 ×3', () => {
@@ -50,7 +58,7 @@ describe('3.6.4 后期血量与心脏', () => {
     expect(seasonedMult(25)).toBe(1);
     expect(seasonedMult(46)).toBeCloseTo(1 + 0.012 * 21, 5);
     expect(seasonedMult(50)).toBeCloseTo(1.3, 5);
-    expect(getLevel(46).hp).toBe(Math.floor(3418 * lateTrashMult(46)));
+    expect(getLevel(46).hp).toBe(Math.floor(Math.floor(3418 * lateTrashMult(46)) * 0.965));
   });
 
   it('首领普攻会出现大暴击，杂兵不会', () => {
