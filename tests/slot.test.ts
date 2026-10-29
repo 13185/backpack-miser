@@ -21,10 +21,11 @@ describe('摇奖机', () => {
     expect(SLOT_WEIGHTS.find(r => r.level === 4)!.w).toBe(15);
     expect(SLOT_WEIGHTS.find(r => r.level === 5)!.w).toBe(5);
     const text = slotBlurb();
-    expect(text).toContain('4级');
-    expect(text).toContain('5级');
-    expect(text).toContain('1.5%');
-    expect(text).toContain('0.5%');
+    expect(text).toContain('5级神器大奖');
+    expect(text).toContain('临时区');
+    expect(text).not.toContain('%');
+    expect(text).not.toContain('长期是亏的');
+    expect(text).not.toMatch(/\d+\.\d/);
     let lv4 = 0, lv5 = 0;
     for (let i = 0; i < SLOT_WEIGHT_TOTAL; i++) {
       const lv = rollSlot(i / SLOT_WEIGHT_TOTAL, 0.2, 1).level;
