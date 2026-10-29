@@ -19,6 +19,7 @@ import { buyPrice, canAfford, expansionOffer, refreshCost, sellPrice } from './e
 import { rollItems } from './loot';
 import { canMerge, mergeItems } from './merge';
 import { canPlace, findSpot, inBag } from './placement';
+import { LV4_GAMBLE, LV5_GAMBLE, gambleOutcome } from '../config/gamble';
 import { nextRandom, Rng } from './rng';
 import { SAVE_VERSION } from './save';
 
@@ -291,31 +292,40 @@ export class Game {
     const g = this.prepOnly(); if (g) return g;
     const a = this.find(sourceId), b = this.find(targetId);
     if (a?.kind === 'burden' || b?.kind === 'burden') return fail('负担物不可合成。');
-    if (a && b && a.level === 3 && b.level === 3 && a.kind === b.kind) return fail('两件 Lv3 要先确认再赌。');
+    if (a && b && a.kind === b.kind && a.level === b.level && (a.level === 3 || a.level === 4)) {
+      return fail(a.level === 4 ? '两件 Lv4 要先确认再赌。' : '两件 Lv3 要先确认再赌。');
+    }
     const r = mergeItems(this.s.items, sourceId, targetId);
     if (r.error) return fail(r.error);
     this.s.items = r.items;
     this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
     return this.commit({ ok: true, msg: `合成成功：${itemLabel(r.result!)}` });
   }
-  /** 两件相同 Lv3：50% 目标升为 Lv4，50% 只删掉拖来的那一件。立刻改 rng 并存档。 */
+  /** Lv3→Lv4 或 Lv4→Lv5。先改 rng 再改物品，立刻存档。 */
   gambleMerge(sourceId: string, targetId: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const a = this.find(sourceId), b = this.find(targetId);
     if (!a || !b) return fail('找不到装备。');
     if (a.kind === 'burden' || b.kind === 'burden') return fail('负担物不可合成。');
     const check = canMerge(a, b);
-    if (!check.ok || !check.gamble) return fail(check.ok ? '这不是 Lv3 对赌。' : check.reason);
+    if (!check.ok || !check.gamble) return fail(check.ok ? '这不是对赌合成。' : check.reason);
+    const odds = a.level === 4 ? LV5_GAMBLE : LV4_GAMBLE;
     const [roll, next] = nextRandom(this.s.rng);
     this.s.rng = next;
     const name = ITEMS[a.kind].name;
+    const outcome = gambleOutcome(roll, odds);
+    if (outcome === 'loseBoth') {
+      this.s.items = this.s.items.filter(i => i.id !== sourceId && i.id !== targetId);
+      this.s.runes = this.s.runes.map(rn => (rn.itemId === sourceId || rn.itemId === targetId) ? { ...rn, itemId: null } : rn);
+      return this.commit({ ok: true, msg: `赌输了：两件${name}都消失了` });
+    }
     this.s.items = this.s.items.filter(i => i.id !== sourceId);
     this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
-    if (roll < 0.5) {
-      b.level = 4;
-      return this.commit({ ok: true, msg: `赌成了：${name} Lv4` });
+    if (outcome === 'success') {
+      b.level = (a.level + 1) as Level;
+      return this.commit({ ok: true, msg: `赌成了：${name} Lv${b.level}` });
     }
-    return this.commit({ ok: true, msg: `赌输了：一件${name}消失了，另一件 Lv3 还在` });
+    return this.commit({ ok: true, msg: `赌输了：一件${name}消失了，另一件 Lv${b.level} 还在` });
   }
   sell(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -627,7 +637,7 @@ export class Game {
     if (this.s.phase !== 'camp') return fail('当前不在营地。');
     if (this.s.campServiceUsed) return fail('本次营地主服务已使用。');
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
-    if (it.level >= 3) return fail('营地最多锻到 Lv3。Lv4 只能用两件 Lv3 对赌。');
+    if (it.level >= 3) return fail('营地最多锻到 Lv3。Lv4 用两件 Lv3 对赌，Lv5 用两件 Lv4 对赌。');
     const cost = this.forgeCost(it.level);
     if (!canAfford(this.s.gold, cost)) return fail('金币不足。');
     this.s.gold -= cost;
@@ -731,7 +741,7 @@ export class Game {
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
     if (it.kind === 'burden') return fail('负担物不可升级。');
     if (it.level !== pu.fromLevel) return fail(`请选择${pu.fromLevel}级装备。`);
-    if (it.level >= 3) return fail('营地和事件最多升到 Lv3。Lv4 只能用两件 Lv3 对赌。');
+    if (it.level >= 3) return fail('营地和事件最多升到 Lv3。Lv4 用两件 Lv3 对赌，Lv5 用两件 Lv4 对赌。');
     it.level = (it.level + 1) as Level;
     this.s.pendingUpgrade = null;
     return this.commit({ ok: true, msg: `升级完成：${itemLabel(it)}` });

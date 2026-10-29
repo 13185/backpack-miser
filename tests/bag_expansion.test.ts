@@ -4,6 +4,7 @@ import { ITEMS } from '../src/config/items';
 import { Game, newGameState } from '../src/systems/game';
 import { expansionCost, expansionLabel, expansionUnlocked } from '../src/systems/economy';
 import { loadGame, migrateV3, saveGame, SAVE_KEY } from '../src/systems/save';
+import { LV5_GAMBLE, gambleOutcome } from '../src/config/gamble';
 import { nextRandom } from '../src/systems/rng';
 
 const mem = () => {
@@ -102,6 +103,7 @@ describe('背包扩容 3.3', () => {
     expect(win.s.items[0].id).toBe('b');
     expect(win.s.rng).not.toBe(winSeed);
     expect(ITEMS.greatsword.values[3]).toBeGreaterThan(ITEMS.greatsword.values[2]);
+    expect(ITEMS.greatsword.values[4]).toBeGreaterThan(ITEMS.greatsword.values[3]);
     const st = mem();
     saveGame(st, win.s);
     const loaded = loadGame(st);
@@ -133,5 +135,75 @@ describe('背包扩容 3.3', () => {
       expect(loaded2.state.items[0].id).toBe('b');
       expect(loaded2.state.rng).toBe(lose.s.rng);
     }
+  });
+
+  it('两件 Lv4 对赌：35% Lv5、40% 留一件、25% 全灭，重载不能重掷', () => {
+    expect(LV5_GAMBLE.success + LV5_GAMBLE.loseOne + LV5_GAMBLE.loseBoth).toBeCloseTo(1);
+    const buckets = { success: 0, loseOne: 0, loseBoth: 0 };
+    const seeds: Record<keyof typeof buckets, number> = { success: 0, loseOne: 0, loseBoth: 0 };
+    const samples = 400;
+    for (let s = 1; s <= samples; s++) {
+      const [roll] = nextRandom(s);
+      const outcome = gambleOutcome(roll, LV5_GAMBLE);
+      buckets[outcome]++;
+      if (!seeds[outcome]) seeds[outcome] = s;
+    }
+    expect(buckets.success / samples).toBeGreaterThan(0.25);
+    expect(buckets.success / samples).toBeLessThan(0.45);
+    expect(buckets.loseOne / samples).toBeGreaterThan(0.30);
+    expect(buckets.loseOne / samples).toBeLessThan(0.50);
+    expect(buckets.loseBoth / samples).toBeGreaterThan(0.15);
+    expect(buckets.loseBoth / samples).toBeLessThan(0.35);
+    const pair = (rng: number) => {
+      const g = new Game(newGameState(1));
+      g.s.rng = rng;
+      g.s.items = [
+        { id: 'a', kind: 'greatsword', level: 4, x: 0, y: 0, rotated: false },
+        { id: 'b', kind: 'greatsword', level: 4, x: 1, y: 0, rotated: false },
+      ];
+      return g;
+    };
+    const win = pair(seeds.success);
+    const ok = win.gambleMerge('a', 'b');
+    expect(ok.ok && ok.msg).toContain('Lv5');
+    expect(win.s.items).toEqual([expect.objectContaining({ id: 'b', level: 5, x: 1 })]);
+    expect(win.s.rng).not.toBe(seeds.success);
+    const st = mem();
+    saveGame(st, win.s);
+    const loaded = loadGame(st);
+    expect(loaded.status).toBe('ok');
+    if (loaded.status === 'ok') {
+      expect(loaded.state.items.map(i => i.level)).toEqual([5]);
+      expect(loaded.state.rng).toBe(win.s.rng);
+    }
+    const one = pair(seeds.loseOne);
+    const mid = one.gambleMerge('a', 'b');
+    expect(mid.ok && mid.msg).toContain('另一件');
+    expect(one.s.items).toEqual([expect.objectContaining({ id: 'b', level: 4, x: 1 })]);
+    const stMid = mem();
+    saveGame(stMid, one.s);
+    const loadedMid = loadGame(stMid);
+    expect(loadedMid.status).toBe('ok');
+    if (loadedMid.status === 'ok') {
+      expect(loadedMid.state.items).toHaveLength(1);
+      expect(loadedMid.state.items[0].level).toBe(4);
+      expect(loadedMid.state.rng).toBe(one.s.rng);
+    }
+    const both = pair(seeds.loseBoth);
+    const bad = both.gambleMerge('a', 'b');
+    expect(bad.ok && bad.msg).toContain('都消失');
+    expect(both.s.items).toHaveLength(0);
+    const stBoth = mem();
+    saveGame(stBoth, both.s);
+    const loadedBoth = loadGame(stBoth);
+    expect(loadedBoth.status).toBe('ok');
+    if (loadedBoth.status === 'ok') {
+      expect(loadedBoth.state.items).toHaveLength(0);
+      expect(loadedBoth.state.rng).toBe(both.s.rng);
+    }
+    const plain = pair(seeds.success);
+    expect(plain.merge('a', 'b').ok).toBe(false);
+    expect(plain.s.items).toHaveLength(2);
+    expect(plain.s.rng).toBe(seeds.success);
   });
 });

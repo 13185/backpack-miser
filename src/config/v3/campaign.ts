@@ -120,12 +120,13 @@ export const V3_STAGES_BASE: StageBudget[] = [
  * 3.3.0：背包在首领后继续长大，后期数值按新战力曲线回缩。
  * 段形仍是五段（1–10 逐步 / 10–20 明显 / 20–30 巨大 / 30–40 再抬 / 40–50 再抬）。无难度选择。
  */
-export const HARD_TUNE_VERSION = '3.3.0-bag-progression' as const;
+export const HARD_TUNE_VERSION = '3.3.0-lv5-gamble' as const;
 
 /**
  * 段形仍是五段。1–10 步长不动。10–20 略松，第 6 列买下后 19 关能打完。
- * 20 关以后伤害加算放慢：敌伤要让护盾和药水还起作用，否则扩容和 Lv4 都接不上输出。
- * 生命步长仍一档比一档大。
+ * 20 关以后伤害加算放慢：敌伤要让护盾和药水还起作用。
+ * 31 关起再把列出的攻击压一档。熔炉这类首领会把重击和过热叠在同一下，
+ * 不压的话 Lv4/Lv5 来不及出手。生命步长仍一档比一档大。
  */
 export const HARD_BANDS = [
   { from: 1, to: 10, hpStep: 0.032, dmgStep: 0.30, cutStep: 0.012, gold: 0.65 },
@@ -142,6 +143,11 @@ const HARD_CUT0 = 0.18;
 const HARD_BOSS_HP_SCALE = 0.88;
 /** 伤害加算上限，避免后期一击必杀无脑 */
 const HARD_DMG_ADD_CAP = 16;
+/**
+ * 31 关起的攻击乘数。Lv4/Lv5 要花对赌才拿得到，后期按「有几件、不是满包」来留出手时间。
+ * 1–30 不受影响。
+ */
+const LATE_REACH_DMG_SCALE = 0.62;
 
 export interface HardParams {
   hp: number;
@@ -202,6 +208,14 @@ export function applyHardTune(s: StageBudget): StageBudget {
   };
 }
 
+/** 进度地板之后再压 31 关起的攻击，避免地板把压掉的伤害加回来。 */
+function scaleLateReach(stages: StageBudget[]): StageBudget[] {
+  return stages.map(s => s.level < 31 ? s : {
+    ...s,
+    damage: Math.max(1, Math.round(s.damage * LATE_REACH_DMG_SCALE)),
+  });
+}
+
 /** Boss 相对上一关 HP 的进度地板（3.2.1 由 1.35 略降到 1.28） */
 export const HARD_BOSS_PROGRESS_FLOOR = 1.28;
 
@@ -228,9 +242,9 @@ function applyProgressFloor(stages: StageBudget[]): StageBudget[] {
   return out;
 }
 
-export const V3_STAGES: StageBudget[] = applyProgressFloor(
+export const V3_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
   V3_STAGES_BASE.map(applyLateTune).map(applyHardTune),
-);
+));
 export function stageOf(level: number): StageBudget {
   const s = V3_STAGES[level - 1];
   if (!s) throw new Error(`无效关卡 ${level}`);

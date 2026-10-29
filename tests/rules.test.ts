@@ -67,7 +67,8 @@ describe('合成', () => {
     expect(canMerge(mk('dagger', 0, 0), mk('dagger', 1, 0, 2))).toEqual({ ok: false, reason: '需要相同种类和等级才能合成。' });
     expect(canMerge(mk('dagger', 0, 0), mk('potion', 1, 0)).ok).toBe(false);
     expect(canMerge(mk('ruby', 0, 0, 3), mk('ruby', 1, 0, 3))).toEqual({ ok: true, gamble: true });
-    expect(canMerge(mk('ruby', 0, 0, 4), mk('ruby', 1, 0, 4))).toEqual({ ok: false, reason: '装备已达到最高等级。' });
+    expect(canMerge(mk('ruby', 0, 0, 4), mk('ruby', 1, 0, 4))).toEqual({ ok: true, gamble: true });
+    expect(canMerge(mk('ruby', 0, 0, 5), mk('ruby', 1, 0, 5))).toEqual({ ok: false, reason: '装备已达到最高等级。' });
   });
   it('结果保留目标位置朝向、数量正确、临时区与背包间无复制', () => {
     const a = mk('dagger', null, null), b = mk('dagger', 2, 1, 1, true), c = mk('potion', 0, 0);

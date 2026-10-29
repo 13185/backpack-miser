@@ -21,7 +21,7 @@ export function validate(s: any): s is GameState {
     typeof s.campaignLength === 'number' && s.campaignLength === CAMPAIGN_LENGTH &&
     typeof s.campaignVersion === 'number' &&
     (s.mode === 'story' || s.mode === 'ironman') &&
-    s.items.every((i: any) => typeof i.id === 'string' && typeof i.kind === 'string' && [1, 2, 3, 4].includes(i.level));
+    s.items.every((i: any) => typeof i.id === 'string' && typeof i.kind === 'string' && [1, 2, 3, 4, 5].includes(i.level));
 }
 
 /** 3.3 背包扩容：旧 v3 档补上 expansions，不改玩家当前的 rows/cols。 */

@@ -4,7 +4,7 @@ export type ItemKind =
   | 'emergency_ledger' | 'poison_needle'
   | 'crossbow' | 'chain_hammer' | 'warhammer' | 'ice_crystal' | 'war_banner'
   | 'burden';
-export type Level = 1 | 2 | 3 | 4;
+export type Level = 1 | 2 | 3 | 4 | 5;
 /** 装备实例：位于背包时有 x,y；临时区时为 null */
 export interface ItemInstance {
   id: string;

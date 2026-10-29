@@ -7,7 +7,8 @@ export function buyPrice(kind: ItemKind, level: Level): number {
   if (level === 1) return p;
   if (level === 2) return Math.ceil(p * ECONOMY.lvl2Mult);
   if (level === 3) return Math.ceil(p * ECONOMY.lvl3Mult);
-  return Math.ceil(p * ECONOMY.lvl3Mult * 2);
+  if (level === 4) return Math.ceil(p * ECONOMY.lvl3Mult * 2);
+  return Math.ceil(p * ECONOMY.lvl3Mult * 4);
 }
 export function sellPrice(kind: ItemKind, level: Level): number { return Math.floor(buyPrice(kind, level) * ECONOMY.sellRate); }
 /** refreshes: 已刷新次数；doctrineT06: 算计专精再-1 */
