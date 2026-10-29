@@ -1,4 +1,4 @@
-export const BALANCE_VERSION = '3.6.2-double';
+export const BALANCE_VERSION = '3.6.3-retune30';
 export const FORGE_SAFE_COST = 60;
 export const FORGE_RISK_UNLOCK = 12;
 export const FORGE_LEGEND_UNLOCK = 25;
