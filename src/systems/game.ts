@@ -298,7 +298,7 @@ export class Game {
     this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
     return this.commit({ ok: true, msg: `合成成功：${itemLabel(r.result!)}` });
   }
-  /** 两件相同 Lv3：50% 留下一件 Lv4，50% 两件都消失。立刻改 rng 并存档。 */
+  /** 两件相同 Lv3：50% 目标升为 Lv4，50% 只删掉拖来的那一件。立刻改 rng 并存档。 */
   gambleMerge(sourceId: string, targetId: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const a = this.find(sourceId), b = this.find(targetId);
@@ -309,15 +309,13 @@ export class Game {
     const [roll, next] = nextRandom(this.s.rng);
     this.s.rng = next;
     const name = ITEMS[a.kind].name;
+    this.s.items = this.s.items.filter(i => i.id !== sourceId);
+    this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
     if (roll < 0.5) {
       b.level = 4;
-      this.s.items = this.s.items.filter(i => i.id !== sourceId);
-      this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
       return this.commit({ ok: true, msg: `赌成了：${name} Lv4` });
     }
-    this.s.items = this.s.items.filter(i => i.id !== sourceId && i.id !== targetId);
-    this.s.runes = this.s.runes.map(rn => (rn.itemId === sourceId || rn.itemId === targetId) ? { ...rn, itemId: null } : rn);
-    return this.commit({ ok: true, msg: `赌输了：两件${name}都消失了` });
+    return this.commit({ ok: true, msg: `赌输了：一件${name}消失了，另一件 Lv3 还在` });
   }
   sell(id: string): Result {
     const g = this.prepOnly(); if (g) return g;

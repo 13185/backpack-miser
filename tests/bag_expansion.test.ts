@@ -70,7 +70,7 @@ describe('背包扩容 3.3', () => {
     saveGame(st, loaded.state);
   });
 
-  it('两件 Lv3 对赌：种子决定成败，失败两件都消失，重载不能重掷', () => {
+  it('两件 Lv3 对赌：种子决定成败，失败只留一件 Lv3，重载不能重掷', () => {
     let wins = 0;
     const samples = 200;
     for (let s = 1; s <= samples; s++) {
@@ -119,13 +119,18 @@ describe('背包扩容 3.3', () => {
     const lose = pair(failSeed);
     const bad = lose.gambleMerge('a', 'b');
     expect(bad.ok && bad.msg).toContain('消失');
-    expect(lose.s.items).toHaveLength(0);
+    expect(lose.s.items).toHaveLength(1);
+    expect(lose.s.items[0].id).toBe('b');
+    expect(lose.s.items[0].level).toBe(3);
+    expect(lose.s.items[0].x).toBe(1);
     const st2 = mem();
     saveGame(st2, lose.s);
     const loaded2 = loadGame(st2);
     expect(loaded2.status).toBe('ok');
     if (loaded2.status === 'ok') {
-      expect(loaded2.state.items).toHaveLength(0);
+      expect(loaded2.state.items).toHaveLength(1);
+      expect(loaded2.state.items[0].level).toBe(3);
+      expect(loaded2.state.items[0].id).toBe('b');
       expect(loaded2.state.rng).toBe(lose.s.rng);
     }
   });

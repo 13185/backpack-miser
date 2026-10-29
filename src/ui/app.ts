@@ -126,7 +126,7 @@ export class App {
         <li>✨ 同种同级装备拖到一起即可<b>合成升级</b>。</li>
         <li>💎 红宝石强化<b>上下左右</b>相邻的武器。</li>
         <li>⚔ 开战后装备自动攻击，征战50关、10个章节，第20关只是中段折转，第50关才是终点！</li>
-        <li>🎲 两件相同的 <b>Lv3</b> 可以赌合成：50% 得到一件更强的 Lv4，50% 两件都消失，结果立刻存档。</li>
+        <li>🎲 两件相同的 <b>Lv3</b> 可以赌合成：50% 得到一件更强的 Lv4，50% 只消失拖过去的那一件，结果立刻存档。</li>
       </ul>
       <label class="toggle"><input type="checkbox" id="tSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
     </div>`;
@@ -351,7 +351,7 @@ export class App {
     const next = it.level < 3
       ? `<div class="nextLv">合成后 Lv${it.level + 1}：${d.category === 'gem' ? '+' + nextVal + '%' : nextVal}</div>`
       : it.level === 3
-        ? `<div class="nextLv">拖到另一件 Lv3 上可赌 Lv4（数值 ${d.values[3]}）：50% 成功，50% 两件都消失。</div>`
+        ? `<div class="nextLv">拖到另一件 Lv3 上可赌 Lv4（数值 ${d.values[3]}）：50% 成功，50% 只消失拖过去的那一件。</div>`
         : `<div class="nextLv">Lv4 · 已是最高等级</div>`;
     const sp = sellPrice(it.kind, it.level); const confirming = this.sellConfirm?.id === it.id && this.sellConfirm.until > Date.now();
     const prep = g.s.phase === 'prep';
@@ -492,7 +492,7 @@ export class App {
       tip = d.drop.ok ? '' : '这里放不下';
     } else if (d.drop?.type === 'merge') {
       document.querySelectorAll(`.item[data-id="${d.drop.targetId}"]`).forEach(e => { if (!e.closest('.ghost')) e.classList.add((d.drop as any).ok ? 'mergeTarget' : 'mergeBad'); });
-      if (d.drop.ok && d.drop.gamble) tip = `赌 Lv4：50% 得到更强的一件，50% 两件都消失`;
+      if (d.drop.ok && d.drop.gamble) tip = `赌 Lv4：50% 得到更强的一件，50% 只消失拖过去的这一件`;
       else if (d.drop.ok) { const def = ITEMS[it.kind]; const nv = def.values[it.level as number]; tip = `✨ 合成预览：${def.name} Lv${it.level + 1}（${def.category === 'gem' ? '+' + nv + '%' : def.category === 'weapon' ? '伤害' + nv : def.category === 'shield' ? '护盾' + nv : def.category === 'potion' ? '治疗' + nv : '金币+' + nv}）`; }
       else tip = d.drop.reason ?? '';
     } else if (d.drop?.type === 'temp') tip = '放回临时区';
@@ -539,7 +539,7 @@ export class App {
     const ov = $('overlay');
     ov.className = 'show';
     ov.innerHTML = `<div class="modal"><h3>赌一把 Lv4</h3>
-      <p>两件 <b>${name} Lv3</b>：<b>50%</b> 合成一件 Lv4（数值 ${v4}），<b>50%</b> 两件都消失。结果马上写入存档，刷新不能重来。</p>
+      <p>两件 <b>${name} Lv3</b>：<b>50%</b> 合成一件 Lv4（数值 ${v4}），<b>50%</b> 只消失拖过去的那一件，另一件 Lv3 留在原地。结果马上写入存档，刷新不能重来。</p>
       <div class="btns"><button class="btn" id="gambleNo">取消</button><button class="btn danger" id="gambleYes">赌一把</button></div></div>`;
     $('gambleNo').onclick = () => { this.closeOverlay(); this.render(); };
     $('gambleYes').onclick = () => {
@@ -548,13 +548,13 @@ export class App {
       if (!r.ok) { sfx.error(); this.toast(r.msg, true); this.render(); return; }
       const msg = r.msg ?? '';
       const lost = msg.includes('消失');
+      this.selected = targetId;
       if (lost) {
         sfx.error();
         $('bagWrap')?.classList.add('bagFail');
         setTimeout(() => $('bagWrap')?.classList.remove('bagFail'), 700);
       } else {
         sfx.merge();
-        this.selected = targetId;
       }
       this.toast(msg, lost);
       this.render();
