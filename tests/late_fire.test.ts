@@ -53,8 +53,9 @@ describe('3.6.4 后期血量与心脏', () => {
     expect(getLevel(30).atk).toBe(Math.floor(32 * 0.78));
     expect(getLevel(35).hp).toBe(2245);
     expect(getLevel(35).atk).toBe(28);
-    expect(getLevel(50).hp).toBe(6204 * 3);
-    expect(getLevel(50).atk).toBe(43);
+    expect(getLevel(50).boss).toBe(true);
+    expect(getLevel(50).hp).toBe(Math.floor(6204 * 3 * 0.85));
+    expect(getLevel(50).atk).toBe(Math.floor(43 * 0.85));
     expect(seasonedMult(25)).toBe(1);
     expect(seasonedMult(46)).toBeCloseTo(1 + 0.012 * 21, 5);
     expect(seasonedMult(50)).toBeCloseTo(1.3, 5);
