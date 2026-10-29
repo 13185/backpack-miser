@@ -80,8 +80,8 @@ export function loadGame(st: Storage): LoadResult {
 export function saveGame(st: Storage, s: GameState) { try { st.setItem(SAVE_KEY, JSON.stringify(s)); } catch { /* 存储满或禁用时忽略 */ } }
 export function clearSave(st: Storage) { try { st.removeItem(SAVE_KEY); } catch { /* */ } }
 export function loadSettings(st: Storage): Settings {
-  try { const s = JSON.parse(st.getItem(SETTINGS_KEY) || '{}'); return { sound: s.sound !== false, tutorialDone: !!s.tutorialDone }; }
-  catch { return { sound: true, tutorialDone: false }; }
+  try { const s = JSON.parse(st.getItem(SETTINGS_KEY) || '{}'); return { sound: s.sound !== false, tutorialDone: !!s.tutorialDone, openingSeen: !!s.openingSeen }; }
+  catch { return { sound: true, tutorialDone: false, openingSeen: false }; }
 }
 export function saveSettings(st: Storage, s: Settings) { try { st.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch { /* */ } }
 

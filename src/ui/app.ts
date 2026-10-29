@@ -5,7 +5,7 @@ import { LV4_GAMBLE, LV5_GAMBLE, gamblePct, type GambleOdds } from '../config/ga
 import { ITEMS } from '../config/items';
 import { MONSTER_BASE } from '../config/monsters';
 import { EVENTS as EVENTS_MAP } from '../config/v3/events';
-import { CAMPAIGN_LENGTH, getLevel, isMidAct, applyEliteOverlay, V3_CHAPTERS, RUNES, DOCTRINES, ENDING_CHOICES, ENDING_IDS, CHAPTER_INTROS, MID_ACT_STORY, resolveStoryText, LEVEL_LINES, runeLegalForItem, V3_RELICS, type RuneId, type EndingId, type RelicId } from '../config/v3';
+import { CAMPAIGN_LENGTH, getLevel, isBossLevel, isMidAct, applyEliteOverlay, V3_CHAPTERS, RUNES, DOCTRINES, ENDING_CHOICES, ENDING_IDS, CHAPTER_INTROS, MID_ACT_STORY, resolveStoryText, LEVEL_LINES, runeLegalForItem, V3_RELICS, type RuneId, type EndingId, type RelicId } from '../config/v3';
 import type { GameState, ItemInstance, ItemKind, Level, Settings } from '../models/types';
 import { gemBonus, weaponDamage, weaponsBoostedBy } from '../systems/adjacency';
 import type { CombatEvent, CombatState } from '../systems/combat';
@@ -19,7 +19,9 @@ import { BattleScene } from '../scenes/BattleScene';
 import { AnimPreviewScene } from '../scenes/AnimPreviewScene';
 import { isV2Enabled } from '../config/v2';
 import type { HeroClassId } from '../art/types';
-import { setSound, sfx, unlockAudio } from './audio';
+import { maybeShout, monsterCue, setSound, sfx, unlockAudio } from './audio';
+import { duckBgm, setBgm, setMusicEnabled } from './bgm';
+import { bossCinema, isBossStory, openingBeats } from './cinema';
 import { iconSvg } from './icons';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -56,6 +58,7 @@ export class App {
   constructor() {
     this.settings = loadSettings(localStorage);
     setSound(this.settings.sound);
+    setMusicEnabled(this.settings.sound);
     document.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
     // 标题不等 Phaser、不等素材。静态 #boot 在 JS 到达前盖住空骨架。
     this.showTitle();
@@ -95,7 +98,9 @@ export class App {
   }
   // ---------- 存档 ----------
   private persist = (s: GameState) => saveGame(localStorage, s);
-  private saveSettings() { saveSettings(localStorage, this.settings); setSound(this.settings.sound); }
+  private saveSettings() { saveSettings(localStorage, this.settings); setSound(this.settings.sound); setMusicEnabled(this.settings.sound); }
+  private cinemaOn = false;
+  private battleFlip = false;
 
   // ---------- 标题界面 ----------
   showTitle(message?: string) {
@@ -173,7 +178,9 @@ export class App {
     if (!st.seenDialogue.includes('ch1_intro')) st.pendingStoryId = 'ch1_intro';
     saveGame(localStorage, st);
     this.tutStep = this.settings.tutorialDone ? -1 : 0;
-    this.loadState(st);
+    const start = () => this.loadState(st);
+    if (!this.settings.openingSeen) this.playOpening(this.heroClass, () => { this.settings.openingSeen = true; this.saveSettings(); start(); });
+    else start();
   }
   loadState(st: GameState) {
     applyBossPrep(st);
@@ -186,6 +193,7 @@ export class App {
     } else {
       this.render();
       if (st.phase === 'camp') this.showCamp();
+      else if (isBossStory(st.pendingStoryId) && (st.phase === 'loot' || st.phase === 'victory')) this.playBossCinema(() => this.finishBossStory());
       else this.showPendingModals();
     }
   }
@@ -218,6 +226,7 @@ export class App {
     document.documentElement.style.setProperty('--cell', this.cell + 'px');
     const battle = s.phase === 'battle';
     document.body.classList.toggle('inBattle', battle);
+    if (!this.cinemaOn && s.phase === 'prep') setBgm('prep');
     // HUD
     const ch = V3_CHAPTERS.find(c => c.id === (s.currentChapter ?? 1));
     const lvDef = getLevel(s.level);
@@ -614,6 +623,9 @@ export class App {
     const c = g.makeCombat();
     this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
     this.scene.setSpeed(this.speed);
+    this.battleFlip = !this.battleFlip;
+    const tune = g.s.eliteActive ? 'elite' : isBossLevel(g.s.level) ? (g.s.level >= 50 ? 'final' : 'boss') : (this.battleFlip ? 'battleA' : 'battleB');
+    setBgm(tune);
     this.scene.start(c, g.s.items.map(i => ({ ...i })), {
       onEvents: (ev, cs) => this.onBattleEvents(ev, cs),
       onEnd: cs => this.endBattle(cs),
@@ -624,9 +636,10 @@ export class App {
     for (const e of ev) {
       if (e.type === 'weapon' || e.type === 'shield' || e.type === 'potion') {
         document.querySelectorAll(`#bag .item[data-id="${e.itemId}"]`).forEach(el => { el.classList.remove('fire'); void (el as HTMLElement).offsetWidth; el.classList.add('fire'); });
+        if (e.type === 'weapon') maybeShout(this.game?.s.heroClass ?? 'merchant');
         (e.type === 'weapon' ? (e.heavy ? sfx.heavy : sfx.hit) : e.type === 'shield' ? sfx.shield : sfx.heal)();
         if (e.type === 'potion') document.querySelectorAll(`#bag .item[data-id="${e.itemId}"]`).forEach(el => el.classList.add('used'));
-      } else if (e.type === 'monsterAttack') sfx.hurt();
+      } else if (e.type === 'monsterAttack') { sfx.hurt(); monsterCue(getLevel(this.game?.s.level ?? 1).monster); }
       else if (e.type === 'enrage' || e.type === 'bossHaste') sfx.enrage();
     }
     const hpEl = document.querySelector('.hud .hp b, #hud .hp b'); if (hpEl) hpEl.textContent = `${c.hp}/${c.maxHp}`;
@@ -637,10 +650,69 @@ export class App {
     const r = g.settle(c); if (!r.ok) return; // 只结算一次
     const s = g.s; const l = s.last!;
     this.render();
-    if (s.phase === 'loot') { sfx.win(); this.showLoot(); }
-    else if (s.phase === 'victory') { sfx.win(); this.showEnd(true); }
-    else { sfx.lose(); this.showEnd(false); }
+    if (!c.won) { setBgm('lose'); this.showEnd(false); return; }
+    if (isBossStory(s.pendingStoryId)) { this.playBossCinema(() => this.finishBossStory()); return; }
+    setBgm('win');
+    window.setTimeout(() => { if (!this.cinemaOn) setBgm('prep'); }, 1700);
+    if (s.phase === 'loot') this.showLoot();
+    else this.showEnd(true);
     void l;
+  }
+  /** 结算已经写入。演出结束或跳过都走这里，不再发一次奖励。 */
+  private finishBossStory() {
+    const g = this.game; if (!g) return;
+    if (isBossStory(g.s.pendingStoryId)) g.dismissStory();
+    duckBgm(false);
+    if (g.s.phase === 'victory') { setBgm('final'); this.showEnd(true); return; }
+    setBgm('prep');
+    if (g.s.phase === 'loot' && g.s.loot && !g.s.loot.claimed) this.showLoot();
+    else this.showPendingModals();
+  }
+  private playOpening(hero: typeof this.heroClass, onDone: () => void) {
+    this.playCinema(openingBeats(hero), onDone);
+  }
+  private playBossCinema(onDone: () => void) {
+    const level = this.game?.s.level ?? 0;
+    const beat = bossCinema(level);
+    if (!beat) { onDone(); return; }
+    this.playCinema([beat], onDone);
+  }
+  private playCinema(beats: { id: string; ms: number; line: string; look: string; title: string }[], onDone: () => void) {
+    if (this.cinemaOn) return;
+    this.cinemaOn = true;
+    if (this.scene) this.scene.paused = true;
+    setBgm('story');
+    duckBgm(true);
+    const root = $('cinema');
+    root.hidden = false;
+    let i = 0;
+    let timer = 0;
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(timer);
+      root.hidden = true;
+      root.innerHTML = '';
+      this.cinemaOn = false;
+      duckBgm(false);
+      if (this.scene && !document.hidden) this.scene.paused = false;
+      onDone();
+    };
+    const show = () => {
+      const b = beats[i];
+      if (!b) { finish(); return; }
+      root.innerHTML = `<div class="cinema ${b.look}" role="dialog" aria-label="${b.id}">
+        <div class="cinLayer cinBack"></div><div class="cinLayer cinMid"></div><div class="cinLayer cinFront"></div>
+        <div class="cinCard"><div class="cinId">${b.id} · ${b.title}</div><p class="cinLine">${b.line}</p>
+        <div class="btns"><button class="btn" id="cinNext">继续</button><button class="btn" id="cinSkip">跳过</button></div></div>
+      </div>`;
+      $('cinSkip').onclick = () => finish();
+      $('cinNext').onclick = () => { i++; show(); };
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => { i++; show(); }, b.ms);
+    };
+    show();
   }
   showLoot() {
     const g = this.game!, s = g.s, l = s.last!, loot = s.loot!;
@@ -768,6 +840,7 @@ export class App {
     if (s.pendingRoute) { this.showRoutePick(); return; }
     if (s.pendingEventId) { this.showEventModal(); return; }
     if (s.pendingUpgrade) { this.showUpgradePick(); return; }
+    if (isBossStory(s.pendingStoryId)) { this.playBossCinema(() => this.finishBossStory()); return; }
     if (s.pendingStoryId) { this.showStoryModal(s.pendingStoryId); return; }
     if (s.pendingRuneChoices?.length) { this.showRunePick(); return; }
     if (s.pendingDoctrineChoices?.length) { this.showDoctrinePick(); return; }
@@ -982,10 +1055,11 @@ export class App {
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
       <p class="muted">版本 3.3.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
-      <div class="btns col"><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
+      <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;
     ($('sSound') as HTMLInputElement).onchange = e => { this.settings.sound = (e.target as HTMLInputElement).checked; this.saveSettings(); this.render(); };
     $('sClose').onclick = () => { this.closeOverlay(); const ph = this.game?.s.phase; if (ph === 'loot') this.showLoot(); else if (ph === 'camp') this.showCamp(); else if (ph === 'victory' || ph === 'defeat') this.showEnd(ph === 'victory'); else if (!this.game) this.showTitle(); };
+    $('sOpen').onclick = () => { this.closeOverlay(); this.playOpening(this.heroClass, () => this.showSettings()); };
     $('sTut').onclick = () => { this.closeOverlay(); this.tutStep = 0; this.render(); };
     $('sTitle').onclick = () => { if (this.game?.s.phase === 'battle') { this.scene.combat = null; } this.showTitle(); };
     $('sRestart').onclick = () => { if (confirm('确定放弃当前进度并重新开始？')) { this.scene.combat = null; this.newGame(); } };
