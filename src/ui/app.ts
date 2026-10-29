@@ -33,6 +33,10 @@ interface DragState {
   id: string; startX: number; startY: number; active: boolean; rotated: boolean;
   grabDx: number; grabDy: number; ghost: HTMLElement | null; from: 'bag' | 'temp';
   drop: { type: 'place'; x: number; y: number; ok: boolean } | { type: 'merge'; targetId: string; ok: boolean; gamble?: boolean; reason?: string } | { type: 'temp' } | null;
+  pointerType: string;
+  t0: number;
+  /** pending：还没决定。drag：这次手势归装备。scroll：交给页面滚动。 */
+  claim: 'pending' | 'drag' | 'scroll';
 }
 const TUTORIAL = [
   { sel: '#bag', text: '① 装备必须放进<b>背包</b>才会生效，临时区的装备不参与战斗。' },
@@ -48,6 +52,7 @@ export class App {
   scene!: BattleScene;
   selected: string | null = null;
   drag: DragState | null = null;
+  private holdTimer = 0;
   sellConfirm: { id: string; until: number } | null = null;
   speed = 1;
   heroClass: HeroClassId = 'merchant';
@@ -68,6 +73,7 @@ export class App {
       type: Phaser.AUTO, parent: 'battle', backgroundColor: '#15101e', transparent: false,
       scale: { mode: Phaser.Scale.RESIZE, width: '100%', height: '100%' }, scene: [BattleScene, AnimPreviewScene],
       render: { antialias: true }, banner: false, audio: { noAudio: true },
+      input: { touch: { capture: false } },
     });
     const bootUi = () => {
       this.scene = this.phaser.scene.getScene('battle') as BattleScene;
@@ -95,6 +101,9 @@ export class App {
     });
     window.addEventListener('resize', () => this.render());
     window.addEventListener('pointermove', e => this.onMove(e), { passive: false });
+    window.addEventListener('touchmove', e => {
+      if (this.drag?.claim === 'drag' && e.cancelable) e.preventDefault();
+    }, { passive: false });
     window.addEventListener('pointerup', e => this.onUp(e));
     window.addEventListener('pointercancel', () => this.cancelDrag());
   }
@@ -446,13 +455,21 @@ export class App {
   // ---------- 拖动 ----------
   onDown(e: PointerEvent, id: string, from: 'bag' | 'temp') {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    e.preventDefault();
+    const touch = e.pointerType !== 'mouse';
+    if (!touch) e.preventDefault();
     const it = this.game!.find(id); if (!it) return;
     const el = e.currentTarget as HTMLElement; const r = el.getBoundingClientRect();
     const cs = from === 'bag' ? this.cell : r.width / itemSize(it.kind, it.rotated).w;
-    this.drag = { id, startX: e.clientX, startY: e.clientY, active: false, rotated: it.rotated, grabDx: Math.floor((e.clientX - r.left) / cs), grabDy: Math.floor((e.clientY - r.top) / cs), ghost: null, from, drop: null };
+    this.drag = {
+      id, startX: e.clientX, startY: e.clientY, active: false, rotated: it.rotated,
+      grabDx: Math.floor((e.clientX - r.left) / cs), grabDy: Math.floor((e.clientY - r.top) / cs),
+      ghost: null, from, drop: null, pointerType: e.pointerType, t0: performance.now(),
+      claim: touch ? 'pending' : 'drag',
+    };
     const sz = itemSize(it.kind, it.rotated);
     this.drag.grabDx = Math.min(sz.w - 1, Math.max(0, this.drag.grabDx)); this.drag.grabDy = Math.min(sz.h - 1, Math.max(0, this.drag.grabDy));
+    window.clearTimeout(this.holdTimer);
+    if (touch) this.holdTimer = window.setTimeout(() => { if (this.drag?.claim === 'pending') this.drag.claim = 'drag'; }, 150);
   }
   rotateDrag() {
     const d = this.drag!; const it = this.game!.find(d.id)!;
@@ -470,11 +487,20 @@ export class App {
   onMove(e: PointerEvent) {
     const d = this.drag; if (!d) return;
     if (!d.active) {
-      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 7) return;
-      if (this.game!.s.phase !== 'prep') { this.drag = null; this.toast('战斗中无法整理背包。', true); return; }
+      const dx = e.clientX - d.startX, dy = e.clientY - d.startY;
+      const dist = Math.hypot(dx, dy);
+      if (d.pointerType !== 'mouse') {
+        const held = d.claim === 'drag' || performance.now() - d.t0 >= 150;
+        const vertical = Math.abs(dy) >= 10 && Math.abs(dy) > Math.abs(dx) * 1.2;
+        if (!held && vertical) { this.releaseDrag(false); return; }
+        const sideways = Math.abs(dx) >= 8 && Math.abs(dx) > Math.abs(dy);
+        if (!(held || sideways) || dist < 7) return;
+      } else if (dist < 7) return;
+      if (this.game!.s.phase !== 'prep') { this.releaseDrag(false); this.toast('战斗中无法整理背包。', true); return; }
+      d.claim = 'drag';
       d.active = true; if (document.body.classList.contains('wide')) this.selected = d.id; else this.selected = null; sfx.pick(); this.makeGhost(); this.renderBag(); this.renderDetails();
     }
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     const sc = $('bagScroll');
     if (sc) {
       const r = sc.getBoundingClientRect();
@@ -543,10 +569,11 @@ export class App {
     tipEl.classList.toggle('good', d.drop?.type === 'merge' && d.drop.ok);
   }
   onUp(e: PointerEvent) {
+    window.clearTimeout(this.holdTimer);
     const d = this.drag; if (!d) return;
     const g = this.game!;
     if (!d.active) { // 点击 → 查看详情
-      this.drag = null;
+      this.releaseDrag(false);
       if (!(e.target as HTMLElement).closest('.item')) return;
       this.selected = this.selected === d.id ? null : d.id; this.sellConfirm = null; sfx.click(); this.render(); return;
     }
@@ -563,7 +590,14 @@ export class App {
       else { sfx.error(); this.toast('这里放不下。', true); this.render(); }
     } else { if (inBag(g.find(d.id)!)) this.act(() => g.toTemp(d.id), sfx.drop); else this.render(); }
   }
-  cancelDrag() { if (this.drag) { this.drag.ghost?.remove(); this.drag = null; this.render(); } }
+  private releaseDrag(render: boolean) {
+    window.clearTimeout(this.holdTimer);
+    if (!this.drag) return;
+    this.drag.ghost?.remove();
+    this.drag = null;
+    if (render) this.render();
+  }
+  cancelDrag() { this.releaseDrag(true); }
   flashMerge(id: string) {
     document.querySelectorAll(`.item[data-id="${id}"]`).forEach(el => { el.classList.add('merged'); });
   }
@@ -1063,7 +1097,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.4.1 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.4.2 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
       <button class="btn danger" id="sRestart">放弃并重新开始</button><button class="btn gold" id="sClose">关闭</button></div></div>`;
