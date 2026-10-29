@@ -26,7 +26,11 @@ const PAINTED: ReadonlySet<ItemKind> = new Set<ItemKind>([
   'dagger', 'greatsword', 'shield', 'potion', 'ruby', 'moneybag', 'spear', 'compass', 'firework_crossbow',
   'fold_wall', 'travel_lamp', 'emergency_ledger', 'poison_needle', 'crossbow', 'chain_hammer', 'warhammer', 'ice_crystal', 'war_banner',
 ]);
-export function iconSvg(kind: ItemKind): string {
-  if (PAINTED.has(kind)) return `<img src="art/items/${kind}.png" class="icon" alt="" aria-hidden="true" draggable="false">`;
+function svgIcon(kind: ItemKind): string {
   return `<svg viewBox="0 0 64 64" class="icon" aria-hidden="true">${S[kind] ?? ''}</svg>`;
+}
+export function iconSvg(kind: ItemKind): string {
+  if (!PAINTED.has(kind)) return svgIcon(kind);
+  const fb = svgIcon(kind).replace(/"/g, '&quot;');
+  return `<img src="art/items/${kind}.png" class="icon" alt="" aria-hidden="true" draggable="false" data-fb="${fb}" onerror="this.outerHTML=this.dataset.fb">`;
 }
