@@ -8,7 +8,7 @@ import { CAMPAIGN_LENGTH, getLevel, isMidAct, applyEliteOverlay, V3_CHAPTERS, RU
 import type { GameState, ItemInstance, ItemKind, Level, Settings } from '../models/types';
 import { gemBonus, weaponDamage, weaponsBoostedBy } from '../systems/adjacency';
 import type { CombatEvent, CombatState } from '../systems/combat';
-import { buyPrice, expansionCost, refreshCost, sellPrice } from '../systems/economy';
+import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { Game, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
 import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
 import { canMerge } from '../systems/merge';
@@ -27,7 +27,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;
 interface DragState {
   id: string; startX: number; startY: number; active: boolean; rotated: boolean;
   grabDx: number; grabDy: number; ghost: HTMLElement | null; from: 'bag' | 'temp';
-  drop: { type: 'place'; x: number; y: number; ok: boolean } | { type: 'merge'; targetId: string; ok: boolean; reason?: string } | { type: 'temp' } | null;
+  drop: { type: 'place'; x: number; y: number; ok: boolean } | { type: 'merge'; targetId: string; ok: boolean; gamble?: boolean; reason?: string } | { type: 'temp' } | null;
 }
 const TUTORIAL = [
   { sel: '#bag', text: '① 装备必须放进<b>背包</b>才会生效，临时区的装备不参与战斗。' },
@@ -126,6 +126,7 @@ export class App {
         <li>✨ 同种同级装备拖到一起即可<b>合成升级</b>。</li>
         <li>💎 红宝石强化<b>上下左右</b>相邻的武器。</li>
         <li>⚔ 开战后装备自动攻击，征战50关、10个章节，第20关只是中段折转，第50关才是终点！</li>
+        <li>🎲 两件相同的 <b>Lv3</b> 可以赌合成：50% 得到一件更强的 Lv4，50% 两件都消失，结果立刻存档。</li>
       </ul>
       <label class="toggle"><input type="checkbox" id="tSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
     </div>`;
@@ -208,8 +209,9 @@ export class App {
     const s = g.s;
     const wide = window.innerWidth >= 960;
     document.body.classList.toggle('wide', wide);
-    const avail = wide ? 520 : Math.min(window.innerWidth, 600) - 28;
-    this.cell = Math.max(44, Math.min(72, Math.floor(avail / s.cols)));
+    const availW = wide ? 520 : Math.min(window.innerWidth, 600) - 36;
+    const availH = wide ? 560 : Math.max(200, Math.min(window.innerHeight * 0.42, 380));
+    this.cell = Math.max(28, Math.min(72, Math.floor(Math.min(availW / s.cols, availH / s.rows))));
     document.documentElement.style.setProperty('--cell', this.cell + 'px');
     const battle = s.phase === 'battle';
     document.body.classList.toggle('inBattle', battle);
@@ -227,6 +229,14 @@ export class App {
     $('logBtn').onclick = () => this.showStoryLog();
     $('soundBtn').onclick = () => { this.settings.sound = !this.settings.sound; this.saveSettings(); this.render(); };
     $('setBtn').onclick = () => this.showSettings();
+    if (s.pendingBagToast) {
+      const lv = s.pendingBagToast;
+      const offer = expansionOffer(s.expansions);
+      s.pendingBagToast = undefined;
+      const what = offer?.axis === 'col' ? '新的一列' : '新的一行';
+      this.toast(`击败第${lv}关首领！可以花钱解锁${what}`);
+      this.persist(s);
+    }
     this.renderMid(); this.renderBag(); this.renderTemp(); this.renderDetails(); this.renderShop(); this.renderStats(); this.renderTutorial();
   }
   renderMid() {
@@ -280,10 +290,19 @@ export class App {
     $('bagHead').innerHTML = `<div class="ptitle">🎒 背包 <small>${s.cols}×${s.rows}</small></div>
       <button class="btn small" id="rotBtn" ${this.selected && ITEMS[g.find(this.selected)?.kind ?? 'potion'].rotatable && s.phase === 'prep' ? '' : 'disabled'}>⟳ 旋转（R）</button>`;
     $('rotBtn').onclick = () => { if (this.selected) this.act(() => g.rotate(this.selected!)); };
-    const cost = expansionCost(s.expansions);
-    $('expand').innerHTML = cost === null ? `<div class="expMax">背包已扩容至最大（5×6）</div>`
-      : `<button class="expandRow ${s.gold >= cost && s.phase === 'prep' ? '' : 'disabled'}" id="expBtn" style="width:${s.cols * c}px">➕ 扩容：新增第${s.rows + 1}行（${s.cols}格） · <span class="coin"></span>${cost}${s.gold < cost ? ' · 金币不足' : ''}</button>`;
-    if (cost !== null) $('expBtn').onclick = () => this.guard(() => this.act(() => g.expand(), sfx.coin));
+    const exp = expansionLabel(s.level, s.rows, s.cols, s.expansions);
+    const offer = expansionOffer(s.expansions);
+    const poor = !!offer && s.gold < offer.cost;
+    $('expand').innerHTML = !exp.canBuy
+      ? `<div class="expMax">${exp.text}</div>`
+      : `<button class="expandRow ${!poor && s.phase === 'prep' ? '' : 'disabled'}" id="expBtn" style="width:${Math.min(s.cols * c, 360)}px">➕ ${exp.text}${poor ? ' · 金币不足' : ''}</button>`;
+    if (exp.canBuy) $('expBtn').onclick = () => this.guard(() => {
+      const before = g.s.expansions;
+      if (this.act(() => g.expand(), sfx.coin) && g.s.expansions > before) {
+        $('bagWrap')?.classList.add('bagGrow');
+        setTimeout(() => $('bagWrap')?.classList.remove('bagGrow'), 900);
+      }
+    });
     bag.querySelectorAll<HTMLElement>('.item').forEach(el => el.addEventListener('pointerdown', e => this.onDown(e, el.dataset.id!, 'bag')));
   }
   renderTemp() {
@@ -328,7 +347,12 @@ export class App {
     else if (d.category === 'passive') stats = `<div>减甲：<b>${v}</b> · 持续前8秒</div>`;
     else if (d.category === 'economy') stats = `<div>开战金&lt;30时额外：<b>+${v}</b> 金币</div>`;
     else stats = `<div>胜利金币：<b>+${v}</b></div>`;
-    const next = it.level < 3 ? `<div class="nextLv">合成后 Lv${it.level + 1}：${d.category === 'gem' ? '+' + d.values[it.level as number] + '%' : d.values[it.level as number]}</div>` : `<div class="nextLv">已达最高等级</div>`;
+    const nextVal = it.level < 3 ? d.values[(it.level) as 1 | 2] : d.values[3];
+    const next = it.level < 3
+      ? `<div class="nextLv">合成后 Lv${it.level + 1}：${d.category === 'gem' ? '+' + nextVal + '%' : nextVal}</div>`
+      : it.level === 3
+        ? `<div class="nextLv">拖到另一件 Lv3 上可赌 Lv4（数值 ${d.values[3]}）：50% 成功，50% 两件都消失。</div>`
+        : `<div class="nextLv">Lv4 · 已是最高等级</div>`;
     const sp = sellPrice(it.kind, it.level); const confirming = this.sellConfirm?.id === it.id && this.sellConfirm.until > Date.now();
     const prep = g.s.phase === 'prep';
     el.innerHTML = `<div class="ptitle">🔍 装备详情 <button class="iconBtn closeSheet" id="closeDet">✕</button></div>
@@ -445,7 +469,7 @@ export class App {
     else if (targetEl && targetEl.dataset.id && !targetEl.closest('.ghost')) target = g.find(targetEl.dataset.id);
     if (target && target.id !== d.id) {
       const m = canMerge(it, target);
-      if (m.ok) { d.drop = { type: 'merge', targetId: target.id, ok: true }; return; }
+      if (m.ok) { d.drop = { type: 'merge', targetId: target.id, ok: true, gamble: !!m.gamble }; return; }
       if (!inGrid) { d.drop = { type: 'merge', targetId: target.id, ok: false, reason: m.reason }; return; }
       if (target.kind === it.kind) { d.drop = { type: 'merge', targetId: target.id, ok: false, reason: m.reason }; return; }
     }
@@ -468,7 +492,8 @@ export class App {
       tip = d.drop.ok ? '' : '这里放不下';
     } else if (d.drop?.type === 'merge') {
       document.querySelectorAll(`.item[data-id="${d.drop.targetId}"]`).forEach(e => { if (!e.closest('.ghost')) e.classList.add((d.drop as any).ok ? 'mergeTarget' : 'mergeBad'); });
-      if (d.drop.ok) { const def = ITEMS[it.kind]; const nv = def.values[it.level as number]; tip = `✨ 合成预览：${def.name} Lv${it.level + 1}（${def.category === 'gem' ? '+' + nv + '%' : def.category === 'weapon' ? '伤害' + nv : def.category === 'shield' ? '护盾' + nv : def.category === 'potion' ? '治疗' + nv : '金币+' + nv}）`; }
+      if (d.drop.ok && d.drop.gamble) tip = `赌 Lv4：50% 得到更强的一件，50% 两件都消失`;
+      else if (d.drop.ok) { const def = ITEMS[it.kind]; const nv = def.values[it.level as number]; tip = `✨ 合成预览：${def.name} Lv${it.level + 1}（${def.category === 'gem' ? '+' + nv + '%' : def.category === 'weapon' ? '伤害' + nv : def.category === 'shield' ? '护盾' + nv : def.category === 'potion' ? '治疗' + nv : '金币+' + nv}）`; }
       else tip = d.drop.reason ?? '';
     } else if (d.drop?.type === 'temp') tip = '放回临时区';
     pv.innerHTML = html;
@@ -493,6 +518,7 @@ export class App {
     $('tempWrap').classList.remove('dropHere');
     if (!drop) { sfx.drop(); this.render(); return; } // 无效位置：回到原处
     if (drop.type === 'merge') {
+      if (drop.ok && drop.gamble) { this.confirmGamble(d.id, drop.targetId); return; }
       if (drop.ok) { if (this.act(() => g.merge(d.id, drop.targetId), sfx.merge)) { this.selected = drop.targetId; this.render(); this.flashMerge(drop.targetId); } }
       else { sfx.error(); this.toast(drop.reason ?? '需要相同种类和等级才能合成。', true); this.render(); }
     } else if (drop.type === 'place') {
@@ -503,6 +529,37 @@ export class App {
   cancelDrag() { if (this.drag) { this.drag.ghost?.remove(); this.drag = null; this.render(); } }
   flashMerge(id: string) {
     document.querySelectorAll(`.item[data-id="${id}"]`).forEach(el => { el.classList.add('merged'); });
+  }
+  private confirmGamble(sourceId: string, targetId: string) {
+    const g = this.game!;
+    const it = g.find(sourceId);
+    if (!it) return;
+    const name = ITEMS[it.kind].name;
+    const v4 = ITEMS[it.kind].values[3];
+    const ov = $('overlay');
+    ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h3>赌一把 Lv4</h3>
+      <p>两件 <b>${name} Lv3</b>：<b>50%</b> 合成一件 Lv4（数值 ${v4}），<b>50%</b> 两件都消失。结果马上写入存档，刷新不能重来。</p>
+      <div class="btns"><button class="btn" id="gambleNo">取消</button><button class="btn danger" id="gambleYes">赌一把</button></div></div>`;
+    $('gambleNo').onclick = () => { this.closeOverlay(); this.render(); };
+    $('gambleYes').onclick = () => {
+      this.closeOverlay();
+      const r = g.gambleMerge(sourceId, targetId);
+      if (!r.ok) { sfx.error(); this.toast(r.msg, true); this.render(); return; }
+      const msg = r.msg ?? '';
+      const lost = msg.includes('消失');
+      if (lost) {
+        sfx.error();
+        $('bagWrap')?.classList.add('bagFail');
+        setTimeout(() => $('bagWrap')?.classList.remove('bagFail'), 700);
+      } else {
+        sfx.merge();
+        this.selected = targetId;
+      }
+      this.toast(msg, lost);
+      this.render();
+      if (!lost) this.flashMerge(targetId);
+    };
   }
   // ---------- 战斗 ----------
   runBattle() {

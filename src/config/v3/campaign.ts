@@ -117,24 +117,22 @@ export const V3_STAGES_BASE: StageBudget[] = [
 ];
 
 /**
- * 3.2.1 分段地狱略放松（玩家反馈 3.2.0 略难）：
- * 段形不变——1–10 逐步；10–20 明显；20–30 巨大；30–40 约翻倍感；40–50 再翻倍感。
- * HP 步长约降 10%，Boss 进度地板 1.28。叠在 LATE_TUNE 之上；无难度选择。
+ * 3.3.0：背包在首领后继续长大，后期数值按新战力曲线回缩。
+ * 段形仍是五段（1–10 逐步 / 10–20 明显 / 20–30 巨大 / 30–40 再抬 / 40–50 再抬）。无难度选择。
  */
-export const HARD_TUNE_VERSION = '3.2.1-band-hell-eased' as const;
+export const HARD_TUNE_VERSION = '3.3.0-bag-progression' as const;
 
-/** 段定义：from 级之后每升 1 关叠加的步长（HP倍率步 / 伤害加算步 / 攻速减秒步 / 金币倍率） */
+/**
+ * 段形仍是五段。1–10 步长不动。10–20 略松，第 6 列买下后 19 关能打完。
+ * 20 关以后伤害加算放慢：敌伤要让护盾和药水还起作用，否则扩容和 Lv4 都接不上输出。
+ * 生命步长仍一档比一档大。
+ */
 export const HARD_BANDS = [
-  /** 1–10：每关可感加压（步长温和；L1 仍可开局） */
   { from: 1, to: 10, hpStep: 0.032, dmgStep: 0.30, cutStep: 0.012, gold: 0.65 },
-  /** 10–20：明显一关比一关难 */
-  { from: 10, to: 20, hpStep: 0.058, dmgStep: 0.60, cutStep: 0.018, gold: 0.56 },
-  /** 20–30：巨大难度跳 */
-  { from: 20, to: 30, hpStep: 0.130, dmgStep: 1.25, cutStep: 0.028, gold: 0.46 },
-  /** 30–40：约翻倍感（相对上一段步长） */
-  { from: 30, to: 40, hpStep: 0.200, dmgStep: 1.55, cutStep: 0.028, gold: 0.48 },
-  /** 40–50：再翻倍感 */
-  { from: 40, to: 50, hpStep: 0.270, dmgStep: 1.70, cutStep: 0.022, gold: 0.50 },
+  { from: 10, to: 20, hpStep: 0.044, dmgStep: 0.12, cutStep: 0.012, gold: 0.58 },
+  { from: 20, to: 30, hpStep: 0.058, dmgStep: 0.06, cutStep: 0.004, gold: 0.50 },
+  { from: 30, to: 40, hpStep: 0.100, dmgStep: 0.08, cutStep: 0.004, gold: 0.50 },
+  { from: 40, to: 50, hpStep: 0.120, dmgStep: 0.16, cutStep: 0.004, gold: 0.52 },
 ] as const;
 
 const HARD_HP0 = 1.55;
@@ -143,7 +141,7 @@ const HARD_CUT0 = 0.18;
 /** Boss 相对普通关 HP 略低，逼技能/蓄力而不是纯海绵 */
 const HARD_BOSS_HP_SCALE = 0.88;
 /** 伤害加算上限，避免后期一击必杀无脑 */
-const HARD_DMG_ADD_CAP = 46;
+const HARD_DMG_ADD_CAP = 16;
 
 export interface HardParams {
   hp: number;

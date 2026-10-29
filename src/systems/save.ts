@@ -21,7 +21,17 @@ export function validate(s: any): s is GameState {
     typeof s.campaignLength === 'number' && s.campaignLength === CAMPAIGN_LENGTH &&
     typeof s.campaignVersion === 'number' &&
     (s.mode === 'story' || s.mode === 'ironman') &&
-    s.items.every((i: any) => typeof i.id === 'string' && typeof i.kind === 'string' && [1, 2, 3].includes(i.level));
+    s.items.every((i: any) => typeof i.id === 'string' && typeof i.kind === 'string' && [1, 2, 3, 4].includes(i.level));
+}
+
+/** 3.3 背包扩容：旧 v3 档补上 expansions，不改玩家当前的 rows/cols。 */
+export function migrateV3(s: any) {
+  if (!s || typeof s !== 'object' || s.version !== SAVE_VERSION) return;
+  if (typeof s.rows !== 'number' || s.rows < 1) s.rows = 4;
+  if (typeof s.cols !== 'number' || s.cols < 1) s.cols = 5;
+  if (typeof s.expansions !== 'number') {
+    s.expansions = Math.max(0, s.rows - 4) + Math.max(0, s.cols - 5);
+  }
 }
 
 function backupOld(st: Storage, raw: string, ver: number) {
@@ -45,6 +55,7 @@ export function loadGame(st: Storage): LoadResult {
       };
     }
     if (ver !== SAVE_VERSION) return { status: 'corrupt', message: '存档版本不兼容，无法继续。' };
+    migrateV3(s);
     if (!validate(s)) return { status: 'corrupt', message: '存档数据已损坏，无法继续。' };
     return { status: 'ok', state: s };
   } catch { return { status: 'corrupt', message: '存档数据已损坏，无法继续。' }; }

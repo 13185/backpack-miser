@@ -15,11 +15,11 @@ import { stageOf } from '../config/v3/campaign';
 import { V2_CLASSES } from '../config/v2/classes';
 import type { ChapterCheckpoint, GameState, HeroClass, ItemInstance, ItemKind, LastBattle, Level, RuneInstance } from '../models/types';
 import { createCombat, computeBagGold, computeLedgerBonus, type CombatState } from './combat';
-import { buyPrice, canAfford, expansionCost, refreshCost, sellPrice } from './economy';
+import { buyPrice, canAfford, expansionOffer, refreshCost, sellPrice } from './economy';
 import { rollItems } from './loot';
-import { mergeItems } from './merge';
+import { canMerge, mergeItems } from './merge';
 import { canPlace, findSpot, inBag } from './placement';
-import { Rng } from './rng';
+import { nextRandom, Rng } from './rng';
 import { SAVE_VERSION } from './save';
 
 export type Result = { ok: true; msg?: string } | { ok: false; msg: string };
@@ -205,6 +205,7 @@ function advanceAfterLoot(s: GameState, cleared: number) {
   s.level++;
   s.currentChapter = chapterOf(s.level);
   s.shop = { level: s.level, slots: [], refreshes: 0 }; rollShop(s);
+  if (cleared === 10 || cleared === 20 || cleared === 30 || cleared === 40) s.pendingBagToast = cleared;
   if (campAfterBoss(cleared) && isBossLevel(cleared)) {
     // 章节营地：检查点延后到营地结束
     s.phase = 'camp'; s.campKind = 'chapter';
@@ -290,12 +291,33 @@ export class Game {
     const g = this.prepOnly(); if (g) return g;
     const a = this.find(sourceId), b = this.find(targetId);
     if (a?.kind === 'burden' || b?.kind === 'burden') return fail('负担物不可合成。');
+    if (a && b && a.level === 3 && b.level === 3 && a.kind === b.kind) return fail('两件 Lv3 要先确认再赌。');
     const r = mergeItems(this.s.items, sourceId, targetId);
     if (r.error) return fail(r.error);
     this.s.items = r.items;
-    // 符文：若源被移除，解绑源上符文为暂存
     this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
     return this.commit({ ok: true, msg: `合成成功：${itemLabel(r.result!)}` });
+  }
+  /** 两件相同 Lv3：50% 留下一件 Lv4，50% 两件都消失。立刻改 rng 并存档。 */
+  gambleMerge(sourceId: string, targetId: string): Result {
+    const g = this.prepOnly(); if (g) return g;
+    const a = this.find(sourceId), b = this.find(targetId);
+    if (!a || !b) return fail('找不到装备。');
+    if (a.kind === 'burden' || b.kind === 'burden') return fail('负担物不可合成。');
+    const check = canMerge(a, b);
+    if (!check.ok || !check.gamble) return fail(check.ok ? '这不是 Lv3 对赌。' : check.reason);
+    const [roll, next] = nextRandom(this.s.rng);
+    this.s.rng = next;
+    const name = ITEMS[a.kind].name;
+    if (roll < 0.5) {
+      b.level = 4;
+      this.s.items = this.s.items.filter(i => i.id !== sourceId);
+      this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
+      return this.commit({ ok: true, msg: `赌成了：${name} Lv4` });
+    }
+    this.s.items = this.s.items.filter(i => i.id !== sourceId && i.id !== targetId);
+    this.s.runes = this.s.runes.map(rn => (rn.itemId === sourceId || rn.itemId === targetId) ? { ...rn, itemId: null } : rn);
+    return this.commit({ ok: true, msg: `赌输了：两件${name}都消失了` });
   }
   sell(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -332,11 +354,22 @@ export class Game {
   }
   expand(): Result {
     const g = this.prepOnly(); if (g) return g;
-    const c = expansionCost(this.s.expansions);
-    if (c === null) return fail('背包已扩容到最大。');
-    if (!canAfford(this.s.gold, c)) return fail('金币不足。');
-    this.s.gold -= c; this.s.expansions++; this.s.rows++;
-    return this.commit({ ok: true, msg: `背包扩容！新增第${this.s.rows}行` });
+    const offer = expansionOffer(this.s.expansions);
+    if (!offer) return fail('背包已扩容到最大。');
+    if (this.s.level <= offer.unlockAfterLevel) {
+      const what = offer.axis === 'col' ? `第${this.s.cols + 1}列` : `第${this.s.rows + 1}行`;
+      return fail(`击败第${offer.unlockAfterLevel}关首领后可解锁${what}。`);
+    }
+    if (!canAfford(this.s.gold, offer.cost)) return fail('金币不足。');
+    this.s.gold -= offer.cost;
+    this.s.expansions++;
+    if (offer.axis === 'col') this.s.cols++;
+    else this.s.rows++;
+    const size = `${this.s.cols}×${this.s.rows}`;
+    const msg = offer.axis === 'col'
+      ? `背包扩容！新增第${this.s.cols}列（${size}）`
+      : `背包扩容！新增第${this.s.rows}行（${size}）`;
+    return this.commit({ ok: true, msg });
   }
 
   canStartBattle(): Result {
@@ -596,7 +629,7 @@ export class Game {
     if (this.s.phase !== 'camp') return fail('当前不在营地。');
     if (this.s.campServiceUsed) return fail('本次营地主服务已使用。');
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
-    if (it.level >= 3) return fail('已达最高等级。');
+    if (it.level >= 3) return fail('营地最多锻到 Lv3。Lv4 只能用两件 Lv3 对赌。');
     const cost = this.forgeCost(it.level);
     if (!canAfford(this.s.gold, cost)) return fail('金币不足。');
     this.s.gold -= cost;
@@ -700,7 +733,7 @@ export class Game {
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
     if (it.kind === 'burden') return fail('负担物不可升级。');
     if (it.level !== pu.fromLevel) return fail(`请选择${pu.fromLevel}级装备。`);
-    if (it.level >= 3) return fail('已达最高等级。');
+    if (it.level >= 3) return fail('营地和事件最多升到 Lv3。Lv4 只能用两件 Lv3 对赌。');
     it.level = (it.level + 1) as Level;
     this.s.pendingUpgrade = null;
     return this.commit({ ok: true, msg: `升级完成：${itemLabel(it)}` });
