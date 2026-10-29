@@ -5,7 +5,7 @@ import { canPlace, occupiedCells, findSpot } from '../src/systems/placement';
 import { canMerge, mergeItems } from '../src/systems/merge';
 import { gemBonus, weaponDamage, weaponsBoostedBy } from '../src/systems/adjacency';
 import { applyDamageToPlayer, createCombat, damageToMonster, simulate, stepCombat } from '../src/systems/combat';
-import { buyPrice, sellPrice, refreshCost } from '../src/systems/economy';
+import { buyPrice, resolveCharmOffer, sellPrice, refreshCost } from '../src/systems/economy';
 import { Game, newGameState } from '../src/systems/game';
 import { loadGame, saveGame, SAVE_KEY } from '../src/systems/save';
 import { LEVELS } from '../src/config/levels';
@@ -258,11 +258,12 @@ describe('经济与流程', () => {
 });
 
 describe('吉利达幸运符', () => {
-  it('只在第一次实际加盾时额外+6，第二次不再触发；临时区不生效', () => {
+  it('只在第一次实际加盾时额外加盾，第二次不再触发；临时区不生效', () => {
     const bag = [mk('shield', 0, 0), mk('luck_charm', 2, 0)];
     const c = createCombat(bag, 100, 100, lv({ hp: 40, atk: 0, interval: 10 }));
     stepCombat(c, 3300);
     expect(c.luckCharmUsed).toBe(true);
+    expect(c.luckCharmBonus).toBe(6);
     expect(c.stats.luckShield).toBe(6);
     const mid = c.shield;
     stepCombat(c, 3300);
@@ -271,11 +272,55 @@ describe('吉利达幸运符', () => {
     const temp = [mk('shield', 0, 0), mk('luck_charm', null, null)];
     const c2 = createCombat(temp, 100, 100, lv({ hp: 40, atk: 0, interval: 10 }));
     stepCombat(c2, 3300);
-    expect(c2.luckCharm).toBe(false);
+    expect(c2.luckCharmBonus).toBe(0);
     expect(c2.stats.luckShield).toBe(0);
     expect(sellPrice('luck_charm', 1)).toBe(8);
+    expect(sellPrice('luck_charm', 2)).toBeGreaterThan(8);
     expect(buyPrice('luck_charm', 1)).toBe(20);
-    expect(canMerge(mk('luck_charm', 0, 0), mk('luck_charm', 1, 0)).ok).toBe(false);
+  });
+  it('两枚同级可以合成；背包里多枚只取最高一级', () => {
+    const pair = [mk('luck_charm', 0, 0), mk('luck_charm', 1, 0)];
+    expect(canMerge(pair[0], pair[1])).toEqual({ ok: true });
+    const merged = mergeItems(pair, pair[0].id, pair[1].id);
+    expect(merged.result?.level).toBe(2);
+    const lv3 = [mk('luck_charm', 0, 0, 3), mk('luck_charm', 1, 0, 3)];
+    expect(canMerge(lv3[0], lv3[1])).toEqual({ ok: true, gamble: true });
+    const both = [mk('shield', 0, 0), mk('luck_charm', 2, 0, 1), mk('luck_charm', 3, 0, 5), mk('luck_charm', null, null, 5)];
+    const c = createCombat(both, 100, 100, lv({ hp: 40, atk: 0, interval: 10 }));
+    expect(c.luckCharmBonus).toBe(18);
+    stepCombat(c, 3300);
+    expect(c.stats.luckShield).toBe(18);
+    expect(ITEMS.luck_charm.values).toEqual([6, 9, 12, 15, 18]);
+    expect(resolveCharmOffer(0, 3)).toBe(1);
+    expect(resolveCharmOffer(2, 1)).toBeNull();
+    expect(resolveCharmOffer(2, 2)).toBeNull();
+    expect(resolveCharmOffer(2, 3)).toBe(3);
+    const st = mem();
+    const saved = new Game(newGameState(3));
+    saved.s.items.push(mk('luck_charm', 4, 3, 5));
+    saveGame(st, saved.s);
+    const loaded = loadGame(st);
+    expect(loaded.status).toBe('ok');
+    if (loaded.status === 'ok') expect(loaded.state.items.some(i => i.kind === 'luck_charm' && i.level === 5)).toBe(true);
+    const camp = new Game(newGameState(4));
+    camp.s.phase = 'camp';
+    const charm = mk('luck_charm', 4, 3, 1);
+    camp.s.items.push(charm);
+    expect(camp.campForge(charm.id).ok).toBe(true);
+    expect(camp.find(charm.id)?.level).toBe(2);
+  });
+  it('持有符时商店不出同级或更低的符，没持有时只卖 1 级', () => {
+    for (let seed = 1; seed <= 80; seed++) {
+      const fresh = new Game(newGameState(seed));
+      for (const sl of fresh.s.shop.slots) if (sl.kind === 'luck_charm') expect(sl.level).toBe(1);
+      const g = new Game(newGameState(seed));
+      g.s.items.push(mk('luck_charm', 4, 3, 2));
+      g.s.gold = 500;
+      for (let i = 0; i < 6; i++) {
+        g.refreshShop();
+        for (const sl of g.s.shop.slots) if (sl.kind === 'luck_charm') expect(sl.level).toBeGreaterThan(2);
+      }
+    }
   });
 });
 

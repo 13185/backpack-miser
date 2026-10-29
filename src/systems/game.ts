@@ -15,7 +15,7 @@ import { stageOf } from '../config/v3/campaign';
 import { V2_CLASSES } from '../config/v2/classes';
 import type { ChapterCheckpoint, GameState, HeroClass, ItemInstance, ItemKind, LastBattle, Level, RuneInstance } from '../models/types';
 import { createCombat, computeBagGold, computeLedgerBonus, type CombatState } from './combat';
-import { buyPrice, canAfford, expansionOffer, refreshCost, sellPrice } from './economy';
+import { buyPrice, canAfford, expansionOffer, refreshCost, resolveCharmOffer, sellPrice } from './economy';
 import { rollItems } from './loot';
 import { canMerge, mergeItems } from './merge';
 import { canPlace, findSpot, inBag } from './placement';
@@ -98,16 +98,22 @@ export function newGameState(seed: number, opts: NewGameOpts = {}): GameState {
   maybeOfferSystems(s);
   return s;
 }
+function highestCharmLevel(s: GameState): number {
+  let best = 0;
+  for (const it of s.items) if (it.kind === 'luck_charm') best = Math.max(best, it.level);
+  return best;
+}
 function rollShop(s: GameState) {
   const r = new Rng(s.rng);
-  const held = s.items.some(i => i.kind === 'luck_charm');
+  const held = highestCharmLevel(s);
   const slots = rollItems(r, s.level, 3).map(o => {
     if (o.kind !== 'luck_charm') return o;
-    if (held) {
+    const level = resolveCharmOffer(held, o.level);
+    if (level == null) {
       const alt = rollItems(r, s.level, 4).find(x => x.kind !== 'luck_charm');
       return alt ?? { kind: 'potion' as const, level: 1 as const };
     }
-    return { kind: 'luck_charm' as const, level: 1 as const };
+    return { kind: 'luck_charm' as const, level };
   });
   s.shop.slots = slots.map(o => ({ ...o, bought: false }));
   s.rng = r.state;
@@ -696,7 +702,6 @@ export class Game {
     if (this.s.phase !== 'camp') return fail('当前不在营地。');
     if (this.s.campServiceUsed) return fail('本次营地主服务已使用。');
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
-    if (it.kind === 'luck_charm') return fail('吉利达幸运符不可升级。');
     if (it.level >= 3) return fail('营地最多锻到 Lv3。Lv4 用两件 Lv3 对赌，Lv5 用两件 Lv4 对赌。');
     const cost = this.forgeCost(it.level);
     if (!canAfford(this.s.gold, cost)) return fail('金币不足。');
@@ -801,7 +806,6 @@ export class Game {
     const it = this.find(itemId); if (!it) return fail('找不到装备。');
     if (it.kind === 'burden') return fail('负担物不可升级。');
     if (it.level !== pu.fromLevel) return fail(`请选择${pu.fromLevel}级装备。`);
-    if (it.kind === 'luck_charm') return fail('吉利达幸运符不可升级。');
     if (it.level >= 3) return fail('营地和事件最多升到 Lv3。Lv4 用两件 Lv3 对赌，Lv5 用两件 Lv4 对赌。');
     it.level = (it.level + 1) as Level;
     this.s.pendingUpgrade = null;

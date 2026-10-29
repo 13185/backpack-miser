@@ -11,8 +11,18 @@ export function buyPrice(kind: ItemKind, level: Level): number {
   return Math.ceil(p * ECONOMY.lvl3Mult * 4);
 }
 export function sellPrice(kind: ItemKind, level: Level): number {
-  if (kind === 'luck_charm') return 8;
+  if (kind === 'luck_charm' && level === 1) return 8;
   return Math.floor(buyPrice(kind, level) * ECONOMY.sellRate);
+}
+/**
+ * 商店里的幸运符。没持有时只卖 1 级（20 金）。
+ * 已持有时，不卖不超过背包或临时区里最高级的那一档；更高一级可以留下。
+ * 返回 null 表示这个格子不要再出幸运符。
+ */
+export function resolveCharmOffer(heldLevel: number, rolledLevel: Level): Level | null {
+  const level: Level = heldLevel <= 0 ? 1 : rolledLevel;
+  if (heldLevel > 0 && level <= heldLevel) return null;
+  return level;
 }
 /** refreshes: 已刷新次数；doctrineT06: 算计专精再-1 */
 export function refreshCost(refreshes: number, doctrine?: string | null, heroClass?: string, level = 1): number {

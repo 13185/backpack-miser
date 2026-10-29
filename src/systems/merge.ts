@@ -2,7 +2,6 @@ import { MAX_LEVEL } from '../config/items';
 import type { ItemInstance, Level } from '../models/types';
 export type MergeCheck = { ok: true; gamble?: boolean } | { ok: false; reason: string };
 export function canMerge(a: ItemInstance, b: ItemInstance): MergeCheck {
-  if (a.kind === 'luck_charm' || b.kind === 'luck_charm') return { ok: false, reason: '吉利达幸运符不可合成。' };
   if (a.id === b.id) return { ok: false, reason: '不能与自身合成。' };
   if (a.kind !== b.kind || a.level !== b.level) return { ok: false, reason: '需要相同种类和等级才能合成。' };
   if (a.level >= MAX_LEVEL) return { ok: false, reason: '装备已达到最高等级。' };

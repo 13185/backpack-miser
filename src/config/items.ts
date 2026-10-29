@@ -96,8 +96,8 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
   },
   luck_charm: {
     kind: 'luck_charm', name: '吉利达幸运符', w: 1, h: 1, rotatable: false, category: 'support',
-    values: v5([6, 6, 6], 6, 6), price: 20, color: '#7af0ff', maxTriggers: 1,
-    desc: () => '每场战斗，盾牌或折叠铁壁第一次实际增加护盾时，额外+6点护盾（仍受护盾上限）。不可合成。吉利达织造坊出品。',
+    values: v5([6, 9, 12], 15, 18), price: 20, color: '#7af0ff', maxTriggers: 1,
+    desc: v => `每场战斗，盾牌或折叠铁壁第一次实际增加护盾时，额外+${v}点护盾（仍受护盾上限）。背包内多枚只取最高一级。可合成。吉利达织造坊出品。`,
   },
   poison_needle: {
     kind: 'poison_needle', name: '毒针', w: 1, h: 2, rotatable: true, category: 'needle',

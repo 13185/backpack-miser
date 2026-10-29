@@ -359,6 +359,7 @@ export class App {
     else if (d.category === 'heal') stats = `<div>恢复：<b>${v}</b> · 间隔 ${d.interval}秒</div><div>每场最多 ${d.maxTriggers ?? 3} 次（非药水）</div>`;
     else if (d.category === 'passive') stats = `<div>减甲：<b>${v}</b> · 持续前8秒</div>`;
     else if (d.category === 'economy') stats = `<div>开战金&lt;30时额外：<b>+${v}</b> 金币</div>`;
+    else if (it.kind === 'luck_charm') stats = `<div>首次加盾额外：<b>+${v}</b> · 每场一次</div>`;
     else stats = `<div>胜利金币：<b>+${v}</b></div>`;
     const nextVal = it.level < 3 ? d.values[(it.level) as 1 | 2] : d.values[3];
     const next = it.level < 3

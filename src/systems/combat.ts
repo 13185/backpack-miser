@@ -51,7 +51,8 @@ export interface CombatState {
   actors: Actor[];
   potions: { id: string; heal: number; used: boolean }[];
   stats: { weapon: Record<string, number>; absorbed: number; healed: number; luckShield?: number; luckClipped?: number };
-  luckCharm: boolean;
+  /** 背包内最高一级幸运符的额外护盾。0 表示没有生效的符。 */
+  luckCharmBonus: number;
   luckCharmUsed: boolean;
   tideCycle: boolean;
   baseArmor: number;
@@ -180,6 +181,13 @@ function syncCompass(s: CombatState, ev: CombatEvent[]) {
   if (s.a09Debuff > 0 && s.t >= s.a09Until) {
     s.a09Debuff = 0;
   }
+}
+
+/** 只看背包内的符。多枚时取最高一级的 values。临时区不计入。 */
+function charmBonus(bag: ItemInstance[]): number {
+  let best = 0;
+  for (const it of bag) if (it.kind === 'luck_charm' && it.level > best) best = it.level;
+  return best ? ITEMS.luck_charm.values[best - 1] : 0;
 }
 
 export function createCombat(items: ItemInstance[], hp: number, maxHp: number, lv: LevelDef, mods: CombatMods = {}): CombatState {
@@ -388,7 +396,7 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     mHp: startMainHp, mMaxHp: mainHp, mAtk: lv.atk, mInterval: ms(lv.interval), armor: startArmor, boss: !!lv.boss, hasted: false,
     enrageStage: 0, actors, potions,
     stats: { weapon: {}, absorbed: 0, healed: 0, luckShield: 0, luckClipped: 0 },
-    luckCharm: bag.some(i => i.kind === 'luck_charm'),
+    luckCharmBonus: charmBonus(bag),
     luckCharmUsed: false,
     tideCycle, baseArmor, tidePhase: tideCycle ? 'high' : null,
     compassDebuff, compassUntil: compassDebuff > 0 ? 8000 : 0,
@@ -775,13 +783,13 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
     s.shield += amount;
     if (a.maxUses !== undefined) a.uses = (a.uses ?? 0) + 1;
     ev.push({ t: s.t, type: 'shield', itemId: a.id, amount });
-    if (amount > 0 && s.luckCharm && !s.luckCharmUsed) {
+    if (amount > 0 && s.luckCharmBonus > 0 && !s.luckCharmUsed) {
       s.luckCharmUsed = true;
       const room = Math.max(0, cap - s.shield);
-      const extra = Math.min(6, room);
+      const extra = Math.min(s.luckCharmBonus, room);
       s.shield += extra;
       s.stats.luckShield = (s.stats.luckShield ?? 0) + extra;
-      s.stats.luckClipped = (s.stats.luckClipped ?? 0) + (6 - extra);
+      s.stats.luckClipped = (s.stats.luckClipped ?? 0) + (s.luckCharmBonus - extra);
       ev.push({ t: s.t, type: 'shield', itemId: 'luck_charm', amount: extra });
     }
   } else if (a.kind === 'heal') {
