@@ -121,7 +121,7 @@ export const V3_STAGES_BASE: StageBudget[] = [
  * 五段：1–10 逐步，10–20 每关明显更硬，20–30 大步，30–40 再抬一倍手感，40–50 再翻上去。
  * 挂机应在 8–12 关倒下；随手买武器的人卡在 10–20；每一关都在算的人后期经常剩不到三成血。
  */
-export const HARD_TUNE_VERSION = '3.6.0-late' as const;
+export const HARD_TUNE_VERSION = '3.6.1-tight' as const;
 
 interface Pressure { hp: number; dmg: number; interval: number; gold: number }
 const PRESSURE_BANDS = [
@@ -188,14 +188,15 @@ export function applyPressure(stages: StageBudget[]): StageBudget[] {
 /** 只加在 31 关之后。1–30 关的倍率不动。首领比同章杂兵抬得更多。 */
 function lateSpike(s: StageBudget): { hp: number; dmg: number; interval: number } {
   if (s.boss) {
-    if (s.level >= 50) return { hp: 1.60, dmg: 1.08, interval: 0.94 };
-    if (s.level >= 45) return { hp: 1.40, dmg: 1.08, interval: 0.94 };
-    if (s.level >= 40) return { hp: 1.35, dmg: 1.06, interval: 0.96 };
-    if (s.level >= 35) return { hp: 1.10, dmg: 1.06, interval: 0.97 };
-    return { hp: 1.12, dmg: 1.05, interval: 0.98 };
+    if (s.level >= 50) return { hp: 1.52, dmg: 1.06, interval: 0.95 };
+    if (s.level >= 45) return { hp: 1.08, dmg: 1.02, interval: 0.98 };
+    if (s.level >= 40) return { hp: 1.12, dmg: 1.02, interval: 0.98 };
+    if (s.level >= 35) return { hp: 0.96, dmg: 1.00, interval: 1.00 };
+    return { hp: 1.08, dmg: 1.04, interval: 0.98 };
   }
-  if (s.level >= 41) return { hp: 1.12, dmg: 1.06, interval: 0.97 };
-  return { hp: 1.06, dmg: 1.04, interval: 0.98 };
+  if (s.level <= 34) return { hp: 1.08, dmg: 1.06, interval: 0.97 };
+  if (s.level >= 41) return { hp: 1.12, dmg: 1.08, interval: 0.96 };
+  return { hp: 1.12, dmg: 1.08, interval: 0.96 };
 }
 
 /** 附录 A04：故事战役首领的最终预算，不再叠地狱倍率。 */

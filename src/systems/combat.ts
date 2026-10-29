@@ -125,6 +125,8 @@ export interface CombatState {
   guardBonusUsed: boolean;
   enrageAt: number;
   enrageBonus: number;
+  /** 游侠武器间隔系数。31 关前 0.75，之后 0.68。其他职业为 1。 */
+  rangerGap: number;
 }
 export interface CombatMods {
   runes?: RuneInstance[];
@@ -255,7 +257,9 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
       if (hasRelic(relics, 'R07') && weaponCount <= 2) value = Math.round(value * 1.25);
       let armorIgnore = runeOn(runes, it.id, 'U02') ? 1 : 0;
       if (mods.heroClass === 'ranger') armorIgnore += 4;
-      if (mods.heroClass === 'merchant' && bag.some(b => b.kind === 'moneybag')) value = Math.round(value * 1.12);
+      if (mods.heroClass === 'merchant' && bag.some(b => b.kind === 'moneybag')) {
+        value = Math.round(value * ((lv.level ?? 0) >= 31 ? 1.20 : 1.12));
+      }
       const armorIgnorePct = it.kind === 'warhammer' ? 0.5 : 0;
       const shots = it.kind === 'crossbow' ? 2 : 1;
       let splashPct = it.kind === 'chain_hammer' ? (hasRelic(relics, 'R04') ? 0.75 : 0.5) : 0;
@@ -291,7 +295,8 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
   if (mods.heroClass === 'guard') {
     const shields = actors.filter(a => a.kind === 'shield');
     const best = shields.reduce<typeof shields[number] | undefined>((m, a) => (!m || a.value > m.value ? a : m), undefined);
-    if (best) best.shieldMult = (best.shieldMult ?? 1) * 1.25;
+    const guardShield = (lv.level ?? 0) >= 31 ? 1.15 : 1.25;
+    if (best) best.shieldMult = (best.shieldMult ?? 1) * guardShield;
   }
   for (const it of bag) {
     const d = ITEMS[it.kind];
@@ -332,11 +337,15 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
   }
   // C12 开场护盾
   let openShield = hasRelic(relics, 'C12') ? 8 : 0;
-  if (mods.heroClass === 'ranger') openShield += 10;
+  if (mods.heroClass === 'ranger') openShield += (lv.level ?? 0) >= 31 ? 16 : 10;
   // K04 脆弱水晶：伤害+30%，玩家承伤×1.2 — 在受击处处理
   let relicDmgMult = 1;
   let adjMaxHp = maxHp;
   let adjHp = hp;
+  const enteredFull = adjHp >= adjMaxHp;
+  if ((lv.level ?? 0) >= 31 && mods.heroClass === 'ranger') adjMaxHp += 20;
+  if ((lv.level ?? 0) >= 31 && mods.heroClass === 'merchant') adjMaxHp += 12;
+  if (enteredFull) adjHp = adjMaxHp;
   if (hasRelic(relics, 'A12') && cells <= 20) {
     relicDmgMult *= 1.20;
     adjMaxHp = Math.max(1, maxHp - 10);
@@ -378,8 +387,8 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     startMShield = Math.max(1, Math.round(mainHp * (lv.openMShieldPct / 100)));
     startMainHp = Math.max(1, mainHp - startMShield);
   }
-  // 游侠：武器和毒针全程间隔 ×0.84（首击也按缩短后的间隔）
-  if (mods.heroClass === 'ranger') for (const a of actors) if (a.kind === 'weapon' || a.kind === 'needle') a.nextAt = Math.round(a.interval * 0.75);
+  const rangerGap = mods.heroClass === 'ranger' ? ((lv.level ?? 0) >= 31 ? 0.68 : 0.75) : 1;
+  if (rangerGap < 1) for (const a of actors) if (a.kind === 'weapon' || a.kind === 'needle') a.nextAt = Math.round(a.interval * rangerGap);
   // K01/K04/A12 最大生命惩罚已在 A12；K01 另 -15%
   if (hasRelic(relics, 'K01')) {
     adjMaxHp = Math.max(1, Math.floor(adjMaxHp * 0.85));
@@ -433,6 +442,7 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     heroClass: mods.heroClass ?? null, guardBonusUsed: false,
     enrageAt: lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt,
     enrageBonus: lv.boss && (lv.level ?? 0) >= 40 ? 0.14 : ECONOMY.enrageBonus,
+    rangerGap,
   };
 }
 
@@ -919,8 +929,8 @@ export function stepCombat(s: CombatState, dtMs: number): CombatEvent[] {
       } else if (a.kind === 'monster' && s.overheatPausedUntil > s.t) {
         a.nextAt = s.overheatPausedUntil;
       } else {
-        const fast = s.heroClass === 'ranger' && (a.kind === 'weapon' || a.kind === 'needle');
-        a.nextAt = s.t + (fast ? Math.round(a.interval * 0.75) : a.interval);
+        const fast = s.rangerGap < 1 && (a.kind === 'weapon' || a.kind === 'needle');
+        a.nextAt = s.t + (fast ? Math.round(a.interval * s.rangerGap) : a.interval);
       }
     }
   }

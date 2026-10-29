@@ -121,26 +121,26 @@ function mechFor(stage: StageBudget, kind: MonsterKind): Partial<LevelDef> {
   if (kind === 'furnace_colossus' || stage.level === 35) {
     return {
       overheat: { every: 2, mult: 2.2, pauseMs: 2200 },
-      heavyStrike: { every: 4, mult: 2.0, windupMs: 2000 },
-      phaseShields: { thresholds: [0.5], shield: 140 },
-      mechSummary: '护甲4；每2次普攻后×2.2过热（停手2.2秒破甲）；半血140盾；每4击2.0倍蓄力。',
+      heavyStrike: { every: 4, mult: 1.9, windupMs: 2000 },
+      phaseShields: { thresholds: [0.5], shield: 100 },
+      mechSummary: '护甲4；每2次普攻后×2.2过热（停手2.2秒破甲）；半血100盾；每4击1.9倍蓄力。',
     };
   }
   if (kind === 'silence_warden' || stage.level === 40) {
     return {
-      pray: { intervalMs: 4500, shield: 58 },
-      prayShare: 0.32,
-      heavyStrike: { every: 3, mult: 2.1, windupMs: 1600 },
-      phaseShields: { thresholds: [0.55, 0.25], shield: 160 },
-      mechSummary: '祝祷者占32%预算（4.5秒/58盾）；55%/25%各获160盾；每3击2.1倍蓄力。',
+      pray: { intervalMs: 4500, shield: 48 },
+      prayShare: 0.26,
+      heavyStrike: { every: 3, mult: 1.9, windupMs: 1600 },
+      phaseShields: { thresholds: [0.55, 0.25], shield: 120 },
+      mechSummary: '祝祷者占26%预算（4.5秒/48盾）；55%/25%各获120盾；每3击1.9倍蓄力。',
     };
   }
   if (kind === 'debt_regent' || stage.level === 45) {
     return {
-      echo: { every: 3, delayMs: 1100, pct: 0.70 },
-      phaseShields: { thresholds: [0.70, 0.40, 0.15], shield: 180 },
-      heavyStrike: { every: 3, mult: 2.2, windupMs: 1500 },
-      mechSummary: '护甲4；每3击后70%回响；70%/40%/15%各获180盾；每3击2.2倍蓄力。',
+      echo: { every: 3, delayMs: 1100, pct: 0.60 },
+      phaseShields: { thresholds: [0.70, 0.40, 0.15], shield: 130 },
+      heavyStrike: { every: 3, mult: 2.0, windupMs: 1500 },
+      mechSummary: '护甲4；每3击后60%回响；70%/40%/15%各获130盾；每3击2.0倍蓄力。',
     };
   }
   if (kind === 'golden_heart' || stage.level === 50) {
