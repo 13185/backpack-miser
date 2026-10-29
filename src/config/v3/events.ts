@@ -177,7 +177,7 @@ export const EVENTS: Record<string, EventDef> = {
 export const EVENT_IDS = Object.keys(EVENTS) as string[];
 
 export const ELITE_LEVELS = [3, 8, 13, 18, 23, 28, 33, 38, 43, 48] as const;
-export const ELITE_HP_MULT = 1.40;
+export const ELITE_HP_MULT = 1.32;
 export const ELITE_GOLD_MULT = 1.4;
 
 export function eventsForChapter(chapter: number, seen: string[]): EventDef[] {

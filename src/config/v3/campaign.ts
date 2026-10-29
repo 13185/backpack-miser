@@ -117,25 +117,24 @@ export const V3_STAGES_BASE: StageBudget[] = [
 ];
 
 /**
- * 3.2.0 分段地狱压（玩家反馈 3.1.0 打到25仍无压力）：
- * 按关递进，段内每关加压强度递增——
- * 1–10 逐步可感；10–20 明显；20–30 巨大；30–40 约翻倍感；40–50 再翻倍感。
- * 叠在 LATE_TUNE 之上；无难度选择。
+ * 3.2.1 分段地狱略放松（玩家反馈 3.2.0 略难）：
+ * 段形不变——1–10 逐步；10–20 明显；20–30 巨大；30–40 约翻倍感；40–50 再翻倍感。
+ * HP 步长约降 10%，Boss 进度地板 1.28。叠在 LATE_TUNE 之上；无难度选择。
  */
-export const HARD_TUNE_VERSION = '3.2.0-band-hell' as const;
+export const HARD_TUNE_VERSION = '3.2.1-band-hell-eased' as const;
 
 /** 段定义：from 级之后每升 1 关叠加的步长（HP倍率步 / 伤害加算步 / 攻速减秒步 / 金币倍率） */
 export const HARD_BANDS = [
   /** 1–10：每关可感加压（步长温和；L1 仍可开局） */
-  { from: 1, to: 10, hpStep: 0.035, dmgStep: 0.30, cutStep: 0.012, gold: 0.65 },
+  { from: 1, to: 10, hpStep: 0.032, dmgStep: 0.30, cutStep: 0.012, gold: 0.65 },
   /** 10–20：明显一关比一关难 */
-  { from: 10, to: 20, hpStep: 0.065, dmgStep: 0.60, cutStep: 0.018, gold: 0.56 },
-  /** 20–30：巨大难度跳（玩家反馈 25 仍无压力的核心加压带） */
-  { from: 20, to: 30, hpStep: 0.145, dmgStep: 1.25, cutStep: 0.028, gold: 0.46 },
+  { from: 10, to: 20, hpStep: 0.058, dmgStep: 0.60, cutStep: 0.018, gold: 0.56 },
+  /** 20–30：巨大难度跳 */
+  { from: 20, to: 30, hpStep: 0.130, dmgStep: 1.25, cutStep: 0.028, gold: 0.46 },
   /** 30–40：约翻倍感（相对上一段步长） */
-  { from: 30, to: 40, hpStep: 0.220, dmgStep: 1.55, cutStep: 0.028, gold: 0.48 },
+  { from: 30, to: 40, hpStep: 0.200, dmgStep: 1.55, cutStep: 0.028, gold: 0.48 },
   /** 40–50：再翻倍感 */
-  { from: 40, to: 50, hpStep: 0.300, dmgStep: 1.70, cutStep: 0.022, gold: 0.50 },
+  { from: 40, to: 50, hpStep: 0.270, dmgStep: 1.70, cutStep: 0.022, gold: 0.50 },
 ] as const;
 
 const HARD_HP0 = 1.55;
@@ -205,7 +204,10 @@ export function applyHardTune(s: StageBudget): StageBudget {
   };
 }
 
-/** 防止章初普通关相对上一关“放暑假”；Boss 相对前关至少 1.35× */
+/** Boss 相对上一关 HP 的进度地板（3.2.1 由 1.35 略降到 1.28） */
+export const HARD_BOSS_PROGRESS_FLOOR = 1.28;
+
+/** 防止章初普通关相对上一关“放暑假”；Boss 相对前关至少 HARD_BOSS_PROGRESS_FLOOR× */
 function applyProgressFloor(stages: StageBudget[]): StageBudget[] {
   const out: StageBudget[] = [];
   let prevHp = 0;
@@ -214,7 +216,7 @@ function applyProgressFloor(stages: StageBudget[]): StageBudget[] {
     const next = { ...s };
     if (prevHp > 0) {
       if (next.boss) {
-        next.hp = Math.max(next.hp, Math.round(prevHp * 1.35));
+        next.hp = Math.max(next.hp, Math.round(prevHp * HARD_BOSS_PROGRESS_FLOOR));
         next.damage = Math.max(next.damage, prevDmg + 2);
       } else {
         next.hp = Math.max(next.hp, Math.round(prevHp * 0.85));

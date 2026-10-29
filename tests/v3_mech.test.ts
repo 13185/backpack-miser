@@ -130,7 +130,7 @@ describe('后期调参', () => {
     for (let i = 1; i < V3_STAGES.length; i++) {
       const prev = V3_STAGES[i - 1], cur = V3_STAGES[i];
       if (!cur.boss) expect(cur.hp).toBeGreaterThanOrEqual(Math.round(prev.hp * 0.85));
-      else expect(cur.hp).toBeGreaterThanOrEqual(Math.round(prev.hp * 1.35));
+      else expect(cur.hp).toBeGreaterThanOrEqual(Math.round(prev.hp * 1.28));
     }
     // 前期必须显著高于底稿（地狱）
     expect(V3_STAGES[0].hp).toBeGreaterThan(Math.round(V3_STAGES_BASE[0].hp * 1.5));
