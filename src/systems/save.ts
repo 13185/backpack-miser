@@ -1,5 +1,7 @@
+import { BAG_MAX_COLS, BAG_MAX_ROWS, ECONOMY } from '../config/economy';
 import { CAMPAIGN_LENGTH, CAMPAIGN_VERSION } from '../config/v3';
-import type { GameState, Settings } from '../models/types';
+import type { GameState, ItemInstance, Settings } from '../models/types';
+import { occupiedCells } from './placement';
 
 export const SAVE_VERSION = 3;
 export const SAVE_KEY = 'backpack-miser-save';
@@ -48,6 +50,34 @@ export function migrateV3(s: any) {
     }
     s.a10Compensated = true;
   } else if (s.a10Compensated === undefined) s.a10Compensated = false;
+  clampBagToCap(s);
+}
+
+/**
+ * 3.6.5：上限改成 6×6。已经更大的档把格子收到 6×6。
+ * 占到界外的装备整件挪进临时区，不删除。已经是 6 列（含旧的金币第 6 列、A10 补到的 6×6）视为到顶，不再要求献祭。
+ * 还停在 5 列的档按行数对齐进度：5×4 / 5×5 / 5×6 仍可按新阶梯往下走。
+ */
+export function clampBagToCap(s: { rows?: number; cols?: number; expansions?: number; items?: ItemInstance[] }) {
+  if (!s || !Array.isArray(s.items)) return;
+  for (const it of s.items) {
+    if (it.x == null || it.y == null) continue;
+    let outside = it.x >= BAG_MAX_COLS || it.y >= BAG_MAX_ROWS || it.x < 0 || it.y < 0;
+    if (!outside) {
+      try {
+        outside = occupiedCells(it.kind, it.x, it.y, !!it.rotated).some(c => c.x >= BAG_MAX_COLS || c.y >= BAG_MAX_ROWS);
+      } catch {
+        outside = true;
+      }
+    }
+    if (outside) { it.x = null; it.y = null; }
+  }
+  const cols = Math.min(BAG_MAX_COLS, Math.max(1, s.cols ?? ECONOMY.startCols));
+  const rows = Math.min(BAG_MAX_ROWS, Math.max(1, s.rows ?? ECONOMY.startRows));
+  s.cols = cols;
+  s.rows = rows;
+  if (cols >= BAG_MAX_COLS) s.expansions = ECONOMY.expansions.length;
+  else s.expansions = Math.min(ECONOMY.expansions.length, Math.max(0, rows - ECONOMY.startRows));
 }
 
 function backupOld(st: Storage, raw: string, ver: number) {

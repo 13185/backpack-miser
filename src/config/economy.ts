@@ -1,4 +1,4 @@
-export const BALANCE_VERSION = '3.6.4-late-fire';
+export const BALANCE_VERSION = '3.6.5-bag66';
 export const FORGE_SAFE_COST = 60;
 export const FORGE_RISK_UNLOCK = 12;
 export const FORGE_LEGEND_UNLOCK = 25;
@@ -28,17 +28,21 @@ export const ITEM_SACRIFICES: readonly ItemSacrifice[] = [
   { lv5: 1 },
 ];
 
+/** 背包硬顶。超过的旧档在读档时收成这个尺寸，多出来的装备进临时区，不删。 */
+export const BAG_MAX_COLS = 6;
+export const BAG_MAX_ROWS = 6;
+
 export const ECONOMY = {
   startHp: 100, startGold: 13, startCols: 5, startRows: 4,
   /**
-   * 5×4 起，四次扩容到 6×7。前三次用金币（第 3 次更贵）；通关 32 后的最后一行只能献祭。
-   * 旧档如果已经到 7×7 或 7×8，尺寸保留，但不能再扩。
+   * 5×4 起，三次扩容到 6×6，没有第 7 行。
+   * 前两次用金币加行：通关 3 → 5×5，通关 7 → 5×6。
+   * 通关 17 后，用原先换第 7 行的献祭换第 6 列（4×Lv3 或 2×Lv4 或 1×Lv5）。不能改用金币，也不能再扩。
    */
   expansions: [
     { cost: 28, axis: 'row', unlockAfterLevel: 3 },
     { cost: 42, axis: 'row', unlockAfterLevel: 7 },
-    { cost: 75, axis: 'col', unlockAfterLevel: 17 },
-    { cost: 0, axis: 'row', unlockAfterLevel: 32, itemCost: ITEM_SACRIFICES },
+    { cost: 0, axis: 'col', unlockAfterLevel: 17, itemCost: ITEM_SACRIFICES },
   ] as const satisfies readonly BagExpansion[],
   refreshBase: 4, refreshStep: 2,
   lvl2Mult: 2.25, lvl3Mult: 5.2, sellRate: 0.38,

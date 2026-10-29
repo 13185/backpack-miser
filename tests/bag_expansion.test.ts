@@ -17,20 +17,19 @@ const mem = () => {
 };
 
 describe('背包扩容 3.3', () => {
-  it('四次扩容到 6×7：前三次金币，最后一次献祭，不能再往上', () => {
-    expect(ECONOMY.expansions.map(e => e.axis)).toEqual(['row', 'row', 'col', 'row']);
-    expect(ECONOMY.expansions.map(e => e.unlockAfterLevel)).toEqual([3, 7, 17, 32]);
+  it('三次扩容到 6×6：前两次金币，第 6 列献祭，没有第 7 行', () => {
+    expect(ECONOMY.expansions.map(e => e.axis)).toEqual(['row', 'row', 'col']);
+    expect(ECONOMY.expansions.map(e => e.unlockAfterLevel)).toEqual([3, 7, 17]);
     expect(expansionCost(0)).toBe(28);
     expect(expansionCost(1)).toBe(42);
-    expect(expansionCost(2)).toBe(75);
+    expect(expansionCost(2)).toBeNull();
+    expect(ECONOMY.expansions[2].itemCost).toEqual([{ lv3: 4 }, { lv4: 2 }, { lv5: 1 }]);
     expect(expansionCost(3)).toBeNull();
-    expect(ECONOMY.expansions[3].itemCost).toEqual([{ lv3: 4 }, { lv4: 2 }, { lv5: 1 }]);
-    expect(expansionCost(4)).toBeNull();
-    expect(ECONOMY.expansions.length).toBe(4);
+    expect(ECONOMY.expansions.length).toBe(3);
     let rows = 4, cols = 5;
     for (const e of ECONOMY.expansions) { if (e.axis === 'row') rows++; else cols++; }
     expect(cols).toBe(6);
-    expect(rows).toBe(7);
+    expect(rows).toBe(6);
   });
 
   it('未击败首领不能买后续扩容；击败后花钱才变大', () => {
@@ -50,10 +49,12 @@ describe('背包扩容 3.3', () => {
     expect(expansionUnlocked(18, 2)).toBe(true);
     g.s.level = 18;
     g.s.gold = 75;
-    expect(expansionLabel(18, g.s.rows, g.s.cols, g.s.expansions).text).toContain('第6列');
-    expect(g.expand().ok).toBe(true);
-    expect(g.s.cols).toBe(6);
-    expect(g.s.gold).toBe(0);
+    const label = expansionLabel(18, g.s.rows, g.s.cols, g.s.expansions);
+    expect(label.text).toContain('第6列');
+    expect(label.itemCost).toBe(true);
+    expect(g.expand().ok).toBe(false);
+    expect(g.s.cols).toBe(5);
+    expect(g.s.gold).toBe(75);
   });
 
   it('旧 v3 存档补 expansions，保留原来的行列', () => {

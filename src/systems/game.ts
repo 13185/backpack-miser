@@ -1,4 +1,4 @@
-import { BALANCE_VERSION, ECONOMY, FORGE_LEGEND_UNLOCK, FORGE_RISK_UNLOCK, FORGE_SAFE_COST, FORGE_VOUCHER_LEVELS, winHealAmount } from '../config/economy';
+import { BAG_MAX_COLS, BAG_MAX_ROWS, BALANCE_VERSION, ECONOMY, FORGE_LEGEND_UNLOCK, FORGE_RISK_UNLOCK, FORGE_SAFE_COST, FORGE_VOUCHER_LEVELS, winHealAmount } from '../config/economy';
 import { ITEMS, ITEM_KINDS, itemUnlockLevel } from '../config/items';
 import {
   CAMPAIGN_LENGTH, CAMPAIGN_VERSION, V3_CHAPTERS, campAfterBoss, chapterOf,
@@ -450,6 +450,9 @@ export class Game {
     const g = this.prepOnly(); if (g) return g;
     const offer = expansionOffer(this.s.expansions);
     if (!offer) return fail('背包已到本局上限。');
+    if ((offer.axis === 'col' && this.s.cols >= BAG_MAX_COLS) || (offer.axis === 'row' && this.s.rows >= BAG_MAX_ROWS)) {
+      return fail('背包已到本局上限。');
+    }
     if (this.s.level <= offer.unlockAfterLevel) {
       const what = offer.axis === 'col' ? `第${this.s.cols + 1}列` : `第${this.s.rows + 1}行`;
       return fail(`通关第${offer.unlockAfterLevel}关后可解锁${what}。`);
