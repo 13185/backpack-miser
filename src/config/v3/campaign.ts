@@ -348,7 +348,8 @@ export const HELL_STAGES: StageBudget[] = scaleLateReach(applyProgressFloor(
 /**
  * 3.6.2 先把首领生命和攻击、普通关生命都 ×2。
  * 3.6.3 在那一档上再砍 30%：floor(×2 × 0.7) = floor(×1.4)。
- * 普通关攻击不动。精英仍乘自己的 ELITE_HP_MULT，所以精英血量跟着这档走。
+ * 3.6.4：13–25 关的生命和攻击再 floor(×0.9)。40 关起的非首领另叠血量坡。终局生命再 ×3。
+ * 13–25 以外的普通关攻击保持 3.6.3。精英仍乘自己的 ELITE_HP_MULT。
  */
 /** 40 关起的非首领：先 ×1.30，之后每关再叠 5%。L40 若是首领则不吃这档。 */
 export function lateTrashMult(level: number): number {
@@ -357,10 +358,15 @@ export function lateTrashMult(level: number): number {
 
 export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
   const cut = (n: number) => Math.floor(n * 2 * 0.7);
+  const ease = (n: number) => Math.floor(n * 0.9);
   return stages.map(s => {
     const boss = !!s.boss;
     let hp = cut(s.hp);
-    const damage = boss ? cut(s.damage) : s.damage;
+    let damage = boss ? cut(s.damage) : s.damage;
+    if (s.level >= 13 && s.level <= 25) {
+      hp = ease(hp);
+      damage = ease(damage);
+    }
     if (!boss && s.level >= 40) hp = Math.floor(hp * lateTrashMult(s.level));
     if (boss && s.level >= 50) hp *= 3;
     return { ...s, hp, damage };

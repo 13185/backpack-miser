@@ -19,9 +19,9 @@ describe('3.6.4 后期血量与心脏', () => {
     expect(getLevel(46).atk).toBe(35);
   });
 
-  it('首领血攻保持 3.6.3，终局生命再 ×3', () => {
-    expect(getLevel(15).hp).toBe(1218);
-    expect(getLevel(15).atk).toBe(32);
+  it('13–25 关再砍 10%，30 关保持 3.6.3，终局生命再 ×3', () => {
+    expect(getLevel(15).hp).toBe(Math.floor(1218 * 0.9));
+    expect(getLevel(15).atk).toBe(Math.floor(32 * 0.9));
     expect(getLevel(30).hp).toBe(2342);
     expect(getLevel(30).atk).toBe(32);
     expect(getLevel(50).hp).toBe(6204 * 3);
