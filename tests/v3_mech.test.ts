@@ -43,20 +43,16 @@ describe('回响 / 过热 / 祝祷 / 心脏', () => {
     }
     expect(echoes).toBeGreaterThanOrEqual(1);
   });
-  it('过热：重击后护甲归零窗口', () => {
+  it('熔炉过热预警结束后护甲归零', () => {
     const lv = getLevel(35);
-    expect(lv.overheat).toBeTruthy();
-    const c = createCombat([mk('dagger', 'd', 3)], 200, 200, {
-      ...lv, hp: 8000, atk: 5, interval: 0.8, armor: 4,
+    expect(lv.furnaceCycle).toBe(true);
+    const c = createCombat([mk('dagger', 'd', 3)], 500, 500, {
+      ...lv, hp: 8000, atk: 5, interval: 0.4, armor: 4,
     });
     let vent = false;
-    for (let i = 0; i < 80 && !c.over; i++) {
-      const ev = stepCombat(c, 200);
-      if (ev.some(e => e.type === 'overheat' && e.kind === 'vent')) {
-        vent = true;
-        expect(c.armor).toBe(0);
-        break;
-      }
+    for (let i = 0; i < 120 && !c.over; i++) {
+      stepCombat(c, 200);
+      if (c.furnaceVentUntil > c.t && c.armor === 0) { vent = true; break; }
     }
     expect(vent).toBe(true);
   });

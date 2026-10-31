@@ -12,7 +12,14 @@ export function occupiedCells(kind: ItemKind, x: number, y: number, rotated: boo
   for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) out.push({ x: x + dx, y: y + dy });
   return out;
 }
-export function inBag(i: ItemInstance): boolean { return i.x !== null && i.y !== null; }
+export type ItemPlace = 'bag' | 'hand' | 'armor' | 'reserve' | 'temp';
+/** 同一实例只有一个位置。bin 优先于坐标，避免穿上了还留在格子里。 */
+export function itemPlace(i: ItemInstance): ItemPlace {
+  if (i.bin === 'hand' || i.bin === 'armor' || i.bin === 'reserve') return i.bin;
+  if (i.x !== null && i.y !== null) return 'bag';
+  return 'temp';
+}
+export function inBag(i: ItemInstance): boolean { return itemPlace(i) === 'bag'; }
 /** 是否可以放置（忽略 ignoreId 自身原位，用于移动/原位旋转） */
 export function canPlace(items: ItemInstance[], cols: number, rows: number, kind: ItemKind, x: number, y: number, rotated: boolean, ignoreId?: string): boolean {
   const cells = occupiedCells(kind, x, y, rotated);

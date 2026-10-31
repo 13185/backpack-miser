@@ -1,7 +1,7 @@
 import type { ItemKind } from '../models/types';
 export interface ItemDef {
   kind: ItemKind; name: string; w: number; h: number; rotatable: boolean;
-  category: 'weapon' | 'shield' | 'potion' | 'gem' | 'bag' | 'passive' | 'heal' | 'economy' | 'needle' | 'control' | 'support';
+  category: 'weapon' | 'shield' | 'potion' | 'gem' | 'bag' | 'passive' | 'heal' | 'economy' | 'needle' | 'control' | 'support' | 'armor';
   values: [number, number, number, number, number];
   interval?: number;
   price: number;
@@ -94,6 +94,18 @@ export const ITEMS: Record<ItemKind, ItemDef> = {
     values: v5([0, 0, 0]), price: 0, color: '#6a5060', unlockLevel: 99,
     desc: () => '事件负担物：不可出售/合成/丢入临时区；可在营地或特定事件移除。',
   },
+  gilded_lining: { kind: 'gilded_lining', name: '镀金衬甲', w: 2, h: 2, rotatable: false, category: 'armor', values: v5([20, 30, 40], 45, 50), price: 16, color: '#e6c36a', unlockLevel: 99,
+    desc: v => `穿上后金抗 +${v}。放在背包或备用箱里不生效。` },
+  root_lining: { kind: 'root_lining', name: '缠根衬甲', w: 2, h: 2, rotatable: false, category: 'armor', values: v5([20, 30, 40], 45, 50), price: 16, color: '#7d9a55', unlockLevel: 99,
+    desc: v => `穿上后木抗 +${v}。放在背包或备用箱里不生效。` },
+  tide_lining: { kind: 'tide_lining', name: '潮织衬甲', w: 2, h: 2, rotatable: false, category: 'armor', values: v5([20, 30, 40], 45, 50), price: 16, color: '#6aa8c9', unlockLevel: 99,
+    desc: v => `穿上后水抗 +${v}。放在背包或备用箱里不生效。` },
+  furnace_lining: { kind: 'furnace_lining', name: '炉衬甲', w: 2, h: 2, rotatable: false, category: 'armor', values: v5([20, 30, 40], 45, 50), price: 16, color: '#d46a45', unlockLevel: 99,
+    desc: v => `穿上后火抗 +${v}。这是抗火，不是火输出。` },
+  stone_lining: { kind: 'stone_lining', name: '岩衬甲', w: 2, h: 2, rotatable: false, category: 'armor', values: v5([20, 30, 40], 45, 50), price: 16, color: '#a89880', unlockLevel: 99,
+    desc: v => `穿上后土抗 +${v}。放在背包或备用箱里不生效。` },
+  travel_lining: { kind: 'travel_lining', name: '旅行衬甲', w: 2, h: 2, rotatable: false, category: 'armor', values: v5([8, 12, 16], 18, 20), price: 16, color: '#cbb98a', unlockLevel: 99,
+    desc: v => `穿上后金木水火土各 +${v}。放在背包或备用箱里不生效。` },
   luck_charm: {
     kind: 'luck_charm', name: '吉利达幸运符', w: 1, h: 1, rotatable: false, category: 'support',
     values: v5([6, 9, 12], 15, 18), price: 20, color: '#7af0ff', maxTriggers: 1,

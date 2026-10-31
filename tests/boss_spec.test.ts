@@ -62,12 +62,16 @@ describe('Boss 机制对齐规格', () => {
     expect(lv.phaseShields?.thresholds).toEqual([0.65, 0.35]);
     expect(lv.heavyStrike?.mult).toBeGreaterThanOrEqual(1.7);
   });
-  it('B35 护甲4、过热更频、半血盾', () => {
+  it('B35 熔炉只保留一套过热循环', () => {
     const lv = getLevel(35);
     expect(lv.armor).toBe(4);
-    expect(lv.overheat?.every).toBe(2);
-    expect(lv.overheat!.mult).toBeGreaterThanOrEqual(2.2);
-    expect(lv.phaseShields?.thresholds).toEqual([0.5]);
+    expect(lv.furnaceCycle).toBe(true);
+    expect(lv.overheat).toBeUndefined();
+    expect(lv.heavyStrike).toBeUndefined();
+    expect(lv.phaseShields).toBeUndefined();
+    expect(lv.bossElement).toBe('fire');
+    expect(lv.resist?.fire).toBe(60);
+    expect(lv.resist?.water).toBe(-20);
   });
   it('B40 强化祝祷+双盾+高频重击', () => {
     const lv = getLevel(40);

@@ -1,8 +1,13 @@
+import { ARMOR_BUY, ARMOR_SELL, isArmorKind } from '../config/v4/armor';
 import { ECONOMY, type BagExpansion } from '../config/economy';
 import { ITEMS } from '../config/items';
 import type { ItemKind, Level } from '../models/types';
 
 export function buyPrice(kind: ItemKind, level: Level, heroClass?: string): number {
+  if (isArmorKind(kind)) {
+    const base = ARMOR_BUY[level - 1] ?? 16;
+    return heroClass === 'merchant' ? Math.max(1, Math.ceil(base * 0.85)) : base;
+  }
   let p = ITEMS[kind].price;
   if (level === 2) p = Math.ceil(p * ECONOMY.lvl2Mult);
   else if (level === 3) p = Math.ceil(p * ECONOMY.lvl3Mult);
@@ -13,6 +18,7 @@ export function buyPrice(kind: ItemKind, level: Level, heroClass?: string): numb
 }
 export function sellPrice(kind: ItemKind, level: Level): number {
   if (kind === 'luck_charm' && level === 1) return 8;
+  if (isArmorKind(kind)) return ARMOR_SELL[level - 1] ?? 6;
   return Math.floor(buyPrice(kind, level) * ECONOMY.sellRate);
 }
 /**

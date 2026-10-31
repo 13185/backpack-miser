@@ -13,10 +13,12 @@ import { gemBonus, weaponDamage, weaponsBoostedBy } from '../systems/adjacency';
 import type { CombatEvent, CombatState } from '../systems/combat';
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { slotBlurb, slotCost } from '../systems/slot';
+import { chapterBossElement, ensureGearTrials } from '../systems/gearTrial';
+import { activateGuard } from '../systems/combat';
 import { Game, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
 import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
 import { canMerge, mergeTargetIds } from '../systems/merge';
-import { canPlace, inBag, itemAt, itemSize, occupiedCells } from '../systems/placement';
+import { canPlace, inBag, itemAt, itemPlace, itemSize, occupiedCells } from '../systems/placement';
 import { clearSave, loadGame, loadSettings, saveGame, saveSettings } from '../systems/save';
 import { BattleScene } from '../scenes/BattleScene';
 import { AnimPreviewScene } from '../scenes/AnimPreviewScene';
@@ -324,7 +326,7 @@ export class App {
       this.toast(`通关第${lv}关！可以花钱解锁${what}`);
       this.persist(s);
     }
-    this.renderMid(); this.renderBag(); this.renderTemp(); this.renderDetails(); this.renderShop(); this.renderStats(); this.renderTutorial();
+    this.renderMid(); this.renderWear(); this.renderBag(); this.renderTemp(); this.renderDetails(); this.renderShop(); this.renderStats(); this.renderTutorial();
   }
   renderMid() {
     const g = this.game!, s = g.s, lv = getLevel(s.level), base = MONSTER_BASE[lv.monster];
@@ -443,6 +445,42 @@ export class App {
     };
     draw();
   }
+  renderWear() {
+    const g = this.game!; const s = g.s; const prep = s.phase === 'prep';
+    if (s.level <= 10 && !g.handItem && !g.wornArmor) { $('wear').innerHTML = ''; return; }
+    if (g.maybeGrantV4Lesson()) this.persist(g.s);
+    const hand = g.handItem; const armor = g.wornArmor;
+    const info = chapterBossElement(s.currentChapter);
+    ensureGearTrials(s);
+    const trials = s.gearTrials?.chapter === s.currentChapter ? s.gearTrials.trials : [];
+    const guardBtn = s.phase === 'battle' && s.level >= 11
+      ? `<button class="btn small" id="guardBtn">🛡 战术防御</button>` : '';
+    $('wear').innerHTML = `<div class="ptitle">穿戴 <small>主手不吃邻接，备用箱不生效</small></div>
+      <div class="sDesc">主手：${hand ? ITEMS[hand.kind].name + ' Lv' + hand.level + (hand.element ? ' · ' + hand.element : ' · 无属性') : '空'}</div>
+      <div class="sDesc">护甲：${armor ? ITEMS[armor.kind].name + ' Lv' + armor.level : '空'}　备用 ${g.reserveItems.length}/6</div>
+      ${info ? `<div class="sDesc">本章首领偏${info.element}，弱点偏${info.weakness}。火抗甲只减火伤，不改变火输出。</div>` : ''}
+      <div class="detBtns">
+        ${hand ? `<button class="btn small" id="offHand" ${prep ? '' : 'disabled'}>卸下主手</button>` : ''}
+        ${armor ? `<button class="btn small" id="offArmor" ${prep ? '' : 'disabled'}>卸下护甲</button>` : ''}
+        ${guardBtn}
+      </div>
+      ${trials.length ? `<div class="sDesc">寻装：${trials.map(t => `${t.kind}${t.claimed ? '已领' : t.ready ? '可领' : '可打'}`).join(' · ')}</div>
+        <div class="detBtns">${trials.map(t => `<button class="btn small" data-trial="${t.id}" ${prep ? '' : 'disabled'}>${t.ready && !t.claimed ? '领取' : '练习'} ${t.kind}</button>`).join('')}</div>` : ''}`;
+    if (hand && prep) $('offHand').onclick = () => this.guard(() => this.act(() => g.unequip(hand.id)));
+    if (armor && prep) $('offArmor').onclick = () => this.guard(() => this.act(() => g.unequip(armor.id)));
+    const gb = document.getElementById('guardBtn');
+    if (gb) gb.onclick = () => { const c = this.scene?.combat; if (c) activateGuard(c); };
+    $('wear').querySelectorAll<HTMLElement>('[data-trial]').forEach(b => b.onclick = () => this.guard(() => {
+      const id = b.dataset.trial!;
+      const trial = s.gearTrials?.trials.find(t => t.id === id);
+      if (trial?.ready && !trial.claimed) this.act(() => g.claimGearTrial(id));
+      else {
+        const r = g.startGearTrial(id);
+        if (!r.ok) { this.toast(r.msg, true); return; }
+        this.render(); this.runBattle();
+      }
+    }));
+  }
   renderTemp() {
     const g = this.game!;
     const tc = Math.min(40, this.cell * 0.7);
@@ -484,6 +522,7 @@ export class App {
     else if (d.category === 'heal') stats = `<div>恢复：<b>${v}</b> · 间隔 ${d.interval}秒</div><div>每场最多 ${d.maxTriggers ?? 3} 次（非药水）</div>`;
     else if (d.category === 'passive') stats = `<div>减甲：<b>${v}</b> · 持续前8秒</div>`;
     else if (d.category === 'economy') stats = `<div>开战金&lt;30时额外：<b>+${v}</b> 金币</div>`;
+    else if (d.category === 'armor') stats = `<div>穿上才生效。抗性见说明，不提供护盾。</div><div>元素：${it.element ?? '无属性武器才有元素改造'}</div>`;
     else if (it.kind === 'luck_charm') stats = `<div>首次加盾额外：<b>+${v}</b> · 每场一次</div>`;
     else stats = `<div>胜利金币：<b>+${v}</b></div>`;
     const nextVal = it.level < 3 ? d.values[(it.level) as 1 | 2] : d.values[3];
@@ -498,17 +537,25 @@ export class App {
     const prep = g.s.phase === 'prep';
     el.innerHTML = `<div class="ptitle">🔍 装备详情 <button class="iconBtn closeSheet" id="closeDet">✕</button></div>
       <div class="detHead"><div class="detIcon lv${it.level}" style="--c:${d.color}">${iconSvg(it.kind)}<div class="lvBadge">Lv${it.level}</div></div>
-      <div><div class="detName">${d.name} <span class="lvTxt">Lv${it.level}</span></div><div class="muted">占格 ${w}×${h}${d.rotatable ? ' · 可旋转' : ''} · ${inBag(it) ? '背包中（生效）' : '临时区（不生效）'}</div></div></div>
+      <div><div class="detName">${d.name} <span class="lvTxt">Lv${it.level}</span></div><div class="muted">占格 ${w}×${h}${d.rotatable ? ' · 可旋转' : ''} · ${itemPlace(it) === 'bag' ? '背包中（生效）' : itemPlace(it) === 'hand' ? '主手（不吃邻接）' : itemPlace(it) === 'armor' ? '已穿戴' : itemPlace(it) === 'reserve' ? '备用箱（不生效）' : '临时区（不生效）'}</div></div></div>
       <div class="desc">${d.desc(v)}</div><div class="statsBox">${stats}${next}</div>
       <div class="detBtns">
         ${d.rotatable ? `<button class="btn small" id="dRot" ${prep ? '' : 'disabled'}>⟳ 旋转</button>` : ''}
         ${inBag(it) ? `<button class="btn small" id="dTemp" ${prep ? '' : 'disabled'}>移到临时区</button>` : `<button class="btn small gold" id="dPlace" ${prep ? '' : 'disabled'}>放入背包</button>`}
+        ${(d.category === 'weapon' || d.category === 'needle') ? `<button class="btn small" id="dHand" ${prep ? '' : 'disabled'}>设为主手</button><button class="btn small" id="dBox" ${prep ? '' : 'disabled'}>放入备用箱</button>` : ''}
+        ${d.category === 'armor' ? `<button class="btn small" id="dArmor" ${prep ? '' : 'disabled'}>穿上</button><button class="btn small" id="dBox" ${prep ? '' : 'disabled'}>放入备用箱</button>` : ''}
         <button class="btn small ${confirming ? 'danger' : ''}" id="dSell" ${prep ? '' : 'disabled'}>${confirming ? `确认出售？+${sp}金币` : `出售 +${sp}金币`}</button>
       </div>`;
     $('closeDet').onclick = () => { this.selected = null; this.render(); };
     if (d.rotatable) $('dRot').onclick = () => this.act(() => g.rotate(it.id));
     if (inBag(it)) $('dTemp').onclick = () => this.act(() => g.toTemp(it.id));
     else $('dPlace').onclick = () => this.act(() => this.autoPlace(it));
+    const dHand = document.getElementById('dHand');
+    const dArmor = document.getElementById('dArmor');
+    const dBox = document.getElementById('dBox');
+    if (dHand) dHand.onclick = () => this.act(() => g.equipHand(it.id));
+    if (dArmor) dArmor.onclick = () => this.act(() => g.equipArmor(it.id));
+    if (dBox) dBox.onclick = () => this.act(() => g.toReserve(it.id));
     $('dSell').onclick = () => this.guard(() => {
       if (confirming) { this.sellConfirm = null; this.selected = null; this.act(() => g.sell(it.id), sfx.coin); }
       else { this.sellConfirm = { id: it.id, until: Date.now() + 3000 }; this.renderDetails(); setTimeout(() => this.renderDetails(), 3050); }
@@ -1273,7 +1320,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.6.11 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.7.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

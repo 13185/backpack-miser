@@ -161,6 +161,8 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .shopCard, .lootCard { background: #0004; border: 2px solid #6b5230; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; color: var(--text); }
 .shopCard.bought { opacity: .5; }
 .shopCard .btn { width: 100%; font-size: 13px; padding: 4px; }
+#wear { margin: 8px 0; padding: 8px; }
+#wear:empty { display: none; }
 .slotBox { margin-top: 10px; padding: 8px; border: 2px dashed #8a5a18; border-radius: 12px; background: #3a220812; text-align: center; }
 .slotBox .sDesc { margin: 4px 0 8px; }
 .slotMsg { font-weight: bold; color: var(--gold2); font-size: 14px; margin: 4px 0; }

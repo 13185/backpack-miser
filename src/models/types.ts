@@ -3,7 +3,8 @@ export type ItemKind =
   | 'spear' | 'compass' | 'firework_crossbow' | 'fold_wall' | 'travel_lamp'
   | 'emergency_ledger' | 'poison_needle'
   | 'crossbow' | 'chain_hammer' | 'warhammer' | 'ice_crystal' | 'war_banner'
-  | 'burden' | 'luck_charm';
+  | 'burden' | 'luck_charm'
+  | 'gilded_lining' | 'root_lining' | 'tide_lining' | 'furnace_lining' | 'stone_lining' | 'travel_lining';
 export type Level = 1 | 2 | 3 | 4 | 5;
 /** 装备实例：位于背包时有 x,y；临时区时为 null */
 export interface ItemInstance {
@@ -17,6 +18,10 @@ export interface ItemInstance {
   burdenShopPct?: number;
   /** 负担物：最大生命降低% */
   burdenMaxHpPct?: number;
+  /** 武器元素改造。缺省是无属性。旧档不填。 */
+  element?: 'metal' | 'wood' | 'water' | 'fire' | 'earth' | null;
+  /** 不在格子上时的归属。缺省且没有坐标就是临时区。 */
+  bin?: 'hand' | 'armor' | 'reserve';
 }
 export interface ShopSlot { kind: ItemKind; level: Level; bought: boolean; }
 export type Phase = 'prep' | 'battle' | 'loot' | 'camp' | 'victory' | 'defeat' | 'event' | 'route';
@@ -154,6 +159,16 @@ export interface GameState {
   pendingUpgrade: { fromLevel: 1 | 2 } | null;
   /** 本局固定最大生命增加累计（上限20） */
   fixedMaxHpBonus: number;
+  /** 战术防御自动。缺省视为开。 */
+  autoGuard?: boolean;
+  /** 第11关教学只发一次。 */
+  v4LessonGranted?: boolean;
+  elementRng?: number;
+  /** 本章已用的付费改造。0 表示还没用。 */
+  imprintChapter?: number;
+  loadouts?: { name: string; handId: string | null; armorId: string | null }[];
+  gearTrials?: { chapter: number; trials: { id: string; kind: 'guard' | 'counter' | 'special'; claimed: boolean; ready: boolean }[] } | null;
+  gearFight?: { trialId: string; hp: number } | null;
 }
 export type HeroClass = 'merchant' | 'guard' | 'ranger';
 export type CampKind = 'chapter' | 'final';

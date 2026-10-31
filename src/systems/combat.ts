@@ -4,6 +4,9 @@ import type { LevelDef } from '../config/levels';
 import { INTERVAL_SHORTEN_CAP } from '../config/v3/runes';
 import { doctrineT01Mult } from '../config/v3/doctrines';
 import { HEART_TUNE, seasonedMult } from '../config/v3/campaign';
+import { emptyResist, splitDirect, splitIncoming, type Element } from '../config/v4/elements';
+import { armorResist, isArmorKind } from '../config/v4/armor';
+import { itemPlace } from './placement';
 import type { ItemInstance, ItemKind, RuneInstance } from '../models/types';
 import { weaponDamage, bannerShorten, gemBonus } from './adjacency';
 import { inBag } from './placement';
@@ -52,6 +55,7 @@ interface Actor {
   shots?: number;
   splashPct?: number;
   shieldMult?: number;
+  element?: Element | null;
 }
 export interface CombatState {
   t: number; over: boolean; won: boolean; reason: string;
@@ -135,12 +139,30 @@ export interface CombatState {
   guardBonusUsed: boolean;
   enrageAt: number;
   enrageBonus: number;
+  levelNo: number;
   invulnUntil: number;
   invulnTriggered: boolean[];
   fireWindupUntil: number;
   fireArmed: boolean;
   /** 游侠武器间隔系数。31 关前 0.75，之后 0.68。其他职业为 1。 */
   rangerGap: number;
+  playerResist: Record<Element, number>;
+  monsterResist: Record<Element, number>;
+  bossElement?: Element;
+  plainShare: number;
+  heavyPlainShare: number;
+  guardUntil: number;
+  guardReadyAt: number;
+  autoGuard: boolean;
+  guardUses: number;
+  furnaceCycle: boolean;
+  furnaceNormals: number;
+  furnaceWindupUntil: number;
+  furnaceVentUntil: number;
+  furnaceWater: number;
+  furnaceBroke: boolean;
+  furnaceBreaks: number;
+  heartElementPhases?: { element: Element; resist: Partial<Record<Element, number>> }[];
 }
 export interface CombatMods {
   runes?: RuneInstance[];
@@ -148,6 +170,7 @@ export interface CombatMods {
   relics?: string[];
   startGold?: number;
   heroClass?: string | null;
+  autoGuard?: boolean;
 }
 
 const ms = (s: number) => Math.round(s * 1000);
@@ -208,15 +231,32 @@ function charmBonus(bag: ItemInstance[]): number {
   return best ? ITEMS.luck_charm.values[best - 1] : 0;
 }
 
+export function activateGuard(s: CombatState): boolean {
+  if (s.over || (s.levelNo ?? 0) < 11) return false;
+  if (s.t < s.guardReadyAt || s.guardUntil > s.t) return false;
+  s.guardUntil = s.t + 2000;
+  s.guardReadyAt = s.t + 12000;
+  s.guardUses++;
+  return true;
+}
+
+function tryAutoGuard(s: CombatState) {
+  if (!s.autoGuard || (s.levelNo ?? 0) < 11) return;
+  const until = s.furnaceWindupUntil > s.t ? s.furnaceWindupUntil : s.heavyWindupUntil;
+  if (until > s.t && until - s.t <= 1000) activateGuard(s);
+}
+
 export function createCombat(items: ItemInstance[], hp: number, maxHp: number, lv: LevelDef, mods: CombatMods = {}): CombatState {
   const bag = items.filter(inBag).map(i => ({ ...i })).sort((a, b) => a.y! - b.y! || a.x! - b.x!);
+  const hand = items.find(i => itemPlace(i) === 'hand');
+  const worn = items.find(i => itemPlace(i) === 'armor' && isArmorKind(i.kind));
   const runes = (mods.runes ?? []).filter(r => r.itemId);
   const relics = mods.relics ?? [];
   const doctrine = mods.doctrine ?? null;
   const weaponCount = bag.filter(i => {
     const c = ITEMS[i.kind].category;
     return c === 'weapon' || c === 'needle';
-  }).length;
+  }).length + (hand && (ITEMS[hand.kind].category === 'weapon' || ITEMS[hand.kind].category === 'needle') ? 1 : 0);
   const doctrineMult = doctrine === 'T01' ? doctrineT01Mult(weaponCount) : 1;
   let doctrineShorten = 0;
   if (doctrine === 'T02') doctrineShorten = weaponCount >= 3 ? 0.06 : 0.02;
@@ -280,6 +320,7 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
       actors.push({
         id: it.id, kind: d.category === 'needle' ? 'needle' : 'weapon',
         interval, nextAt: interval, value, order: order++, itemKind: it.kind, armorIgnore, armorIgnorePct, shots, splashPct,
+        element: it.element ?? null,
       });
     }
   }
@@ -321,6 +362,22 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
         maxUses: d.maxTriggers ?? 3, uses: 0,
       });
     }
+  }
+  if (hand && (ITEMS[hand.kind].category === 'weapon' || ITEMS[hand.kind].category === 'needle')) {
+    const d = ITEMS[hand.kind];
+    let value = d.values[hand.level - 1];
+    if (runeOn(runes, hand.id, 'U01')) value = Math.round(value * 1.10);
+    value = Math.round(value * doctrineMult);
+    if (hasRelic(relics, 'C02')) value = Math.round(value * 1.10);
+    if (hasRelic(relics, 'R07') && weaponCount <= 2) value = Math.round(value * 1.25);
+    if (mods.heroClass === 'merchant' && bag.some(b => b.kind === 'moneybag')) {
+      value = Math.round(value * ((lv.level ?? 0) >= 31 ? 1.20 : 1.12));
+    }
+    actors.push({
+      id: hand.id, kind: d.category === 'needle' ? 'needle' : 'weapon',
+      interval: ms(d.interval!), nextAt: ms(d.interval!), value, order: order++, itemKind: hand.kind,
+      element: hand.element ?? null,
+    });
   }
   actors.push({ id: 'monster', kind: 'monster', interval: ms(lv.interval), nextAt: ms(lv.interval), value: lv.atk, order: 100000 });
 
@@ -462,6 +519,16 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     enrageBonus: lv.boss && (lv.level ?? 0) >= 40 ? 0.14 : ECONOMY.enrageBonus,
     rangerGap,
     invulnUntil: 0, invulnTriggered: [false, false], fireWindupUntil: 0, fireArmed: false,
+    levelNo: lv.level ?? 1,
+    playerResist: worn && isArmorKind(worn.kind) ? armorResist(worn.kind, worn.level) : emptyResist(),
+    monsterResist: { ...emptyResist(), ...(lv.resist ?? {}) },
+    bossElement: lv.bossElement,
+    plainShare: lv.plainShare ?? 0.6,
+    heavyPlainShare: lv.heavyPlainShare ?? 0.2,
+    guardUntil: 0, guardReadyAt: 0, autoGuard: mods.autoGuard !== false, guardUses: 0,
+    furnaceCycle: !!lv.furnaceCycle, furnaceNormals: 0, furnaceWindupUntil: 0, furnaceVentUntil: 0,
+    furnaceWater: 0, furnaceBroke: false, furnaceBreaks: 0,
+    heartElementPhases: lv.heartElementPhases,
   };
 }
 
@@ -543,11 +610,19 @@ function tickPoison(s: CombatState, ev: CombatEvent[]) {
   }
   if (s.mHp <= 0) { s.pendingEcho = null; tryClearWin(s, ev, '怪物被毒杀！'); }
 }
+function applyHeartElement(s: CombatState, phase: number) {
+  const row = s.heartElementPhases?.[phase - 1];
+  if (!row) return;
+  s.bossElement = row.element;
+  s.monsterResist = { ...emptyResist(), ...row.resist };
+}
 function processTimeline(s: CombatState, ev: CombatEvent[]) {
+  tryAutoGuard(s);
   if (s.t >= ms(ECONOMY.timeout)) { finish(s, ev, false, `战斗超过${ECONOMY.timeout}秒仍未分出胜负，冒险失败：火力不足，被怪物拖垮了。`); return; }
   if (s.fireArmed && s.fireWindupUntil > 0 && s.t >= s.fireWindupUntil && s.mHp > 0 && !s.over) {
     s.fireArmed = false;
-    const dmg = Math.max(1, Math.round(s.maxHp * HEART_FIRE_HP_PCT));
+    let dmg = Math.max(1, Math.round(s.maxHp * HEART_FIRE_HP_PCT));
+    dmg = splitIncoming(dmg, 'fire', 0, s.playerResist.fire ?? 0, s.guardUntil > s.t);
     const r = applyDamageToPlayer(s.hp, s.shield, dmg);
     s.hp = r.hp; s.shield = r.shield; s.stats.absorbed += r.absorbed;
     ev.push({ t: s.t, type: 'fireBreath', dmg, hpLoss: r.hpLoss });
@@ -738,8 +813,25 @@ function hitMonster(s: CombatState, a: Actor, ev: CombatEvent[], rawIn: number) 
   let ign = a.armorIgnore ?? 0;
   if (a.armorIgnorePct) ign += Math.floor(effectiveArmor(s, 0) * a.armorIgnorePct);
   const armor = effectiveArmor(s, ign);
-  const dmg = damageToMonster(raw, armor);
+  let dmg = damageToMonster(raw, armor);
+  let waterPart = 0;
+  if (a.element) {
+    const split = splitDirect(dmg, a.element, s.monsterResist[a.element] ?? 0);
+    dmg = split.total;
+    waterPart = split.water;
+  }
   const real = applyToMonsterHp(s, dmg);
+  if (s.furnaceCycle && s.furnaceWindupUntil > s.t && waterPart > 0) {
+    const credited = Math.min(waterPart, real);
+    s.furnaceWater += credited;
+    if (!s.furnaceBroke && s.furnaceWater >= Math.ceil(s.mMaxHp * 0.04)) {
+      s.furnaceBroke = true;
+      s.furnaceBreaks++;
+      const mon = s.actors.find(x => x.kind === 'monster');
+      if (mon) mon.nextAt = s.t;
+      s.furnaceWindupUntil = s.t;
+    }
+  }
   s.stats.weapon[a.id] = (s.stats.weapon[a.id] ?? 0) + real;
   ev.push({ t: s.t, type: 'weapon', itemId: a.id, dmg: real, raw, heavy: raw >= 20 });
   // A03 / C01 / R05
@@ -784,12 +876,14 @@ function hitMonster(s: CombatState, a: Actor, ev: CombatEvent[], rawIn: number) 
     const ratio = s.mHp / s.mMaxHp;
     if (s.heartPhase === 1 && ratio <= HEART_TUNE.phase2At) {
       s.heartPhase = 2;
+      applyHeartElement(s, 2);
       s.heavyStrike = undefined; s.heavyPending = false;
       s.echo = { every: 3, delayMs: 500, pct: 0.35 };
       s.mShield = Math.max(s.mShield, HEART_TUNE.phase2Shield);
       ev.push({ t: s.t, type: 'heartPhase', phase: 2 });
     } else if (s.heartPhase === 2 && ratio <= HEART_TUNE.phase3At) {
       s.heartPhase = 3;
+      applyHeartElement(s, 3);
       s.echo = undefined; s.pendingEcho = null;
       s.overheat = { every: 3, mult: 1.8, pauseMs: 2000 };
       s.mShield = Math.max(s.mShield, HEART_TUNE.phase3Shield);
@@ -878,6 +972,25 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
   } else {
     // 过热停火窗口
     if (s.overheatPausedUntil > s.t) return;
+    if (s.furnaceCycle && s.furnaceVentUntil > s.t) return;
+    if (s.furnaceCycle && s.furnaceWindupUntil > s.t) return;
+    if (s.furnaceCycle && s.furnaceWindupUntil > 0 && s.t >= s.furnaceWindupUntil) {
+      s.furnaceWindupUntil = 0;
+      s.furnaceNormals = 0;
+      s.armor = 0;
+      s.furnaceVentUntil = s.t + 3000;
+      if (s.furnaceBroke) { s.furnaceBroke = false; ev.push({ t: s.t, type: 'heavyWindup' }); return; }
+      const mult = enrageMult(s.enrageStage, s.enrageBonus) * (s.mHp / s.mMaxHp <= 0.4 ? 2 : 1.8);
+      let dmg = Math.round(s.mAtk * mult);
+      if (s.bossElement) dmg = splitIncoming(dmg, s.bossElement, s.heavyPlainShare, s.playerResist[s.bossElement] ?? 0, s.guardUntil > s.t);
+      else if (s.guardUntil > s.t) dmg = Math.max(1, Math.floor(dmg * 0.6));
+      const r = applyDamageToPlayer(s.hp, s.shield, dmg);
+      s.hp = r.hp; s.shield = r.shield; s.stats.absorbed += r.absorbed;
+      ev.push({ t: s.t, type: 'heavyStrike', mult: s.mHp / s.mMaxHp <= 0.4 ? 2 : 1.8 });
+      ev.push({ t: s.t, type: 'monsterAttack', dmg, absorbed: r.absorbed, hpLoss: r.hpLoss });
+      if (s.hp <= 0) { finish(s, ev, false, '生命耗尽，冒险失败。'); return; }
+      return;
+    }
     let mult = enrageMult(s.enrageStage, s.enrageBonus);
     let overheated = false;
     let heavy = false;
@@ -917,9 +1030,25 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
         s.nextHitOverheated = true; // 下一击过热
       }
     }
+    if (s.furnaceCycle && s.furnaceWindupUntil <= s.t) {
+      s.furnaceNormals++;
+      if (s.furnaceNormals >= 3) {
+        s.furnaceWindupUntil = s.t + 3000;
+        s.furnaceWater = 0;
+        s.furnaceBroke = false;
+        ev.push({ t: s.t, type: 'heavyWindup' });
+      }
+    }
     let dmg = Math.round(s.mAtk * mult);
     const crit = bossCrit(s);
     if (crit) dmg = Math.max(dmg, Math.round(s.maxHp * (s.heartPhases ? HEART_CRIT_HP_PCT : BOSS_CRIT_HP_PCT)));
+    if (s.bossElement) {
+      const plain = heavy ? s.heavyPlainShare : s.plainShare;
+      const resist = s.playerResist[s.bossElement] ?? 0;
+      dmg = splitIncoming(dmg, s.bossElement, plain, resist, s.guardUntil > s.t);
+    } else if (s.guardUntil > s.t) {
+      dmg = Math.max(1, Math.floor(dmg * 0.6));
+    }
     if (hasRelic(s.relics, 'K04')) dmg = Math.round(dmg * 1.20);
     // 冰晶减速对伤害无影响，仅间隔
     const hpBefore = s.hp;
@@ -971,6 +1100,7 @@ export function stepCombat(s: CombatState, dtMs: number): CombatEvent[] {
     const next = Math.min(tl, nextActor);
     if (next > target) break;
     s.t = next;
+    tryAutoGuard(s);
     if (tl === next) { processTimeline(s, ev); if (s.over) break; }
     const due = s.actors.filter(a => a.nextAt === next).sort((a, b) => a.order - b.order);
     for (const a of due) {
@@ -983,6 +1113,10 @@ export function stepCombat(s: CombatState, dtMs: number): CombatEvent[] {
         a.nextAt = Number.MAX_SAFE_INTEGER;
       } else if (a.kind === 'monster' && s.heavyWindupUntil > s.t) {
         a.nextAt = s.heavyWindupUntil;
+      } else if (a.kind === 'monster' && s.furnaceWindupUntil > s.t) {
+        a.nextAt = s.furnaceWindupUntil;
+      } else if (a.kind === 'monster' && s.furnaceVentUntil > s.t) {
+        a.nextAt = s.furnaceVentUntil;
       } else if (a.kind === 'monster' && s.overheatPausedUntil > s.t) {
         a.nextAt = s.overheatPausedUntil;
       } else {

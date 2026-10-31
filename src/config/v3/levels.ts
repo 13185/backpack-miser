@@ -1,6 +1,7 @@
 import type { LevelDef } from '../levels';
 import type { MonsterKind } from '../monsters';
 import { DUAL_UNIT_KINDS } from '../monsters';
+import { bossElements } from '../v4/bosses';
 import { STORY_BOSS_BUDGET, V3_STAGES, stageOf, type StageBudget } from './campaign';
 
 /** 章节常备普通怪（真实 kind，非换皮） */
@@ -273,6 +274,8 @@ export function stageToLevelDef(stage: StageBudget): LevelDef {
   const mech = mechFor(stage, monster);
   const dual = !!mech.dualUnits || DUAL_UNIT_KINDS.includes(monster) || monster === 'rats';
   const bossLevels = new Set([5, 10, 15, 20, 25, 30, 35, 40, 45, 50]);
+  const el = bossElements(stage.level);
+  const furnace = !!el?.furnaceCycle;
   return {
     monster,
     title: stage.name,
@@ -286,6 +289,15 @@ export function stageToLevelDef(stage: StageBudget): LevelDef {
     ...(usesTide(monster) ? { tideCycle: true } : {}),
     ...(dual ? { dualUnits: true } : {}),
     ...mech,
+    ...(el ? {
+      bossElement: el.element,
+      resist: el.resist,
+      plainShare: el.plainShare,
+      heavyPlainShare: el.heavyPlainShare,
+      heartElementPhases: el.phases,
+    } : {}),
+    // 熔炉样板替换旧的过热+重击+阶段盾叠层，只留这一套循环。
+    ...(furnace ? { furnaceCycle: true, overheat: undefined, heavyStrike: undefined, phaseShields: undefined } : {}),
   };
 }
 

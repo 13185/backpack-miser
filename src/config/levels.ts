@@ -41,6 +41,13 @@ export interface LevelDef {
   regen?: { intervalMs: number; amount: number };
   /** 战前机制摘要（UI） */
   mechSummary?: string;
+  /** 首领主元素。没有则普攻仍是纯无属性。 */
+  bossElement?: 'metal' | 'wood' | 'water' | 'fire' | 'earth';
+  resist?: Partial<Record<'metal' | 'wood' | 'water' | 'fire' | 'earth', number>>;
+  plainShare?: number;
+  heavyPlainShare?: number;
+  furnaceCycle?: boolean;
+  heartElementPhases?: { element: 'metal' | 'wood' | 'water' | 'fire' | 'earth'; resist: Partial<Record<'metal' | 'wood' | 'water' | 'fire' | 'earth', number>> }[];
 }
 
 export const LEVELS: LevelDef[] = [

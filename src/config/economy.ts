@@ -1,4 +1,4 @@
-export const BALANCE_VERSION = '3.6.11-slot-l50';
+export const BALANCE_VERSION = '3.7.0-v4';
 export const FORGE_SAFE_COST = 60;
 export const FORGE_RISK_UNLOCK = 12;
 export const FORGE_LEGEND_UNLOCK = 25;
