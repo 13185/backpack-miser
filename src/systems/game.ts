@@ -23,6 +23,8 @@ import { canPlace, findSpot, inBag, itemPlace } from './placement';
 import { isArmorKind } from '../config/v4/armor';
 import { ELEMENT_NAME, ELEMENTS, type Element } from '../config/v4/elements';
 import { chapterBossElement, ensureGearTrials, gearTrialLevel } from './gearTrial';
+import { activeGoblin, ensureGoblinSpawns, goblinLevel, rollGoblinDrop } from './goblin';
+import { GOBLIN_TAUNT } from '../config/v4/goblin';
 import { LV4_GAMBLE, LV5_GAMBLE, gambleOutcome } from '../config/gamble';
 import { nextRandom, Rng } from './rng';
 import { SAVE_VERSION } from './save';
@@ -92,6 +94,10 @@ export function newGameState(seed: number, opts: NewGameOpts = {}): GameState {
   };
   s.heroClass = cls.id as HeroClass;
   s.mode = opts.mode ?? 'story';
+  s.goblinRng = ((seed ^ 0x6b1d0b11) >>> 0) || 1;
+  s.goblinSpawns = [];
+  s.goblinFight = null;
+  ensureGoblinSpawns(s);
   for (const st of cls.starter) {
     const spot = findSpot(s.items, s.cols, s.rows, st.kind)!;
     s.items.push({ id: 'i' + s.nextId++, kind: st.kind, level: 1, x: spot.x, y: spot.y, rotated: spot.rotated });
@@ -665,6 +671,30 @@ export class Game {
     this.s.last = { level: this.s.level, won: c.won, reason: c.won ? '寻找套装完成' : c.reason, time: c.t / 1000, weaponDamage: [], shieldAbsorb: c.stats.absorbed, potionHeal: c.stats.healed, bagGold: 0, baseGold: 0 };
     return this.commit({ ok: true, msg: c.won ? '寻找套装胜利。主线生命和金币没有变。' : '寻找套装失败。主线生命和金币没有变。' });
   }
+  private settleLootGoblin(c: CombatState): Result {
+    if (this.s.phase !== 'battle' || !c.over) return fail('战斗未结束。');
+    if (this.s.settledToken === this.s.battleToken) return fail('已结算。');
+    this.s.settledToken = this.s.battleToken;
+    const snap = this.s.goblinFight;
+    if (snap) {
+      this.s.hp = snap.hp;
+      this.s.gold = snap.gold;
+    }
+    this.s.goblinFight = null;
+    for (const g of this.s.goblinSpawns ?? []) if (g.level === this.s.level) g.done = true;
+    this.s.phase = 'prep';
+    const killed = c.won && !c.escaped;
+    this.s.last = {
+      level: this.s.level, won: killed, reason: c.reason, time: c.t / 1000,
+      weaponDamage: [], shieldAbsorb: 0, potionHeal: 0, bagGold: 0, baseGold: 0,
+    };
+    if (!killed) return this.commit({ ok: true, msg: `罗纹口袋哥布林逃走了。${GOBLIN_TAUNT}` });
+    const r = new Rng(this.s.goblinRng || 1);
+    const drop = rollGoblinDrop(r, this.s.level);
+    this.s.goblinRng = r.state;
+    const it = this.addTemp(drop.kind, drop.level);
+    return this.commit({ ok: true, msg: `打倒罗纹口袋哥布林，${itemLabel(it)} 放进待整理。` });
+  }
   claimGearTrial(trialId: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const trial = this.s.gearTrials?.trials.find(t => t.id === trialId);
@@ -757,6 +787,7 @@ export class Game {
       if (!this.s.seenDialogue.includes(this.s.pendingStoryId)) this.s.seenDialogue.push(this.s.pendingStoryId);
       this.s.pendingStoryId = null;
     }
+    this.s.goblinFight = activeGoblin(this.s) ? { hp: this.s.hp, gold: this.s.gold } : null;
     this.s.phase = 'battle'; this.s.battleToken++;
     return this.commit();
   }
@@ -769,9 +800,12 @@ export class Game {
     }
     let lv = { ...getLevel(this.s.level) };
     const gearTrial = !!this.s.gearFight;
+    const lootGoblin = !gearTrial && !!this.s.goblinFight;
     if (gearTrial) {
       hp = maxHp;
       lv = gearTrialLevel(this.s.currentChapter, this.s.level);
+    } else if (lootGoblin) {
+      lv = goblinLevel(this.s.level);
     } else if (this.s.eliteActive) {
       lv = applyEliteOverlay(lv, this.s.level);
       lv.hp = Math.round(lv.hp * ELITE_HP_MULT);
@@ -786,11 +820,12 @@ export class Game {
       autoGuard: this.s.autoGuard !== false,
       armorId: this.s.armorId ?? null,
       mainHandId: this.s.mainHandId ?? null,
-      encounterKind: gearTrial ? 'gearTrial' : 'main',
+      encounterKind: gearTrial ? 'gearTrial' : lootGoblin ? 'lootGoblin' : 'main',
     });
   }
   settle(c: CombatState): Result {
     if (this.s.gearFight) return this.settleGearTrial(c);
+    if (c.encounterKind === 'lootGoblin' || this.s.goblinFight) return this.settleLootGoblin(c);
     if (this.s.phase !== 'battle' || !c.over) return fail('战斗未结束。');
     if (this.s.settledToken === this.s.battleToken) return fail('已结算。');
     this.s.settledToken = this.s.battleToken;
@@ -1177,6 +1212,8 @@ export class Game {
     this.s.pendingStoryId = null;
     this.s.phase = 'prep';
     this.s.loot = null; this.s.last = null;
+    this.s.goblinFight = null;
+    ensureGoblinSpawns(this.s);
   }
 
   restoreChapterCheckpoint(): Result {

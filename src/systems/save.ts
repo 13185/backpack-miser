@@ -2,6 +2,7 @@ import { BAG_MAX_COLS, BAG_MAX_ROWS, ECONOMY } from '../config/economy';
 import { CAMPAIGN_LENGTH, CAMPAIGN_VERSION } from '../config/v3';
 import type { GameState, ItemInstance, Settings } from '../models/types';
 import { occupiedCells } from './placement';
+import { ensureGoblinSpawns } from './goblin';
 
 export const SAVE_VERSION = 3;
 export const SAVE_KEY = 'backpack-miser-save';
@@ -52,6 +53,7 @@ export function migrateV3(s: any) {
   } else if (s.a10Compensated === undefined) s.a10Compensated = false;
   clampBagToCap(s);
   migrateWearRefs(s);
+  if (typeof s.level === 'number') ensureGoblinSpawns(s);
 }
 
 /**

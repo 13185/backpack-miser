@@ -10,6 +10,8 @@ import { pickEnemyArt, ENEMY_FOOT_ORIGIN_Y } from '../art/enemyArt';
 import { heroArtEntries, levelArtEntries, loadTextures } from '../art/artLoad';
 import { CAMPAIGN_LENGTH } from '../config/v3';
 import { bossElementMark, withBossElement } from '../config/v4/bosses';
+import { GOBLIN_POSES } from '../config/v4/goblin';
+import { webAsset } from '../art/webAsset';
 import { V3_LEVELS } from '../config/v3/levels';
 import { HeroSprite } from '../art/HeroSprite';
 import type { HeroClassId } from '../art/types';
@@ -199,6 +201,8 @@ export class BattleScene extends Phaser.Scene {
 
   private eliteActive = false;
   private previewLevelNo = 1;
+  private goblinPose: keyof typeof GOBLIN_POSES = 'idle';
+  private goblinHitUntil = 0;
 
   private applyMonsterArt(lv: LevelDef) {
     const levelNo = this.previewLevelNo || (V3_LEVELS.indexOf(lv) + 1);
@@ -247,12 +251,25 @@ export class BattleScene extends Phaser.Scene {
     void this.finishArt(gen, this.previewLevelNo, this.eliteActive);
   }
 
+  private setGoblinPose(pose: keyof typeof GOBLIN_POSES) {
+    if (this.level?.monster !== 'loot_goblin') return;
+    if (pose === 'hit' && (this.goblinPose === 'escape' || this.goblinPose === 'defeat')) return;
+    this.goblinPose = pose;
+    const key = GOBLIN_POSES[pose].key;
+    if (this.monImg && this.textures.exists(key)) this.monImg.setTexture(key).setOrigin(0.5, ENEMY_FOOT_ORIGIN_Y);
+    if (pose === 'hit') this.goblinHitUntil = this.time.now + 180;
+  }
+
   /** 只拉当前关 + 当前职业待机，完成后预取下一关。失败保持程序绘制。 */
   private async finishArt(gen: number, levelNo: number, elite: boolean) {
     try {
+      const goblinArt = this.level?.monster === 'loot_goblin'
+        ? (Object.values(GOBLIN_POSES) as { key: string; src: string }[]).map(p => ({ key: p.key, url: webAsset(p.src) }))
+        : [];
       await loadTextures(this, [
         ...levelArtEntries(levelNo, elite),
         ...heroArtEntries(this.heroClass, ['idle']),
+        ...goblinArt,
       ]);
     } catch (e) {
       console.warn('[art] 本关素材加载失败', e);
@@ -260,6 +277,7 @@ export class BattleScene extends Phaser.Scene {
     if (gen !== this.artGen || !this.level) return;
     this.applyBackground(this.level.chapter ?? 1);
     this.applyMonsterArt(this.level);
+    if (this.level.monster === 'loot_goblin') this.setGoblinPose('idle');
     this.tryBuildHero();
     this.layout();
     if (levelNo < CAMPAIGN_LENGTH) {
@@ -290,8 +308,14 @@ export class BattleScene extends Phaser.Scene {
         const ev = stepCombat(c, dt);
         if (ev.length) { this.render(ev, c); this.hooks?.onEvents(ev, c); }
         this.target = { hp: c.hp, maxHp: c.maxHp, shield: c.shield, mHp: c.mHp, mMax: c.mMaxHp };
-        const left = c.enrageAt - c.t / 1000;
-        this.timerText.setText(`⏱ ${(c.t / 1000).toFixed(1)}s  ${left > 0 ? `${Math.ceil(left)}秒后狂暴` : `🔥狂暴 ×${(1 + c.enrageStage * c.enrageBonus).toFixed(2)}  ${Math.ceil(ECONOMY.timeout - c.t / 1000)}秒后超时`}`);
+        if (c.encounterKind === 'lootGoblin' && c.lootLimitMs) {
+          const left = Math.max(0, Math.ceil((c.lootLimitMs - c.t) / 1000));
+          this.timerText.setFontSize(22).setColor('#ffd45c').setText(`打宝剩余 ${left} 秒`);
+          if (this.goblinPose === 'hit' && this.time.now > this.goblinHitUntil) this.setGoblinPose('idle');
+        } else {
+          const left = c.enrageAt - c.t / 1000;
+          this.timerText.setFontSize(13).setColor('#f5e6c4').setText(`⏱ ${(c.t / 1000).toFixed(1)}s  ${left > 0 ? `${Math.ceil(left)}秒后狂暴` : `🔥狂暴 ×${(1 + c.enrageStage * c.enrageBonus).toFixed(2)}  ${Math.ceil(ECONOMY.timeout - c.t / 1000)}秒后超时`}`);
+        }
         if (c.over) this.endTimer = 1100;
       } else if (this.endTimer > 0) {
         this.endTimer -= dt;
@@ -339,6 +363,7 @@ export class BattleScene extends Phaser.Scene {
           this.hit(mx, my, col, true);
         }
         this.float(mx, my - 50, `-${e.dmg}`, '#fff2b0', e.heavy ? 26 : 20);
+        if (this.level?.monster === 'loot_goblin') this.setGoblinPose('hit');
         const ht = this.heroSprite?.container ?? this.heroGfx;
         this.tweens.add({ targets: ht, x: (this.heroSprite ? this.heroSprite.container.x : this.heroGfx.x) + 10, duration: 70, yoyo: true });
       } else if (e.type === 'shield') {
@@ -435,7 +460,10 @@ export class BattleScene extends Phaser.Scene {
         this.showBanner(`💚 再生 +${e.amount}`, '#7dff9a');
         this.castRing(0x66dd88, 1.2, 450);
       } else if (e.type === 'end') {
-        if (e.won) {
+        if (this.level?.monster === 'loot_goblin') {
+          this.setGoblinPose(e.won ? 'defeat' : 'escape');
+          this.showBanner(e.won ? '口袋裂开！' : '它跑了！', e.won ? '#ffd45c' : '#ffb060');
+        } else if (e.won) {
           this.heroSprite?.play('victory', true);
           this.tweens.killTweensOf(this.mon);
           this.tweens.add({ targets: this.mon, alpha: 0, angle: 20, scale: 0.3, duration: 700 });

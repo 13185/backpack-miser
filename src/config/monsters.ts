@@ -9,7 +9,8 @@ export type MonsterKind =
   | 'priest' | 'chanter' | 'amulet_attendant' | 'echo_guard' | 'core_soldier' | 'lamp_priest'
   | 'elite_foreman' | 'elite_dual_guard' | 'elite_brood' | 'elite_executioner'
   | 'elite_smuggler_deacon' | 'elite_twin_auditors' | 'elite_forge_overseer'
-  | 'elite_sealing_friar' | 'elite_debt_knight' | 'elite_last_auditor';
+  | 'elite_sealing_friar' | 'elite_debt_knight' | 'elite_last_auditor'
+  | 'loot_goblin';
 
 export const MONSTER_BASE: Record<MonsterKind, { name: string; ability: string }> = {
   slime: { name: '史莱姆', ability: '凝胶再生：周期性回复少量生命。' },
@@ -56,6 +57,7 @@ export const MONSTER_BASE: Record<MonsterKind, { name: string; ability: string }
   elite_sealing_friar: { name: '封账修士', ability: '精英：主攻+弱祝祷者（25%预算）。' },
   elite_debt_knight: { name: '王庭追债骑士', ability: '精英：回响+有限护甲。' },
   elite_last_auditor: { name: '最后审计官', ability: '精英：蓄力重击+一次阶段护盾。' },
+  loot_goblin: { name: '罗纹口袋哥布林', ability: '限时打宝。它不还手。时间到就逃走，不掉装备。' },
 };
 
 export const MONSTER_ART: Partial<Record<MonsterKind, { key: string; src: string }>> = {
@@ -103,6 +105,7 @@ export const MONSTER_ART: Partial<Record<MonsterKind, { key: string; src: string
   elite_sealing_friar: { key: 'enemy_e38', src: 'art/enemies/E38_sealing_friar.png' },
   elite_debt_knight: { key: 'enemy_e43', src: 'art/enemies/E43_debt_knight.png' },
   elite_last_auditor: { key: 'enemy_e48', src: 'art/enemies/E48_last_auditor.png' },
+  loot_goblin: { key: 'enemy_loot_goblin', src: 'art/enemies/G_loot_goblin_idle.png' },
 };
 
 export const CHAPTER_BG: Record<number, { key: string; src: string }> = {

@@ -64,6 +64,7 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .enemyCard { border-radius: 14px; padding: 10px 12px; }
 .enemyCard.boss { border-color: var(--brass); }
 .eName { font-weight: bold; color: var(--gold2); font-size: 16px; }
+.goblinClock { margin: 6px 0 8px; font-size: 28px; font-weight: 800; color: #ffd45c; letter-spacing: 0.04em; text-shadow: 0 2px 0 #3a2410; }
 .eStats { display: flex; gap: 12px; margin: 4px 0; font-size: 15px; }
 .eAbil { font-size: 13px; color: var(--muted); line-height: 1.5; }
 .actions { display: flex; flex-direction: column; gap: 8px; justify-content: center; align-items: stretch; border-radius: 14px; padding: 10px; position: relative; }

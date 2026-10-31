@@ -16,6 +16,8 @@ import { ELEMENT_NAME, ELEMENTS, type Element as GearElement } from '../config/v
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { slotBlurb, slotCost } from '../systems/slot';
 import { bossSkillLine, withBossElement } from '../config/v4/bosses';
+import { GOBLIN_NAME, GOBLIN_SECONDS, GOBLIN_VOICE } from '../config/v4/goblin';
+import { activeGoblin, goblinLevel } from '../systems/goblin';
 import { chapterBossElement, ensureGearTrials, gearTrialLevel } from '../systems/gearTrial';
 import { activateGuard } from '../systems/combat';
 import { Game, RESERVE_CAP, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
@@ -309,7 +311,8 @@ export class App {
     prefetchClassVoice(st.heroClass);
     this.game = new Game(st, this.persist);
     this.selected = null; this.closeOverlay();
-    this.scene.setPreview(st.eliteActive ? applyEliteOverlay(getLevel(st.level), st.level) : getLevel(st.level), st.hp, st.maxHp, { eliteActive: !!st.eliteActive, levelNo: st.level });
+    const preview = this.fightPreview();
+    this.scene.setPreview(preview.lv, preview.hp, st.maxHp, { eliteActive: preview.elite, levelNo: preview.levelNo });
     if (st.phase === 'battle') {
       this.toast('检测到战斗中断，已恢复到开战前，重新进行本场战斗。');
       this.render(); this.runBattle();
@@ -384,9 +387,18 @@ export class App {
     document.querySelectorAll<HTMLButtonElement>('#sheetNav [data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === this.sheet));
     document.querySelectorAll<HTMLButtonElement>('.subNav [data-sub]').forEach(b => b.classList.toggle('on', b.dataset.sub === this.sub));
   }
+  private fightPreview() {
+    const s = this.game!.s;
+    if (s.gearFight) return { lv: gearTrialLevel(s.currentChapter, s.level), elite: false, levelNo: 1, hp: s.maxHp };
+    if (activeGoblin(s)) return { lv: goblinLevel(s.level), elite: false, levelNo: s.level, hp: s.hp };
+    const elite = !!s.eliteActive;
+    const lv = elite ? applyEliteOverlay(getLevel(s.level), s.level) : getLevel(s.level);
+    return { lv, elite, levelNo: s.level, hp: s.hp };
+  }
   renderMid() {
     const g = this.game!, s = g.s;
-    const lv = s.gearFight ? gearTrialLevel(s.currentChapter, s.level) : getLevel(s.level);
+    const gob = s.gearFight ? null : activeGoblin(s);
+    const lv = s.gearFight ? gearTrialLevel(s.currentChapter, s.level) : gob ? goblinLevel(s.level) : getLevel(s.level);
     const base = MONSTER_BASE[lv.monster];
     const battle = s.phase === 'battle';
     const can = g.canStartBattle();
@@ -395,18 +407,26 @@ export class App {
     const lvLine = s.gearFight ? '' : (LEVEL_LINES[s.level] ?? '');
     const temps = g.tempItems.length;
     const armed = g.bagItems.some(i => { const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle'; }) || !!g.handItem;
-    const skillLine = s.gearFight ? null : bossSkillLine(s.level);
-    const eTitle = s.gearFight ? lv.title : withBossElement(lv.level ?? s.level, lv.title);
+    const skillLine = s.gearFight || gob ? null : bossSkillLine(s.level);
+    const eTitle = s.gearFight || gob ? lv.title : withBossElement(lv.level ?? s.level, lv.title);
     let startLabel = '⚔ 开始战斗';
     let startMode: 'start' | 'tidy' | 'block' = can.ok ? 'start' : 'block';
     if (!battle && temps) { startLabel = `整理装备（${temps}）`; startMode = 'tidy'; }
     else if (!battle && !armed) { startLabel = '配置攻击装备'; startMode = 'block'; }
-    $('mid').innerHTML = `<div class="enemyCard ${lv.boss ? 'boss' : ''}">
+    const card = gob
+      ? `<div class="enemyCard boss">
+        <div class="eName">限时打宝 · ${esc(GOBLIN_NAME)}</div>
+        <div id="goblinClock" class="goblinClock">打宝剩余 ${GOBLIN_SECONDS} 秒</div>
+        <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ 不还手</span></div>
+        <div class="eAbil">✦ ${GOBLIN_SECONDS} 秒内打倒，一件装备进待整理。通常是 3 级，很小概率 4 级。超时它逃走，不掉装备，也不扣生命和金币。这一关的正主还在后面。</div>
+      </div>`
+      : `<div class="enemyCard ${lv.boss ? 'boss' : ''}">
         <div class="eName">${s.gearFight ? '训练：' : lv.boss ? '👑 首领 · ' : '下一关：'}${esc(eTitle)}</div>
         ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
         <div class="eAbil">✦ ${abil}${mech}${skillLine ? `<br/>✦ ${esc(skillLine)}` : ''}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
-      </div>
+      </div>`;
+    $('mid').innerHTML = `${card}
       <div class="actions">
         ${battle ? `<div class="hint">⚔ 自动战斗中……背包已锁定</div>
           <div class="speed"><button class="btn small ${this.speed === 1 ? 'gold' : ''}" id="sp1">1倍速</button><button class="btn small ${this.speed === 2 ? 'gold' : ''}" id="sp2">2倍速</button></div>`
@@ -1121,13 +1141,13 @@ export class App {
     const trial = !!g.s.gearFight;
     this.selected = null; this.render();
     const c = g.makeCombat();
-    const preview = trial
-      ? gearTrialLevel(g.s.currentChapter, g.s.level)
-      : (g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level));
-    this.scene.setPreview(preview, trial ? g.s.maxHp : g.s.hp, g.s.maxHp, { eliteActive: trial ? false : !!g.s.eliteActive, levelNo: trial ? 1 : g.s.level });
+    const preview = this.fightPreview();
+    this.scene.setPreview(preview.lv, preview.hp, g.s.maxHp, { eliteActive: preview.elite, levelNo: preview.levelNo });
     this.scene.setSpeed(this.speed);
     this.battleFlip = !this.battleFlip;
-    const tune = trial ? (this.battleFlip ? 'battleA' : 'battleB') : g.s.eliteActive ? 'elite' : isBossLevel(g.s.level) ? (g.s.level >= 50 ? 'final' : 'boss') : (this.battleFlip ? 'battleA' : 'battleB');
+    const tune = trial || c.encounterKind === 'lootGoblin'
+      ? (this.battleFlip ? 'battleA' : 'battleB')
+      : g.s.eliteActive ? 'elite' : isBossLevel(g.s.level) ? (g.s.level >= 50 ? 'final' : 'boss') : (this.battleFlip ? 'battleA' : 'battleB');
     setBgm(tune);
     this.scene.start(c, g.s.items.map(i => ({ ...i })), {
       onEvents: (ev, cs) => this.onBattleEvents(ev, cs),
@@ -1146,6 +1166,11 @@ export class App {
       else if (e.type === 'fireBreath') sfx.fire();
       else if (e.type === 'enrage' || e.type === 'bossHaste') sfx.enrage();
     }
+    const clock = document.getElementById('goblinClock');
+    if (clock && c.lootLimitMs) {
+      const left = Math.max(0, Math.ceil((c.lootLimitMs - c.t) / 1000));
+      clock.textContent = `打宝剩余 ${left} 秒`;
+    }
     const hpEl = document.querySelector('.hud .hp b, #hud .hp b'); if (hpEl) hpEl.textContent = `${c.hp}/${c.maxHp}`;
     const bar = document.querySelector('#hud .hpbar i') as HTMLElement | null; if (bar) bar.style.width = (c.hp / c.maxHp) * 100 + '%';
   }
@@ -1153,6 +1178,15 @@ export class App {
     const g = this.game!;
     const trial = c.encounterKind === 'gearTrial';
     const r = g.settle(c); if (!r.ok) return; // 只结算一次
+    if (c.encounterKind === 'lootGoblin') {
+      const p = this.fightPreview();
+      this.scene.setPreview(p.lv, p.hp, g.s.maxHp, { eliteActive: p.elite, levelNo: p.levelNo });
+      if (!c.won) playVoice(GOBLIN_VOICE);
+      this.toast(r.msg ?? '', !c.won);
+      setBgm('prep');
+      this.render();
+      return;
+    }
     if (trial) {
       this.toast(r.msg || (c.won ? '寻找套装胜利。主线没有变化。' : '寻找套装失败。主线生命和关卡没有变。'), !c.won);
       setBgm('prep');
@@ -1297,7 +1331,7 @@ export class App {
   }
   afterLootAdvance() {
     const g = this.game!;
-    this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+    { const p = this.fightPreview(); this.scene.setPreview(p.lv, p.hp, g.s.maxHp, { eliteActive: p.elite, levelNo: p.levelNo }); }
     this.render();
     if (g.s.phase === 'camp') this.showCamp();
     else this.showPendingModals();
@@ -1337,7 +1371,7 @@ export class App {
     $('campLeave').onclick = () => this.guard(() => {
       if (this.act(() => g.campLeave())) {
         this.closeOverlay();
-        this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+        { const p = this.fightPreview(); this.scene.setPreview(p.lv, p.hp, g.s.maxHp, { eliteActive: p.elite, levelNo: p.levelNo }); }
         this.render(); this.showPendingModals();
       }
     });
@@ -1373,7 +1407,7 @@ export class App {
     if (asBtn) asBtn.onclick = () => this.guard(() => {
       if (this.act(() => g.retryWithAssistance())) {
         this.closeOverlay();
-        this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+        { const p = this.fightPreview(); this.scene.setPreview(p.lv, p.hp, g.s.maxHp, { eliteActive: p.elite, levelNo: p.levelNo }); }
         this.render(); this.showAssistSwap();
       }
     });
@@ -1381,7 +1415,7 @@ export class App {
     if (cpBtn) cpBtn.onclick = () => this.guard(() => {
       if (this.act(() => g.restoreChapterCheckpoint())) {
         this.closeOverlay();
-        this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+        { const p = this.fightPreview(); this.scene.setPreview(p.lv, p.hp, g.s.maxHp, { eliteActive: p.elite, levelNo: p.levelNo }); }
         this.render();
       }
     });
@@ -1416,15 +1450,14 @@ export class App {
     $('routeNormal').onclick = () => this.guard(() => {
       if (this.act(() => g.chooseRoute(false))) {
         this.closeOverlay();
-        this.scene.setPreview(getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: false, levelNo: g.s.level });
+        { const p = this.fightPreview(); this.scene.setPreview(p.lv, p.hp, g.s.maxHp, { eliteActive: p.elite, levelNo: p.levelNo }); }
         this.render(); this.showPendingModals();
       }
     });
     $('routeElite').onclick = () => this.guard(() => {
       if (this.act(() => g.chooseRoute(true))) {
         this.closeOverlay();
-        const lv = applyEliteOverlay(getLevel(g.s.level), g.s.level);
-        this.scene.setPreview(lv, g.s.hp, g.s.maxHp, { eliteActive: true, levelNo: g.s.level });
+        { const p = this.fightPreview(); this.scene.setPreview(p.lv, p.hp, g.s.maxHp, { eliteActive: p.elite, levelNo: p.levelNo }); }
         this.render(); this.showPendingModals();
       }
     });
@@ -1612,7 +1645,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.5 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.6 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

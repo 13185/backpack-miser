@@ -6,6 +6,7 @@ import { doctrineT01Mult } from '../config/v3/doctrines';
 import { HEART_TUNE, seasonedMult } from '../config/v3/campaign';
 import { emptyResist, splitDirect, splitIncoming, type Element } from '../config/v4/elements';
 import { ELEMENT_SKILL_EVERY_MS, ELEMENT_SKILLS, SKILL_RAMP_STEP, WATER_SUPPRESS_MS, elementSkill } from '../config/v4/bosses';
+import { GOBLIN_SECONDS } from '../config/v4/goblin';
 import { armorResist, isArmorKind } from '../config/v4/armor';
 import type { ItemInstance, ItemKind, RuneInstance } from '../models/types';
 import { weaponDamage, bannerShorten, gemBonus } from './adjacency';
@@ -61,7 +62,10 @@ interface Actor {
 }
 export interface CombatState {
   t: number; over: boolean; won: boolean; reason: string;
-  encounterKind: 'main' | 'gearTrial';
+  encounterKind: 'main' | 'gearTrial' | 'lootGoblin';
+  /** 限时打宝的结束时刻。到点还活着就是逃走，不是冒险失败。 */
+  lootLimitMs?: number;
+  escaped?: boolean;
   hp: number; maxHp: number; shield: number;
   mHp: number; mMaxHp: number; mAtk: number; mInterval: number; armor: number; boss: boolean; hasted: boolean;
   enrageStage: number;
@@ -182,8 +186,8 @@ export interface CombatMods {
   armorId?: string | null;
   /** 主手槽。离开背包后只打一次，不吃邻接。 */
   mainHandId?: string | null;
-  /** main 是主线。gearTrial 是寻找套装，结算不得推进关卡。 */
-  encounterKind?: 'main' | 'gearTrial';
+  /** main 是主线。gearTrial 是寻找套装。lootGoblin 是限时打宝，结算不得推进关卡。 */
+  encounterKind?: 'main' | 'gearTrial' | 'lootGoblin';
 }
 
 const ms = (s: number) => Math.round(s * 1000);
@@ -400,7 +404,8 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
       splashPct: hand.kind === 'chain_hammer' ? (hasRelic(relics, 'R04') ? 0.75 : 0.5) : 0,
     });
   }
-  actors.push({ id: 'monster', kind: 'monster', interval: ms(lv.interval), nextAt: ms(lv.interval), value: lv.atk, order: 100000 });
+  const monsterNext = mods.encounterKind === 'lootGoblin' ? Number.MAX_SAFE_INTEGER : ms(lv.interval);
+  actors.push({ id: 'monster', kind: 'monster', interval: ms(lv.interval), nextAt: monsterNext, value: lv.atk, order: 100000 });
 
   const baseArmor = lv.armor ?? 0;
   const tideCycle = !!lv.tideCycle;
@@ -536,7 +541,7 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     furnaceEnraged: false, iceSlowUntil: 0, iceSlowPct: 0,
     c01Hits: 0, r01Absorbed: 0, r05Hits: 0, r06Stacks: 0, c07Used: false,
     heroClass: mods.heroClass ?? null, guardBonusUsed: false,
-    enrageAt: lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt,
+    enrageAt: mods.encounterKind === 'lootGoblin' ? 99999 : (lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt),
     enrageBonus: lv.boss && (lv.level ?? 0) >= 40 ? 0.14 : ECONOMY.enrageBonus,
     rangerGap,
     invulnUntil: 0, invulnTriggered: [false, false], fireWindupUntil: 0, fireArmed: false,
@@ -554,6 +559,8 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     skillCasts: 0,
     skillNextAt: lv.boss && (lv.level ?? 0) >= 15 && elementSkill(lv.bossElement) ? ELEMENT_SKILL_EVERY_MS : Number.MAX_SAFE_INTEGER,
     encounterKind: mods.encounterKind ?? 'main',
+    lootLimitMs: mods.encounterKind === 'lootGoblin' ? GOBLIN_SECONDS * 1000 : undefined,
+    escaped: false,
   };
 }
 
@@ -643,6 +650,11 @@ function applyHeartElement(s: CombatState, phase: number) {
 }
 function processTimeline(s: CombatState, ev: CombatEvent[]) {
   tryAutoGuard(s);
+  if (s.lootLimitMs && s.t >= s.lootLimitMs && s.mHp > 0) {
+    s.escaped = true;
+    finish(s, ev, false, '罗纹口袋哥布林逃走了。');
+    return;
+  }
   if (s.t >= ms(ECONOMY.timeout)) { finish(s, ev, false, `战斗超过${ECONOMY.timeout}秒仍未分出胜负，冒险失败：火力不足，被怪物拖垮了。`); return; }
   if (s.fireArmed && s.fireWindupUntil > 0 && s.t >= s.fireWindupUntil && s.mHp > 0 && !s.over) {
     s.fireArmed = false;
@@ -771,6 +783,7 @@ function castElementSkill(s: CombatState, ev: CombatEvent[]) {
 function nextTimelineAt(s: CombatState): number {
   const e = ms(s.enrageAt) + s.enrageStage * ms(ECONOMY.enrageStep);
   let next = Math.min(e, ms(ECONOMY.timeout));
+  if (s.lootLimitMs && s.lootLimitMs > s.t) next = Math.min(next, s.lootLimitMs);
   if (s.tideCycle) {
     const mod = s.t % TIDE_PERIOD;
     const toFlip = mod < TIDE_HIGH ? TIDE_HIGH - mod : TIDE_PERIOD - mod;
@@ -1033,6 +1046,7 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
     if (a.maxUses !== undefined) a.uses = (a.uses ?? 0) + 1;
     ev.push({ t: s.t, type: 'lamp', itemId: a.id, heal });
   } else {
+    if (s.encounterKind === 'lootGoblin') return;
     // 过热停火窗口
     if (s.overheatPausedUntil > s.t) return;
     if (s.furnaceCycle && s.furnaceVentUntil > s.t) return;

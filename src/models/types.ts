@@ -173,6 +173,12 @@ export interface GameState {
   mainHandId?: string | null;
   /** 护甲引用，物品仍在背包原格。 */
   armorId?: string | null;
+  /** 罗纹口袋哥布林的独立随机流，不推进商店和掉落。 */
+  goblinRng?: number;
+  /** 三段各出现一次。done 之后本段不再出现。回档按检查点里的这份记录。 */
+  goblinSpawns?: { band: '10-20' | '20-30' | '40-50'; level: number; done: boolean }[];
+  /** 正在打哥布林。记下开战前的生命和金币，结束时原样放回。 */
+  goblinFight?: { hp: number; gold: number } | null;
 }
 export type HeroClass = 'merchant' | 'guard' | 'ranger';
 export type CampKind = 'chapter' | 'final';
