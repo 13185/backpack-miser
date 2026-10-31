@@ -65,7 +65,7 @@ const TUTORIAL = [
 const WEAR_TUTORIAL = [
   { sel: '#handSlot', text: '把武器拖进<b>主手</b>，把衬甲拖进<b>护甲</b>。穿上后离开背包，格子会腾出来。' },
   { sel: '#tempWrap', text: '<b>待整理</b>紧挨背包。备用箱只有两件，放进去就不攻击、不加抗性。' },
-  { sel: '#sheetNav', text: '上面只留<b>背包、寻找套装、商店</b>。方案和战报在旁边，需要时再打开。' },
+  { sel: '#sheetNav', text: '上面是<b>背包</b>和<b>寻找套装</b>。商店就在装备详情下面，不用切页。' },
 ];
 const TRIAL_NAME: Record<'guard' | 'counter' | 'special', string> = {
   guard: '防护委托', counter: '克制委托', special: '专项委托',
@@ -96,7 +96,9 @@ export class App {
   ironman = false;
   tutStep = -1;
   wearStep = -1;
-  sheet: 'bag' | 'trial' | 'market' = 'bag';
+  sheet: 'bag' | 'trial' = 'bag';
+  /** 手机上商店默认折叠，点开后刷新商店仍保持。 */
+  shopOpen = false;
   sub: 'plan' | 'report' | null = null;
   busy = false; // 防止快速连点
   cell = 60;
@@ -155,7 +157,7 @@ export class App {
     window.addEventListener('pointercancel', () => this.cancelDrag());
     window.addEventListener('blur', () => this.cancelDrag());
     document.querySelectorAll<HTMLButtonElement>('#sheetNav [data-sheet]').forEach(b => {
-      b.onclick = () => { this.sheet = b.dataset.sheet as 'bag' | 'trial' | 'market'; this.render(); };
+      b.onclick = () => { this.sheet = b.dataset.sheet as 'bag' | 'trial'; this.render(); };
     });
     document.querySelectorAll<HTMLButtonElement>('.subNav [data-sub]').forEach(b => {
       b.onclick = () => {
@@ -373,10 +375,9 @@ export class App {
   private applySheet() {
     const bag = this.sheet === 'bag';
     const trial = this.sheet === 'trial';
-    const market = this.sheet === 'market';
     $('pageBag').hidden = !bag;
     $('pageTrial').hidden = !trial;
-    $('pageMarket').hidden = !market;
+    $('shop').hidden = !bag;
     $('planPanel').hidden = this.sub !== 'plan';
     $('statsPanel').hidden = this.sub !== 'report';
     document.querySelectorAll<HTMLButtonElement>('#sheetNav [data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === this.sheet));
@@ -737,7 +738,11 @@ export class App {
     const imprint = `<div class="slotBox"><div class="sName">元素改造</div>
       <div class="sDesc">${canImprint ? `当前 ${ITEMS[picked!.kind].name} · ${elName(picked!.element)}。每章 10 金一次。` : '先选中一把武器。每章 10 金一次。火抗甲不改变火输出。'}</div>
       <div class="detBtns">${[{ id: '', label: '无属性' }, ...ELEMENTS.map(e => ({ id: e, label: ELEMENT_NAME[e] }))].map(e => `<button class="btn small" data-imprint="${e.id}" ${canImprint && prep ? '' : 'disabled'}>${e.label}</button>`).join('')}</div></div>`;
-    $('shop').innerHTML = `<div class="ptitle">商店 <small>买到的装备进入待整理</small></div>
+    const wide = document.body.classList.contains('wide');
+    const wasOpen = (document.querySelector('#shop details') as HTMLDetailsElement | null)?.open;
+    if (wasOpen) this.shopOpen = true;
+    const open = wide || this.shopOpen ? 'open' : '';
+    $('shop').innerHTML = `<details class="shopFold" ${open}><summary>商店 <small>买到的装备进入待整理</small></summary><div class="shopBody">
       <div class="shopRow">${s.shop.slots.map((sl, i) => {
         const p = buyPrice(sl.kind, sl.level, s.heroClass); const poor = s.gold < p; const d = ITEMS[sl.kind];
         const short = Math.max(0, p - s.gold);
@@ -747,7 +752,7 @@ export class App {
       }).join('')}</div>
       <button class="btn small wideBtn" id="refBtn" ${s.gold < rc || !prep ? 'disabled' : ''}>刷新商店 · <span class="coin"></span>${rc}${s.gold < rc ? `（还差${rc - s.gold}金币）` : ''}</button>
       ${imprint}
-      <details class="slotFold"><summary>摇奖机</summary>${this.slotHtml(prep)}</details>`;
+      <details class="slotFold"><summary>摇奖机</summary>${this.slotHtml(prep)}</details></div></details>`;
     $('shop').querySelectorAll<HTMLElement>('[data-buy]').forEach(b => (b.onclick = () => this.guard(() => this.act(() => g.buy(+b.dataset.buy!), sfx.coin))));
     $('refBtn').onclick = () => this.guard(() => this.act(() => g.refreshShop(), sfx.coin));
     $('shop').querySelectorAll<HTMLButtonElement>('[data-imprint]').forEach(b => b.onclick = () => this.guard(() => {
@@ -756,6 +761,8 @@ export class App {
       const element = (ELEMENTS as readonly string[]).includes(raw) ? raw as GearElement : null;
       this.act(() => g.imprint(picked.id, element));
     }));
+    const fold = document.querySelector('#shop details');
+    if (fold) fold.addEventListener('toggle', () => { this.shopOpen = (fold as HTMLDetailsElement).open; });
     $('slotBtn').onclick = () => this.guard(() => this.act(() => {
       const r = g.pullSlot();
       if (r.ok) this.slotMsg = r.msg ?? '摇完了';
@@ -1600,7 +1607,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.3 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.4 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

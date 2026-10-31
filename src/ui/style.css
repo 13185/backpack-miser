@@ -267,6 +267,14 @@ body:not(.wide).sheetOpen #details { display: block; position: fixed; left: 0; r
 body:not(.wide) .closeSheet { display: inline-block; }
 body:not(.wide).sheetOpen #app { padding-bottom: 45vh; }
 body.inBattle #shop { opacity: .5; pointer-events: none; }
+#shop .shopRow { grid-template-columns: 1fr; }
+#shop .shopFold > summary { cursor: pointer; font-weight: bold; color: var(--gold2); list-style: none; }
+#shop .shopFold > summary::-webkit-details-marker { display: none; }
+#shop .shopBody { margin-top: 8px; }
+body.wide #shop .shopFold > summary { pointer-events: none; }
+@media (max-width: 959px) {
+  #shop .shopRow { grid-template-columns: 1fr 1fr; }
+}
 img.icon { object-fit: contain; }
 #cinema[hidden] { display: none; }
 #cinema { position: fixed; inset: 0; z-index: 90; }
