@@ -1,7 +1,7 @@
 import { BAG_MAX_COLS, BAG_MAX_ROWS, ECONOMY } from '../config/economy';
 import { CAMPAIGN_LENGTH, CAMPAIGN_VERSION } from '../config/v3';
 import type { GameState, ItemInstance, Settings } from '../models/types';
-import { findSpot, occupiedCells } from './placement';
+import { occupiedCells } from './placement';
 
 export const SAVE_VERSION = 3;
 export const SAVE_KEY = 'backpack-miser-save';
@@ -55,39 +55,43 @@ export function migrateV3(s: any) {
 }
 
 /**
- * 3.8：穿戴是背包引用。旧档里 bin=hand/armor 的装备尝试放回格子并记下引用；
- * 放不下就进待整理，不生效、不删除。备用箱只留两件，多出来的进只取出/出售的旧暂存。
+ * 3.8.2：穿上的装备离开背包。旧的「引用仍占格」会在读档时腾出格子。
+ * 备用箱只留两件，多出来的进只取出/出售的旧暂存。不删除、不复制。
  */
 export function migrateWearRefs(s: { cols?: number; rows?: number; items?: ItemInstance[]; mainHandId?: string | null; armorId?: string | null }) {
   if (!s || !Array.isArray(s.items)) return;
-  const cols = s.cols ?? 5;
-  const rows = s.rows ?? 4;
-  const pending = s.items.filter(i => i.bin === 'hand' || i.bin === 'armor');
-  for (const it of pending) {
-    const was = it.bin;
-    it.bin = undefined;
-    const spot = findSpot(s.items, cols, rows, it.kind, it.id);
-    if (spot) {
-      it.x = spot.x; it.y = spot.y; it.rotated = spot.rotated;
-      if (was === 'hand' && !s.mainHandId) s.mainHandId = it.id;
-      if (was === 'armor' && !s.armorId) s.armorId = it.id;
-    } else {
+  for (const it of s.items) {
+    if (it.bin === 'hand') {
       it.x = null; it.y = null;
+      if (!s.mainHandId) s.mainHandId = it.id;
+    }
+    if (it.bin === 'armor') {
+      it.x = null; it.y = null;
+      if (!s.armorId) s.armorId = it.id;
     }
   }
+  const lift = (id: string | null | undefined, slot: 'hand' | 'armor') => {
+    if (!id) return;
+    const it = s.items!.find(i => i.id === id);
+    if (!it) return;
+    it.bin = slot;
+    it.x = null;
+    it.y = null;
+  };
+  lift(s.mainHandId, 'hand');
+  lift(s.armorId, 'armor');
+  for (const it of s.items) {
+    if (it.bin === 'hand' && it.id !== s.mainHandId) { it.bin = undefined; it.x = null; it.y = null; }
+    if (it.bin === 'armor' && it.id !== s.armorId) { it.bin = undefined; it.x = null; it.y = null; }
+  }
+  if (!s.items.some(i => i.id === s.mainHandId && i.bin === 'hand')) s.mainHandId = null;
+  if (!s.items.some(i => i.id === s.armorId && i.bin === 'armor')) s.armorId = null;
   let kept = 0;
   for (const it of s.items) {
     if (it.bin !== 'reserve') continue;
     if (kept < 2) { kept++; continue; }
     it.bin = 'legacy';
   }
-  const held = (id: string | null | undefined) => {
-    if (!id) return false;
-    const it = s.items!.find(i => i.id === id);
-    return !!it && it.x != null && it.y != null && it.bin !== 'reserve' && it.bin !== 'legacy';
-  };
-  if (!held(s.mainHandId)) s.mainHandId = null;
-  if (!held(s.armorId)) s.armorId = null;
 }
 
 /**

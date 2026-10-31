@@ -5,10 +5,11 @@ import { INTERVAL_SHORTEN_CAP } from '../config/v3/runes';
 import { doctrineT01Mult } from '../config/v3/doctrines';
 import { HEART_TUNE, seasonedMult } from '../config/v3/campaign';
 import { emptyResist, splitDirect, splitIncoming, type Element } from '../config/v4/elements';
+import { ELEMENT_SKILL_EVERY_MS, ELEMENT_SKILLS, SKILL_RAMP_STEP, WATER_SUPPRESS_MS, elementSkill } from '../config/v4/bosses';
 import { armorResist, isArmorKind } from '../config/v4/armor';
 import type { ItemInstance, ItemKind, RuneInstance } from '../models/types';
 import { weaponDamage, bannerShorten, gemBonus } from './adjacency';
-import { inBag } from './placement';
+import { inBag, itemPlace } from './placement';
 
 /** 其他首领的大暴击保底，占玩家最大生命。 */
 export const BOSS_CRIT_HP_PCT = 0.32;
@@ -42,6 +43,8 @@ export type CombatEvent =
   | { t: number; type: 'phaseShield'; threshold: number; shield: number }
   | { t: number; type: 'summon'; addId: string; hp: number }
   | { t: number; type: 'regen'; amount: number }
+  | { t: number; type: 'elementSkill'; element: Element; name: string; heal?: number; dmg?: number; hpLoss?: number; hit?: number }
+  | { t: number; type: 'skillRamp'; casts: number; mult: number }
   | { t: number; type: 'end'; won: boolean; reason: string };
 
 type ActorKind = 'weapon' | 'shield' | 'heal' | 'needle' | 'monster' | 'control';
@@ -162,6 +165,10 @@ export interface CombatState {
   furnaceBroke: boolean;
   furnaceBreaks: number;
   heartElementPhases?: { element: Element; resist: Partial<Record<Element, number>> }[];
+  /** 关键技能叠乘。开场是 1，每次施放后再乘 (1+SKILL_RAMP_STEP)。 */
+  skillRamp: number;
+  skillCasts: number;
+  skillNextAt: number;
 }
 export interface CombatMods {
   runes?: RuneInstance[];
@@ -170,8 +177,10 @@ export interface CombatMods {
   startGold?: number;
   heroClass?: string | null;
   autoGuard?: boolean;
-  /** 护甲槽引用。物品必须仍在背包里才计入抗性。 */
+  /** 护甲槽。物品已离开背包才计入抗性。 */
   armorId?: string | null;
+  /** 主手槽。离开背包后只打一次，不吃邻接。 */
+  mainHandId?: string | null;
 }
 
 const ms = (s: number) => Math.round(s * 1000);
@@ -249,14 +258,16 @@ function tryAutoGuard(s: CombatState) {
 
 export function createCombat(items: ItemInstance[], hp: number, maxHp: number, lv: LevelDef, mods: CombatMods = {}): CombatState {
   const bag = items.filter(inBag).map(i => ({ ...i })).sort((a, b) => a.y! - b.y! || a.x! - b.x!);
-  const worn = mods.armorId ? bag.find(i => i.id === mods.armorId && isArmorKind(i.kind)) : undefined;
+  const hand = mods.mainHandId ? items.find(i => i.id === mods.mainHandId && itemPlace(i) === 'hand') : undefined;
+  const worn = mods.armorId ? items.find(i => i.id === mods.armorId && itemPlace(i) === 'armor' && isArmorKind(i.kind)) : undefined;
   const runes = (mods.runes ?? []).filter(r => r.itemId);
   const relics = mods.relics ?? [];
   const doctrine = mods.doctrine ?? null;
+  const handFights = !!hand && (ITEMS[hand.kind].category === 'weapon' || ITEMS[hand.kind].category === 'needle');
   const weaponCount = bag.filter(i => {
     const c = ITEMS[i.kind].category;
     return c === 'weapon' || c === 'needle';
-  }).length;
+  }).length + (handFights ? 1 : 0);
   const doctrineMult = doctrine === 'T01' ? doctrineT01Mult(weaponCount) : 1;
   let doctrineShorten = 0;
   if (doctrine === 'T02') doctrineShorten = weaponCount >= 3 ? 0.06 : 0.02;
@@ -362,6 +373,29 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
         maxUses: d.maxTriggers ?? 3, uses: 0,
       });
     }
+  }
+  if (handFights && hand) {
+    const d = ITEMS[hand.kind];
+    let value = d.values[hand.level - 1];
+    if (runeOn(runes, hand.id, 'U01')) value = Math.round(value * 1.10);
+    value = Math.round(value * doctrineMult);
+    if (hasRelic(relics, 'C02')) value = Math.round(value * 1.10);
+    if (hasRelic(relics, 'R07') && weaponCount <= 2) value = Math.round(value * 1.25);
+    if (hasRelic(relics, 'R02') && (hand.kind === 'greatsword' || hand.kind === 'warhammer')) value = Math.round(value * 1.35);
+    if (mods.heroClass === 'merchant' && bag.some(b => b.kind === 'moneybag')) {
+      value = Math.round(value * ((lv.level ?? 0) >= 31 ? 1.20 : 1.12));
+    }
+    let interval = ms(d.interval!);
+    if (hasRelic(relics, 'R02') && (hand.kind === 'greatsword' || hand.kind === 'warhammer')) interval = Math.round(interval * 1.15);
+    if (hasRelic(relics, 'C03')) interval = applyIntervalShorten(interval, 0.08);
+    let armorIgnore = mods.heroClass === 'ranger' ? 4 : 0;
+    actors.push({
+      id: hand.id, kind: d.category === 'needle' ? 'needle' : 'weapon',
+      interval, nextAt: interval, value, order: order++, itemKind: hand.kind,
+      element: hand.element ?? null, armorIgnore, armorIgnorePct: hand.kind === 'warhammer' ? 0.5 : 0,
+      shots: hand.kind === 'crossbow' ? 2 : 1,
+      splashPct: hand.kind === 'chain_hammer' ? (hasRelic(relics, 'R04') ? 0.75 : 0.5) : 0,
+    });
   }
   actors.push({ id: 'monster', kind: 'monster', interval: ms(lv.interval), nextAt: ms(lv.interval), value: lv.atk, order: 100000 });
 
@@ -513,6 +547,9 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     furnaceCycle: !!lv.furnaceCycle, furnaceNormals: 0, furnaceWindupUntil: 0, furnaceVentUntil: 0,
     furnaceWater: 0, furnaceBroke: false, furnaceBreaks: 0,
     heartElementPhases: lv.heartElementPhases,
+    skillRamp: 1,
+    skillCasts: 0,
+    skillNextAt: lv.boss && (lv.level ?? 0) >= 15 && elementSkill(lv.bossElement) ? ELEMENT_SKILL_EVERY_MS : Number.MAX_SAFE_INTEGER,
   };
 }
 
@@ -689,6 +726,43 @@ function processTimeline(s: CombatState, ev: CombatEvent[]) {
     tickPoison(s, ev);
     s.poisonNextAt = s.t + POISON_TICK;
   }
+  if (s.skillNextAt < Number.MAX_SAFE_INTEGER && s.t >= s.skillNextAt && !s.over && s.mHp > 0) {
+    castElementSkill(s, ev);
+  }
+}
+function castElementSkill(s: CombatState, ev: CombatEvent[]) {
+  const spec = elementSkill(s.bossElement);
+  if (!spec) { s.skillNextAt = Number.MAX_SAFE_INTEGER; return; }
+  const pace = enrageMult(s.enrageStage, s.enrageBonus) * s.skillRamp;
+  if (spec.element === 'wood') {
+    const heal = Math.min(Math.round(s.mMaxHp * ELEMENT_SKILLS.wood.healPct), Math.max(0, s.mMaxHp - s.mHp));
+    s.mHp += heal;
+    ev.push({ t: s.t, type: 'elementSkill', element: 'wood', name: spec.name, heal });
+  } else if (spec.element === 'fire') {
+    for (let i = 0; i < ELEMENT_SKILLS.fire.hits; i++) {
+      let dmg = Math.round(s.mAtk * ELEMENT_SKILLS.fire.atkMult * pace);
+      dmg = splitIncoming(dmg, 'fire', 0, s.playerResist.fire ?? 0, s.guardUntil > s.t);
+      const r = applyDamageToPlayer(s.hp, s.shield, dmg);
+      s.hp = r.hp; s.shield = r.shield; s.stats.absorbed += r.absorbed;
+      ev.push({ t: s.t, type: 'elementSkill', element: 'fire', name: spec.name, dmg, hpLoss: r.hpLoss, hit: i + 1 });
+      if (s.hp <= 0) { finish(s, ev, false, '生命耗尽，冒险失败。'); return; }
+    }
+  } else {
+    const atkMult = spec.element === 'water' ? ELEMENT_SKILLS.water.atkMult : ELEMENT_SKILLS.metal.atkMult;
+    let dmg = Math.round(s.mAtk * atkMult * pace);
+    dmg = splitIncoming(dmg, spec.element, 0, s.playerResist[spec.element] ?? 0, s.guardUntil > s.t);
+    const r = applyDamageToPlayer(s.hp, s.shield, dmg);
+    s.hp = r.hp; s.shield = r.shield; s.stats.absorbed += r.absorbed;
+    ev.push({ t: s.t, type: 'elementSkill', element: spec.element, name: spec.name, dmg, hpLoss: r.hpLoss, hit: 1 });
+    if (spec.element === 'water') {
+      for (const a of s.actors) if (a.kind === 'weapon' || a.kind === 'needle') a.nextAt += WATER_SUPPRESS_MS;
+    }
+    if (s.hp <= 0) { finish(s, ev, false, '生命耗尽，冒险失败。'); return; }
+  }
+  s.skillCasts++;
+  s.skillRamp *= 1 + SKILL_RAMP_STEP;
+  ev.push({ t: s.t, type: 'skillRamp', casts: s.skillCasts, mult: s.skillRamp });
+  s.skillNextAt = s.t + ELEMENT_SKILL_EVERY_MS;
 }
 function nextTimelineAt(s: CombatState): number {
   const e = ms(s.enrageAt) + s.enrageStage * ms(ECONOMY.enrageStep);
@@ -716,6 +790,7 @@ function nextTimelineAt(s: CombatState): number {
   if (s.fireArmed && s.fireWindupUntil > s.t) next = Math.min(next, s.fireWindupUntil);
   if (s.invulnUntil > s.t) next = Math.min(next, s.invulnUntil);
   if (s.a09Debuff > 0 && s.a09Until > s.t) next = Math.min(next, s.a09Until);
+  if (s.skillNextAt < Number.MAX_SAFE_INTEGER) next = Math.min(next, s.skillNextAt);
   return next;
 }
 function bossCrit(s: CombatState): boolean {
@@ -965,7 +1040,7 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
       s.furnaceVentUntil = s.t + 3000;
       if (s.furnaceBroke) { s.furnaceBroke = false; return; }
       const mult = enrageMult(s.enrageStage, s.enrageBonus) * (s.mHp / s.mMaxHp <= 0.4 ? 2 : 1.8);
-      let dmg = Math.round(s.mAtk * mult);
+      let dmg = Math.round(s.mAtk * mult * s.skillRamp);
       if (s.bossElement) dmg = splitIncoming(dmg, s.bossElement, s.heavyPlainShare, s.playerResist[s.bossElement] ?? 0, s.guardUntil > s.t);
       else if (s.guardUntil > s.t) dmg = Math.max(1, Math.floor(dmg * 0.6));
       const r = applyDamageToPlayer(s.hp, s.shield, dmg);
@@ -1023,7 +1098,7 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
         ev.push({ t: s.t, type: 'heavyWindup' });
       }
     }
-    let dmg = Math.round(s.mAtk * mult);
+    let dmg = Math.round(s.mAtk * mult * s.skillRamp);
     const crit = bossCrit(s);
     if (crit) dmg = Math.max(dmg, Math.round(s.maxHp * (s.heartPhases ? HEART_CRIT_HP_PCT : BOSS_CRIT_HP_PCT)));
     if (s.bossElement) {

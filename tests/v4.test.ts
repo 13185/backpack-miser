@@ -8,6 +8,7 @@ import { weaponDamage } from '../src/systems/adjacency';
 import { itemPlace } from '../src/systems/placement';
 import { nextRandom } from '../src/systems/rng';
 import { isArmorKind } from '../src/config/v4/armor';
+import { SKILL_RAMP_STEP, bossSkillLine } from '../src/config/v4/bosses';
 import { migrateV3 } from '../src/systems/save';
 
 describe('V4 元素公式', () => {
@@ -21,48 +22,45 @@ describe('V4 元素公式', () => {
   });
 });
 
-describe('V4.1 穿戴引用', () => {
-  it('主手留在原格，只生成一个攻击者，邻接仍然计入', () => {
+describe('穿戴离开背包', () => {
+  it('主手腾出格子，只打一次，不再吃邻接', () => {
     const g = new Game(newGameState(1, { heroClass: 'ranger' }));
     g.s.items = [
       { id: 'd', kind: 'dagger', level: 1, x: 0, y: 0, rotated: false },
       { id: 'r', kind: 'ruby', level: 1, x: 1, y: 0, rotated: false },
     ];
     const dagger = g.find('d')!;
-    const x = dagger.x!;
-    const y = dagger.y!;
     const marked = weaponDamage(g.s.items, dagger);
     expect(marked).toBeGreaterThan(ITEMS.dagger.values[0]);
     expect(g.equipHand(dagger.id).ok).toBe(true);
-    expect(itemPlace(dagger)).toBe('bag');
-    expect(dagger.x).toBe(x);
-    expect(dagger.y).toBe(y);
-    expect(g.s.mainHandId).toBe(dagger.id);
+    expect(itemPlace(dagger)).toBe('hand');
+    expect(dagger.x).toBeNull();
+    expect(g.bagItems.some(i => i.id === dagger.id)).toBe(false);
+    expect(g.s.items.filter(i => i.id === dagger.id)).toHaveLength(1);
     const c = g.makeCombat();
     const actors = c.actors.filter(a => a.id === dagger.id);
     expect(actors).toHaveLength(1);
-    expect(actors[0].value).toBe(marked);
-    expect(g.toReserve(dagger.id).ok).toBe(true);
-    expect(g.s.mainHandId).toBeNull();
-    expect(g.makeCombat().actors.some(a => a.id === dagger.id)).toBe(false);
+    expect(actors[0].value).toBe(ITEMS.dagger.values[0]);
     expect(g.unequip(dagger.id).ok).toBe(true);
-    expect(itemPlace(dagger)).toBe('temp');
+    expect(itemPlace(dagger)).toBe('bag');
+    expect(g.s.mainHandId).toBeNull();
   });
 
-  it('护甲未引用时没有抗性，穿上后仍占格', () => {
+  it('护甲穿上后腾格才有抗性，背包满了卸下就进待整理', () => {
     const g = new Game(newGameState(2));
     const it = g.addTemp('furnace_lining', 3);
     expect(createCombat(g.s.items, 100, 100, getLevel(1)).playerResist.fire).toBe(0);
     expect(g.equipArmor(it.id).ok).toBe(true);
-    expect(itemPlace(it)).toBe('bag');
-    expect(g.s.armorId).toBe(it.id);
+    expect(itemPlace(it)).toBe('armor');
+    expect(g.bagItems.some(i => i.id === it.id)).toBe(false);
     expect(g.makeCombat().playerResist.fire).toBe(40);
-    const x = it.x; const y = it.y;
+    g.s.items = g.s.items.filter(i => i.id === it.id);
+    for (let n = 0; n < g.s.cols * g.s.rows; n++) {
+      g.s.items.push({ id: 'fill' + n, kind: 'ruby', level: 1, x: n % g.s.cols, y: Math.floor(n / g.s.cols), rotated: false });
+    }
     expect(g.unequip(it.id).ok).toBe(true);
-    expect(it.x).toBe(x);
-    expect(it.y).toBe(y);
-    expect(g.makeCombat().playerResist.fire).toBe(0);
-    expect(g.toReserve(it.id).ok).toBe(true);
+    expect(itemPlace(it)).toBe('temp');
+    expect(g.s.items.filter(i => i.id === it.id)).toHaveLength(1);
     expect(g.makeCombat().playerResist.fire).toBe(0);
   });
 
@@ -79,7 +77,7 @@ describe('V4.1 穿戴引用', () => {
     expect(g.reserveItems).toHaveLength(2);
   });
 
-  it('旧档主手放回格子，超额备用进只取出暂存', () => {
+  it('旧档已穿戴的主手保持离包，超额备用进只取出暂存', () => {
     const s = newGameState(4);
     const dagger = s.items.find(i => i.kind === 'dagger')!;
     dagger.bin = 'hand';
@@ -92,7 +90,7 @@ describe('V4.1 穿戴引用', () => {
     );
     migrateV3(s);
     expect(s.mainHandId).toBe(dagger.id);
-    expect(itemPlace(dagger)).toBe('bag');
+    expect(itemPlace(dagger)).toBe('hand');
     expect(s.items.filter(i => i.bin === 'reserve')).toHaveLength(2);
     expect(s.items.find(i => i.id === 'r3')?.bin).toBe('legacy');
     const g = new Game(s);
@@ -104,17 +102,16 @@ describe('V4.1 穿戴引用', () => {
     expect(s.items.filter(i => i.id === dagger.id)).toHaveLength(1);
   });
 
-  it('待整理拖进槽之前，没有格子就拒绝', () => {
+  it('背包占满也能把待整理的武器穿上，并腾不出第二件', () => {
     const g = new Game(newGameState(5));
     g.s.cols = 1;
     g.s.rows = 2;
     g.s.items = [{ id: 'd', kind: 'dagger', level: 1, x: 0, y: 0, rotated: false }];
     const extra = g.addTemp('dagger', 1);
-    expect(g.equipHand(extra.id).ok).toBe(false);
-    expect(g.s.mainHandId ?? null).toBeNull();
-    expect(itemPlace(extra)).toBe('temp');
-    expect(g.equipHand('d').ok).toBe(true);
+    expect(g.equipHand(extra.id).ok).toBe(true);
+    expect(itemPlace(extra)).toBe('hand');
     expect(g.find('d')?.x).toBe(0);
+    expect(g.s.items.filter(i => i.kind === 'dagger')).toHaveLength(2);
   });
 });
 
@@ -263,5 +260,58 @@ describe('V4 方案、合成、商店和防御', () => {
     auto.heavyWindupUntil = 600;
     stepCombat(auto, 200);
     expect(auto.guardUses).toBe(1);
+  });
+});
+
+describe('首领元素技能', () => {
+  it('预告用中文技能名，土不另起技能', () => {
+    expect(bossSkillLine(15)).toContain('木');
+    expect(bossSkillLine(15)).toContain('回血大招');
+    expect(bossSkillLine(20)).toContain('金碧辉煌');
+    expect(bossSkillLine(25)).toContain('大海无量');
+    expect(bossSkillLine(35)).toContain('流星火雨');
+    expect(bossSkillLine(30)).toContain('土');
+    expect(bossSkillLine(30)).not.toContain('回血');
+    expect(bossSkillLine(10)).toBeNull();
+    expect(SKILL_RAMP_STEP).toBe(0.05);
+  });
+
+  it('木首领回血写进生命，施放后伤害叠乘 1.05', () => {
+    const lv = { ...getLevel(15), hp: 1000, atk: 10, interval: 3 };
+    const c = createCombat([], 500, 500, lv);
+    c.mHp = 100;
+    const names: string[] = [];
+    while (!c.over && c.t < 13000 && c.skillCasts < 1) {
+      for (const e of stepCombat(c, 200)) if (e.type === 'elementSkill') names.push(e.name);
+    }
+    expect(names).toContain('回血大招');
+    expect(c.mHp).toBe(100 + Math.round(1000 * 0.08));
+    expect(c.skillRamp).toBeCloseTo(1.05);
+  });
+
+  it('火雨被火抗甲压低，土首领不放这四招', () => {
+    const lv = { ...getLevel(35), hp: 8000, atk: 100, interval: 3 };
+    const bare = createCombat([], 9999, 9999, lv);
+    const worn = createCombat([
+      { id: 'a', kind: 'furnace_lining', level: 3, x: null, y: null, rotated: false, bin: 'armor' },
+    ], 9999, 9999, lv, { armorId: 'a' });
+    const take = (c: ReturnType<typeof createCombat>) => {
+      const hits: number[] = [];
+      while (!c.over && c.t < 13000 && hits.length < 3) {
+        for (const e of stepCombat(c, 200)) if (e.type === 'elementSkill' && e.dmg) hits.push(e.dmg);
+      }
+      return hits;
+    };
+    const open = take(bare);
+    const resisted = take(worn);
+    expect(open).toHaveLength(3);
+    expect(resisted).toHaveLength(3);
+    expect(resisted[0]).toBeLessThan(open[0]);
+    const earth = createCombat([], 9999, 9999, { ...getLevel(30), hp: 5000, atk: 10, interval: 3 });
+    let named = 0;
+    while (!earth.over && earth.t < 13000) {
+      named += stepCombat(earth, 500).filter(e => e.type === 'elementSkill').length;
+    }
+    expect(named).toBe(0);
   });
 });

@@ -12,11 +12,10 @@ export function occupiedCells(kind: ItemKind, x: number, y: number, rotated: boo
   for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) out.push({ x: x + dx, y: y + dy });
   return out;
 }
-export type ItemPlace = 'bag' | 'reserve' | 'legacy' | 'temp';
-/** 备用和旧档暂存不在格子上。主手/护甲是背包物品上的引用，不单独占一个容器。 */
+export type ItemPlace = 'bag' | 'reserve' | 'legacy' | 'temp' | 'hand' | 'armor';
+/** 备用、旧档暂存和已穿上的主手/护甲都不占背包格子。 */
 export function itemPlace(i: ItemInstance): ItemPlace {
-  if (i.bin === 'reserve' || i.bin === 'legacy') return i.bin;
-  if (i.bin === 'hand' || i.bin === 'armor') return 'temp';
+  if (i.bin === 'reserve' || i.bin === 'legacy' || i.bin === 'hand' || i.bin === 'armor') return i.bin;
   if (i.x !== null && i.y !== null) return 'bag';
   return 'temp';
 }

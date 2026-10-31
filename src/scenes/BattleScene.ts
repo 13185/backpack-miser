@@ -376,6 +376,21 @@ export class BattleScene extends Phaser.Scene {
         this.showBanner(`先击祝祷者 -${e.dmg}（剩${e.hp}）`, '#d8c8ff');
       } else if (e.type === 'addDown') {
         this.showBanner('祝祷者倒下：不再加盾', '#a8ffb0');
+      } else if (e.type === 'elementSkill') {
+        const color = e.element === 'wood' ? '#7dff9a' : e.element === 'fire' ? '#ff7a3a' : e.element === 'water' ? '#7ecbff' : '#ffd45c';
+        this.showBanner(e.name, color);
+        if (e.heal) {
+          this.float(mx, my - 70, `+${e.heal}`, '#7dff9a', 26);
+          const glow = this.add.circle(mx, my, 36, 0x7dff9a, 0.45).setDepth(6);
+          this.tweens.add({ targets: glow, scale: 2.2, alpha: 0, duration: 520, onComplete: () => glow.destroy() });
+        }
+        if (e.dmg) {
+          this.float(hx, hy - 50 - (e.hit ?? 1) * 16, `-${e.dmg}`, color, 22);
+          const bolt = this.add.circle(mx + ((e.hit ?? 1) - 2) * 28, my - 80, e.element === 'water' ? 22 : 14, e.element === 'fire' ? 0xff7a3a : e.element === 'water' ? 0x7ecbff : 0xffd45c, 0.9).setDepth(6);
+          this.tweens.add({ targets: bolt, y: hy, alpha: 0, duration: e.element === 'fire' ? 280 : 360, onComplete: () => bolt.destroy() });
+        }
+      } else if (e.type === 'skillRamp') {
+        this.showBanner(`难度 ×${e.mult.toFixed(2)}`, '#ffd24a');
       } else if (e.type === 'heavyWindup') {
         this.showBanner('⚠ 蓄力施法！', '#ffcc66');
         this.castRing(0xffcc44, 1.6, 1600);

@@ -317,27 +317,56 @@ export class Game {
     }
     return r;
   }
-  /** 穿戴引用必须指向仍在背包里的那一件。卖掉、入箱、待整理后引用失效，不复制。 */
+  /** 穿戴槽里的那一件不在背包。卖掉、入箱或待整理后引用失效，不复制。 */
   private syncWear() {
-    const live = (id: string | null | undefined, weapon: boolean) => {
+    const keep = (id: string | null | undefined, slot: 'hand' | 'armor', weapon: boolean) => {
       if (!id) return null;
-      const it = this.bagItems.find(i => i.id === id);
-      if (!it) return null;
+      const it = this.find(id);
+      if (!it || it.bin !== slot) return null;
       if (weapon && !this.ownsWeapon(it.kind)) return null;
       if (!weapon && !isArmorKind(it.kind)) return null;
+      it.x = null;
+      it.y = null;
       return id;
     };
-    this.s.mainHandId = live(this.s.mainHandId, true);
-    this.s.armorId = live(this.s.armorId, false);
+    this.s.mainHandId = keep(this.s.mainHandId, 'hand', true);
+    this.s.armorId = keep(this.s.armorId, 'armor', false);
+    for (const it of this.s.items) {
+      if (it.bin === 'hand' && it.id !== this.s.mainHandId) { it.bin = undefined; it.x = null; it.y = null; }
+      if (it.bin === 'armor' && it.id !== this.s.armorId) { it.bin = undefined; it.x = null; it.y = null; }
+    }
   }
-  /** 备用箱和待整理要先落到真实格子，才允许被引用。 */
-  private landInBag(it: ItemInstance): Result | null {
-    if (inBag(it)) { it.bin = undefined; return null; }
-    const spot = findSpot(this.s.items, this.s.cols, this.s.rows, it.kind, it.id);
-    if (!spot) return fail('背包空间不足，先整理');
+  /** 离开穿戴槽。有指定空位就放那里，否则找第一个空位，再不行就待整理。 */
+  private releaseWorn(it: ItemInstance, at?: { x: number; y: number; rotated: boolean }): 'bag' | 'temp' {
+    if (this.s.mainHandId === it.id) this.s.mainHandId = null;
+    if (this.s.armorId === it.id) this.s.armorId = null;
     it.bin = undefined;
-    it.x = spot.x; it.y = spot.y; it.rotated = spot.rotated;
-    return null;
+    const rot = ITEMS[it.kind].rotatable ? (at?.rotated ?? it.rotated) : false;
+    if (at && canPlace(this.s.items, this.s.cols, this.s.rows, it.kind, at.x, at.y, rot, it.id)) {
+      it.x = at.x; it.y = at.y; it.rotated = rot;
+      return 'bag';
+    }
+    const spot = findSpot(this.s.items, this.s.cols, this.s.rows, it.kind, it.id);
+    if (spot) {
+      it.x = spot.x; it.y = spot.y; it.rotated = spot.rotated;
+      return 'bag';
+    }
+    it.x = null; it.y = null;
+    return 'temp';
+  }
+  private takeWear(it: ItemInstance, slot: 'hand' | 'armor') {
+    const prevId = slot === 'hand' ? this.s.mainHandId : this.s.armorId;
+    if (slot === 'hand' && this.s.armorId === it.id) this.s.armorId = null;
+    if (slot === 'armor' && this.s.mainHandId === it.id) this.s.mainHandId = null;
+    it.bin = slot;
+    it.x = null;
+    it.y = null;
+    if (slot === 'hand') this.s.mainHandId = it.id;
+    else this.s.armorId = it.id;
+    if (prevId && prevId !== it.id) {
+      const prev = this.find(prevId);
+      if (prev) this.releaseWorn(prev);
+    }
   }
   private prepOnly(): Result | null { return this.s.phase === 'prep' ? null : fail('战斗中无法整理背包。'); }
   get bagItems() { return this.s.items.filter(inBag); }
@@ -345,13 +374,14 @@ export class Game {
   get handItem() {
     const id = this.s.mainHandId;
     if (!id) return undefined;
-    const it = this.bagItems.find(i => i.id === id);
-    return it && this.ownsWeapon(it.kind) ? it : undefined;
+    const it = this.find(id);
+    return it && itemPlace(it) === 'hand' && this.ownsWeapon(it.kind) ? it : undefined;
   }
   get wornArmor() {
     const id = this.s.armorId;
     if (!id) return undefined;
-    return this.bagItems.find(i => i.id === id && isArmorKind(i.kind));
+    const it = this.find(id);
+    return it && itemPlace(it) === 'armor' && isArmorKind(it.kind) ? it : undefined;
   }
   get reserveItems() { return this.s.items.filter(i => itemPlace(i) === 'reserve'); }
   get legacyItems() { return this.s.items.filter(i => itemPlace(i) === 'legacy'); }
@@ -519,36 +549,29 @@ export class Game {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
     if (!this.ownsWeapon(it.kind)) return fail('主手只能装武器。');
-    const landed = this.landInBag(it); if (landed) return landed;
-    this.s.mainHandId = it.id;
-    if (this.s.armorId === it.id) this.s.armorId = null;
-    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已设为主手，仍占原格。` });
+    this.takeWear(it, 'hand');
+    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已设为主手，不再占背包。` });
   }
   equipArmor(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
     if (!isArmorKind(it.kind)) return fail('这不是护甲。');
-    const landed = this.landInBag(it); if (landed) return landed;
-    this.s.armorId = it.id;
-    if (this.s.mainHandId === it.id) this.s.mainHandId = null;
-    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已穿上，仍占原格。` });
+    this.takeWear(it, 'armor');
+    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已穿上，不再占背包。` });
   }
-  unequip(id: string): Result {
+  unequip(id: string, at?: { x: number; y: number; rotated: boolean }): Result {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
-    if (this.s.mainHandId === id) {
-      this.s.mainHandId = null;
-      return this.commit({ ok: true, msg: '已卸下主手。背包里的武器仍会攻击。' });
-    }
-    if (this.s.armorId === id) {
-      this.s.armorId = null;
-      return this.commit({ ok: true, msg: '已卸下护甲。抗性不再计入。' });
+    if (this.s.mainHandId === id || this.s.armorId === id || it.bin === 'hand' || it.bin === 'armor') {
+      const where = this.releaseWorn(it, at);
+      const back = where === 'bag' ? '已放回背包。' : '背包放不下，已放入待整理。';
+      return this.commit({ ok: true, msg: back });
     }
     if (it.bin === 'reserve' || it.bin === 'legacy') {
       it.bin = undefined; it.x = null; it.y = null;
       return this.commit({ ok: true, msg: '已放到待整理。' });
     }
-    return fail('这件没有穿戴标记。');
+    return fail('这件没有穿戴。');
   }
   toReserve(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -621,7 +644,7 @@ export class Game {
     ensureGearTrials(this.s);
     const trial = this.s.gearTrials?.trials.find(t => t.id === trialId);
     if (!trial) return fail('没有这张寻找套装委托。');
-    const armed = this.bagItems.some(i => this.ownsWeapon(i.kind));
+    const armed = this.bagItems.some(i => this.ownsWeapon(i.kind)) || !!this.handItem;
     if (!armed) return fail('至少装备一把武器才能战斗。');
     this.s.gearFight = { trialId, hp: this.s.hp };
     this.s.phase = 'battle';
@@ -715,7 +738,7 @@ export class Game {
     if (this.tempItems.length > 0) return fail('请先处理待整理的装备。');
     const armed = this.bagItems.some(i => {
       const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle';
-    });
+    }) || !!this.handItem;
     if (!armed) return fail('至少装备一把武器才能战斗。');
     if (this.s.pendingRelicChoices?.length) return fail('请先选择遗物。');
     if (this.s.pendingRuneChoices?.length) return fail('请先选择符文。');
@@ -768,6 +791,7 @@ export class Game {
       heroClass: this.s.heroClass,
       autoGuard: this.s.autoGuard !== false,
       armorId: this.s.armorId ?? null,
+      mainHandId: this.s.mainHandId ?? null,
     });
   }
   settle(c: CombatState): Result {

@@ -20,7 +20,7 @@ export interface ItemInstance {
   burdenMaxHpPct?: number;
   /** 武器元素改造。缺省是无属性。旧档不填。 */
   element?: 'metal' | 'wood' | 'water' | 'fire' | 'earth' | null;
-  /** 不在格子上时的归属。reserve 是备用箱，legacy 是旧档超额暂存。穿戴不再用 bin 把物品移出背包。 */
+  /** 不在格子上时的归属。hand/armor 是穿戴槽，会腾出背包。 */
   bin?: 'reserve' | 'legacy' | 'hand' | 'armor';
 }
 export interface ShopSlot { kind: ItemKind; level: Level; bought: boolean; }

@@ -15,6 +15,7 @@ import { armorResist, isArmorKind } from '../config/v4/armor';
 import { ELEMENT_NAME, ELEMENTS, type Element as GearElement } from '../config/v4/elements';
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { slotBlurb, slotCost } from '../systems/slot';
+import { bossSkillLine } from '../config/v4/bosses';
 import { chapterBossElement, ensureGearTrials } from '../systems/gearTrial';
 import { activateGuard } from '../systems/combat';
 import { Game, RESERVE_CAP, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
@@ -62,7 +63,7 @@ const TUTORIAL = [
   { sel: '#startBtn', text: '⑤ 整理好后，点击<b>开始战斗</b>，装备会自动出手！' },
 ];
 const WEAR_TUTORIAL = [
-  { sel: '#handSlot', text: '把武器拖进<b>主手</b>，把衬甲拖进<b>护甲</b>。它们仍占背包原来的格子。' },
+  { sel: '#handSlot', text: '把武器拖进<b>主手</b>，把衬甲拖进<b>护甲</b>。穿上后离开背包，格子会腾出来。' },
   { sel: '#tempWrap', text: '<b>待整理</b>紧挨背包。备用箱只有两件，放进去就不攻击、不加抗性。' },
   { sel: '#sheetNav', text: '上面只留<b>背包、寻找套装、商店</b>。方案和战报在旁边，需要时再打开。' },
 ];
@@ -389,7 +390,8 @@ export class App {
     const mech = lv.mechSummary && !noticeRepeats(abil, lv.mechSummary) ? `<br/>⚙ ${lv.mechSummary}` : '';
     const lvLine = LEVEL_LINES[s.level] ?? '';
     const temps = g.tempItems.length;
-    const armed = g.bagItems.some(i => { const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle'; });
+    const armed = g.bagItems.some(i => { const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle'; }) || !!g.handItem;
+    const skillLine = bossSkillLine(s.level);
     let startLabel = '⚔ 开始战斗';
     let startMode: 'start' | 'tidy' | 'block' = can.ok ? 'start' : 'block';
     if (!battle && temps) { startLabel = `整理装备（${temps}）`; startMode = 'tidy'; }
@@ -398,7 +400,7 @@ export class App {
         <div class="eName">${lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
         ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
-        <div class="eAbil">✦ ${abil}${mech}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
+        <div class="eAbil">✦ ${abil}${mech}${skillLine ? `<br/>✦ ${esc(skillLine)}` : ''}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
       </div>
       <div class="actions">
         ${battle ? `<div class="hint">⚔ 自动战斗中……背包已锁定</div>
@@ -536,7 +538,7 @@ export class App {
         <div class="eqSlot" id="handSlot" data-slot="hand">${this.slotFig(hand, open ? '拖入武器' : '未开启')}<span class="slotName">主手</span></div>
         <div class="eqSlot" id="armorSlot" data-slot="armor">${this.slotFig(armor, open ? '拖入护甲' : '未开启')}<span class="slotName">护甲</span></div>
       </div>
-      <div class="sDesc">${hand ? `攻击倾向：${elName(hand.element)} · ${ITEMS[hand.kind].name}` : '未指定主手，背包武器正常攻击'}</div>
+      <div class="sDesc">${hand ? `主手：${ITEMS[hand.kind].name} · ${elName(hand.element)} · 不占背包` : '未指定主手，背包武器正常攻击'}</div>
       <div class="sDesc">${resist}</div>
       ${open ? '' : '<div class="muted">通关第10关后，可以把武器和衬甲拖进槽里。格子仍被占用。</div>'}
       ${open && !g.s.items.some(i => isArmorKind(i.kind)) ? '<button class="btn small" id="gotoTrial" type="button">暂无护甲 → 查看防护委托</button>' : ''}
@@ -638,14 +640,17 @@ export class App {
     let status = '背包中 · 按原规则生效';
     if (place === 'reserve' || place === 'legacy') status = '备用中 · 不参与战斗';
     else if (place === 'temp') status = '待整理 · 不参与战斗';
-    else if (d.category === 'armor') status = `${g.s.armorId === it.id ? '已穿戴 · 抗性生效' : '未穿戴 · 抗性未生效'} · 占格${w}×${h}`;
-    else if (d.category === 'weapon' || d.category === 'needle') status = g.s.mainHandId === it.id ? '已设为主手 · 攻击生效 · 仍占原格子' : '背包武器 · 攻击生效';
+    else if (place === 'hand') status = '主手 · 攻击生效 · 不占背包格 · 不吃邻接';
+    else if (place === 'armor') status = `已穿戴 · 抗性生效 · 不占背包格`;
+    else if (d.category === 'armor') status = `未穿戴 · 抗性未生效 · 占格${w}×${h}`;
+    else if (d.category === 'weapon' || d.category === 'needle') status = '背包武器 · 攻击生效';
     let stats = '';
     if (d.category === 'weapon' || d.category === 'needle') {
       const b = d.category === 'weapon' ? gemBonus(g.s.items, it) : { pct: 0, gems: [] as string[] };
       const fin = d.category === 'weapon' ? weaponDamage(g.s.items, it) : v;
       const names = (b.gems ?? []).map(id => g.find(id) ? ITEMS[g.find(id)!.kind].name : '').filter(Boolean).join('、') || '无';
-      stats = `<div>伤害：<b>${v}</b> · 间隔 ${d.interval}秒 · 元素 ${elName(it.element)}</div><div>邻接：${names} · 宝石 <b class="${b.pct ? 'up' : ''}">+${b.pct}%</b>${!inBag(it) ? '（待整理不生效）' : ''}</div>
+      const off = place === 'hand' ? '（已穿出，不吃邻接）' : !inBag(it) ? '（待整理不生效）' : '';
+      stats = `<div>伤害：<b>${v}</b> · 间隔 ${d.interval}秒 · 元素 ${elName(it.element)}</div><div>邻接：${names} · 宝石 <b class="${b.pct ? 'up' : ''}">+${b.pct}%</b>${off}</div>
         <div>结算伤害：<b class="up">${inBag(it) ? fin : 0}</b>${d.category === 'needle' ? ' · 附毒' : ''}</div>`;
     } else if (d.category === 'gem') {
       const n = weaponsBoostedBy(g.s.items, it).length;
@@ -886,11 +891,6 @@ export class App {
       if (g.s.level <= 10) { ok = false; reason = '通关第10关后才能穿戴'; }
       else if (slot === 'hand' && cat !== 'weapon' && cat !== 'needle') { ok = false; reason = '主手只能装武器'; }
       else if (slot === 'armor' && cat !== 'armor') { ok = false; reason = '护甲槽只接受衬甲'; }
-      else if (!inBag(it)) {
-        const spot = findSpot(g.s.items, g.s.cols, g.s.rows, it.kind, it.id);
-        if (!spot) { ok = false; reason = '背包空间不足，先整理'; }
-        else land = { x: spot.x, y: spot.y };
-      }
       d.drop = { type: 'wear', slot, ok, reason, land };
       return;
     }
@@ -943,7 +943,7 @@ export class App {
         for (const c of occupiedCells(it.kind, d.drop.land.x, d.drop.land.y, d.rotated))
           html += `<div class="pv ok" style="left:${c.x * this.cell}px;top:${c.y * this.cell}px"></div>`;
       }
-      tip = d.drop.ok ? '松开穿戴' : (d.drop.reason ?? '');
+      tip = d.drop.ok ? '松开后离开背包' : (d.drop.reason ?? '');
     } else if (d.drop?.type === 'reserve') {
       tip = d.drop.ok ? '放入备用，不生效' : (d.drop.reason ?? '');
     } else if (d.drop?.type === 'place') {
@@ -992,12 +992,13 @@ export class App {
       if (drop.ok && drop.gamble) { this.confirmGamble(d.id, drop.targetId); return; }
       if (drop.ok) { if (this.act(() => g.merge(d.id, drop.targetId), sfx.merge)) { this.selected = drop.targetId; this.render(); this.flashMerge(drop.targetId); } }
       else { sfx.error(); this.toast(drop.reason ?? '需要相同种类和等级才能合成。', true); this.render(); }
+    } else if (drop.type === 'place' && drop.unequip) {
+      this.act(() => g.unequip(d.id, drop.ok ? { x: drop.x, y: drop.y, rotated: d.rotated } : undefined), sfx.drop);
     } else if (drop.type === 'place') {
       if (!drop.ok) { sfx.error(); this.toast('这里放不下。', true); this.render(); return; }
       const it = g.find(d.id)!;
       const same = inBag(it) && it.x === drop.x && it.y === drop.y && it.rotated === d.rotated;
       if (!same && !this.act(() => g.move(d.id, drop.x, drop.y, d.rotated), sfx.drop)) return;
-      if (drop.unequip) this.act(() => g.unequip(d.id), sfx.drop);
       else if (same) this.render();
     } else if (drop.type === 'wear') {
       if (!drop.ok) { sfx.error(); this.toast(drop.reason || '不能穿上', true); this.render(); return; }
@@ -1586,7 +1587,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.1 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.2 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
