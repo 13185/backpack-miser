@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isBossLevel } from '../src/config/v3/campaign';
-import { GOBLIN_HP_MULT, GOBLIN_LV4_CHANCE, GOBLIN_NAME, GOBLIN_SECONDS, goblinHp, goblinReferenceDps } from '../src/config/v4/goblin';
+import { GOBLIN_HP, GOBLIN_LV4_CHANCE, GOBLIN_NAME, GOBLIN_SECONDS, goblinHp } from '../src/config/v4/goblin';
 import { ITEMS } from '../src/config/items';
 import type { ItemInstance } from '../src/models/types';
 import { createCombat, stepCombat } from '../src/systems/combat';
@@ -45,13 +45,12 @@ describe('罗纹口袋哥布林', () => {
     expect(late && late.level >= 41 && late.level <= 49 && !isBossLevel(late.level)).toBe(true);
   });
 
-  it('三段血量是参考火力打满 40 秒再乘 2，攻击是 0，没有五行括号', () => {
+  it('三段血量是固定的 6000 / 12000 / 20000，攻击是 0，没有五行括号', () => {
     expect(GOBLIN_SECONDS).toBe(40);
-    expect(GOBLIN_HP_MULT).toBe(2);
-    expect(goblinHp('10-20')).toBe(Math.floor(goblinReferenceDps('10-20') * 40) * 2);
-    expect(goblinHp('10-20')).toBe(3172);
-    expect(goblinHp('20-30')).toBe(4640);
-    expect(goblinHp('40-50')).toBe(8064);
+    expect(GOBLIN_HP).toEqual({ '10-20': 6000, '20-30': 12000, '40-50': 20000 });
+    expect(goblinHp('10-20')).toBe(6000);
+    expect(goblinHp('20-30')).toBe(12000);
+    expect(goblinHp('40-50')).toBe(20000);
     const lv = goblinLevel(16);
     expect(lv.title).toBe(GOBLIN_NAME);
     expect(lv.boss).toBe(false);
@@ -60,21 +59,18 @@ describe('罗纹口袋哥布林', () => {
     expect(lv.title.includes('（')).toBe(false);
   });
 
-  it('参考武器 40 秒大约打掉一半，然后逃走，期间怪物不出手', () => {
+  it('早段参考武器 40 秒打不完 6000 血，然后逃走，期间怪物不出手', () => {
     const lv = goblinLevel(16);
     const c = createCombat(pack(['dagger', 'greatsword', 'crossbow', 'warhammer'], 2).map((it, i) => (
       i === 3 ? { ...it, level: 1 as const } : it
     )), 80, 80, lv, { encounterKind: 'lootGoblin' });
-    // 连弩参考是 2 级。上面 warhammer 被改成 1 级，dagger/greatsword/crossbow 仍是 2 级。
-    expect(c.mMaxHp).toBe(3172);
+    expect(c.mMaxHp).toBe(6000);
     const attacks = [];
     while (!c.over) attacks.push(...stepCombat(c, 200));
     expect(c.won).toBe(false);
     expect(c.escaped).toBe(true);
     expect(c.t).toBe(GOBLIN_SECONDS * 1000);
-    const dealt = c.mMaxHp - c.mHp;
-    expect(dealt).toBeGreaterThan(c.mMaxHp * 0.4);
-    expect(dealt).toBeLessThan(c.mMaxHp * 0.6);
+    expect(c.mHp).toBeGreaterThan(4000);
     expect(attacks.some(e => e.type === 'monsterAttack')).toBe(false);
     expect(c.hp).toBe(80);
   });
