@@ -61,6 +61,7 @@ interface Actor {
 }
 export interface CombatState {
   t: number; over: boolean; won: boolean; reason: string;
+  encounterKind: 'main' | 'gearTrial';
   hp: number; maxHp: number; shield: number;
   mHp: number; mMaxHp: number; mAtk: number; mInterval: number; armor: number; boss: boolean; hasted: boolean;
   enrageStage: number;
@@ -181,6 +182,8 @@ export interface CombatMods {
   armorId?: string | null;
   /** 主手槽。离开背包后只打一次，不吃邻接。 */
   mainHandId?: string | null;
+  /** main 是主线。gearTrial 是寻找套装，结算不得推进关卡。 */
+  encounterKind?: 'main' | 'gearTrial';
 }
 
 const ms = (s: number) => Math.round(s * 1000);
@@ -550,6 +553,7 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
     skillRamp: 1,
     skillCasts: 0,
     skillNextAt: lv.boss && (lv.level ?? 0) >= 15 && elementSkill(lv.bossElement) ? ELEMENT_SKILL_EVERY_MS : Number.MAX_SAFE_INTEGER,
+    encounterKind: mods.encounterKind ?? 'main',
   };
 }
 

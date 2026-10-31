@@ -10,6 +10,7 @@ import { nextRandom } from '../src/systems/rng';
 import { isArmorKind } from '../src/config/v4/armor';
 import { SKILL_RAMP_STEP, bossSkillLine } from '../src/config/v4/bosses';
 import { migrateV3 } from '../src/systems/save';
+import { gearTrialLevel } from '../src/systems/gearTrial';
 
 describe('V4 元素公式', () => {
   it('无属性保持原值，火打高抗变少，水打负抗变多，火打木略增', () => {
@@ -131,6 +132,60 @@ describe('V4 寻装与熔炉', () => {
     expect(g.s.hp).toBe(40);
     expect(g.s.gold).toBe(15);
     expect(g.s.level).toBe(21);
+  });
+
+  it('挑战委托打的是训练快照，胜利只打开领奖，不推进主线', () => {
+    const g = new Game(newGameState(9));
+    g.s.level = 11;
+    g.s.currentChapter = 3;
+    g.s.hp = 40;
+    g.s.gold = 15;
+    g.s.v4LessonGranted = true;
+    const main = getLevel(11);
+    expect(g.startGearTrial('c3-guard').ok).toBe(true);
+    const c = g.makeCombat();
+    const train = gearTrialLevel(3, 11);
+    expect(c.encounterKind).toBe('gearTrial');
+    expect(c.boss).toBe(false);
+    expect(c.mMaxHp).toBe(train.hp);
+    expect(c.mMaxHp).not.toBe(main.hp);
+    expect(c.mAtk).toBe(train.atk);
+    c.mHp = 0;
+    c.over = true;
+    c.won = true;
+    c.reason = '怪物被击败！';
+    const r = g.settle(c);
+    expect(r.ok).toBe(true);
+    expect(g.s.level).toBe(11);
+    expect(g.s.gold).toBe(15);
+    expect(g.s.hp).toBe(40);
+    expect(g.s.phase).toBe('prep');
+    expect(g.s.completion ?? null).toBeNull();
+    expect(g.s.gearTrials?.trials.find(t => t.id === 'c3-guard')?.ready).toBe(true);
+    expect(g.s.gearTrials?.trials.find(t => t.id === 'c3-guard')?.claimed).toBe(false);
+    expect(g.claimGearTrial('c3-guard').ok).toBe(true);
+    expect(g.s.level).toBe(11);
+  });
+
+  it('寻找套装失败不把主线生命打成死档', () => {
+    const g = new Game(newGameState(10));
+    g.s.level = 11;
+    g.s.currentChapter = 3;
+    g.s.hp = 40;
+    g.s.gold = 15;
+    g.s.v4LessonGranted = true;
+    expect(g.startGearTrial('c3-counter').ok).toBe(true);
+    const c = g.makeCombat();
+    c.hp = 0;
+    c.over = true;
+    c.won = false;
+    c.reason = '生命耗尽，冒险失败。';
+    g.settle(c);
+    expect(g.s.hp).toBe(40);
+    expect(g.s.level).toBe(11);
+    expect(g.s.phase).toBe('prep');
+    expect(g.s.gold).toBe(15);
+    expect(g.s.gearTrials?.trials.find(t => t.id === 'c3-counter')?.ready).toBe(false);
   });
 
   it('熔炉第三次普攻后进入过热预警，而不是再叠一套过热', () => {

@@ -1,3 +1,5 @@
+import type { LevelDef } from '../config/levels';
+import { getLevel } from '../config/v3/levels';
 import type { Element } from '../config/v4/elements';
 import { bossElements } from '../config/v4/bosses';
 import type { GameState } from '../models/types';
@@ -32,7 +34,33 @@ export function ensureGearTrials(s: GameState) {
   };
 }
 
-/** 寻装敌人：本章普通预算的大约 65% 生命、55% 攻击，抗性不超过 20。 */
+/**
+ * 寻找套装用本章首领预算做一份独立训练，不读取当前主线关的敌人。
+ * 生命约为主线首领的 65%，攻击约 55%，抗性不超过 20。
+ */
+export function gearTrialLevel(chapter: number, levelNo: number): LevelDef {
+  const bossLv = BOSS_LEVEL[chapter] ?? 15;
+  const boss = getLevel(bossLv);
+  const info = chapterBossElement(chapter);
+  const enemy = trialEnemy(boss.hp, boss.atk, info?.element ?? null);
+  return {
+    monster: 'slime',
+    title: '寻找套装训练',
+    level: levelNo,
+    hp: enemy.hp,
+    atk: enemy.atk,
+    interval: 2.2,
+    boss: false,
+    chapter,
+    resist: enemy.resist,
+    bossElement: enemy.element ?? undefined,
+    plainShare: 0.6,
+    heavyPlainShare: 0.2,
+    mechSummary: '训练委托。胜负不推进主线，不发主线金币。',
+  };
+}
+
+/** 训练敌人：给定预算的大约 65% 生命、55% 攻击，抗性不超过 20。 */
 export function trialEnemy(levelHp: number, levelAtk: number, element: Element | null) {
   const cap = (n: number) => Math.max(-20, Math.min(20, n));
   const resist: Partial<Record<Element, number>> = {};

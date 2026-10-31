@@ -22,7 +22,7 @@ import { canMerge, mergeItems } from './merge';
 import { canPlace, findSpot, inBag, itemPlace } from './placement';
 import { isArmorKind } from '../config/v4/armor';
 import { ELEMENT_NAME, ELEMENTS, type Element } from '../config/v4/elements';
-import { chapterBossElement, ensureGearTrials, trialEnemy } from './gearTrial';
+import { chapterBossElement, ensureGearTrials, gearTrialLevel } from './gearTrial';
 import { LV4_GAMBLE, LV5_GAMBLE, gambleOutcome } from '../config/gamble';
 import { nextRandom, Rng } from './rng';
 import { SAVE_VERSION } from './save';
@@ -768,16 +768,10 @@ export class Game {
       hp = Math.min(maxHp, hp + 5);
     }
     let lv = { ...getLevel(this.s.level) };
-    if (this.s.gearFight) {
-      const info = chapterBossElement(this.s.currentChapter);
-      const enemy = trialEnemy(lv.hp, lv.atk, info?.element ?? null);
+    const gearTrial = !!this.s.gearFight;
+    if (gearTrial) {
       hp = maxHp;
-      lv = {
-        ...lv, hp: enemy.hp, atk: enemy.atk, boss: false, title: '寻找套装训练',
-        resist: enemy.resist, bossElement: enemy.element ?? undefined, furnaceCycle: false,
-        heavyStrike: undefined, phaseShields: undefined, summons: undefined, heartPhases: undefined,
-        overheat: undefined, echo: undefined, pray: undefined,
-      };
+      lv = gearTrialLevel(this.s.currentChapter, this.s.level);
     } else if (this.s.eliteActive) {
       lv = applyEliteOverlay(lv, this.s.level);
       lv.hp = Math.round(lv.hp * ELITE_HP_MULT);
@@ -792,6 +786,7 @@ export class Game {
       autoGuard: this.s.autoGuard !== false,
       armorId: this.s.armorId ?? null,
       mainHandId: this.s.mainHandId ?? null,
+      encounterKind: gearTrial ? 'gearTrial' : 'main',
     });
   }
   settle(c: CombatState): Result {

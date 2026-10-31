@@ -16,7 +16,7 @@ import { ELEMENT_NAME, ELEMENTS, type Element as GearElement } from '../config/v
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { slotBlurb, slotCost } from '../systems/slot';
 import { bossSkillLine } from '../config/v4/bosses';
-import { chapterBossElement, ensureGearTrials } from '../systems/gearTrial';
+import { chapterBossElement, ensureGearTrials, gearTrialLevel } from '../systems/gearTrial';
 import { activateGuard } from '../systems/combat';
 import { Game, RESERVE_CAP, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
 import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
@@ -383,21 +383,23 @@ export class App {
     document.querySelectorAll<HTMLButtonElement>('.subNav [data-sub]').forEach(b => b.classList.toggle('on', b.dataset.sub === this.sub));
   }
   renderMid() {
-    const g = this.game!, s = g.s, lv = getLevel(s.level), base = MONSTER_BASE[lv.monster];
+    const g = this.game!, s = g.s;
+    const lv = s.gearFight ? gearTrialLevel(s.currentChapter, s.level) : getLevel(s.level);
+    const base = MONSTER_BASE[lv.monster];
     const battle = s.phase === 'battle';
     const can = g.canStartBattle();
     const abil = lv.armor ? base.ability.replace('固定值', `${lv.armor}点`) : base.ability;
     const mech = lv.mechSummary && !noticeRepeats(abil, lv.mechSummary) ? `<br/>⚙ ${lv.mechSummary}` : '';
-    const lvLine = LEVEL_LINES[s.level] ?? '';
+    const lvLine = s.gearFight ? '' : (LEVEL_LINES[s.level] ?? '');
     const temps = g.tempItems.length;
     const armed = g.bagItems.some(i => { const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle'; }) || !!g.handItem;
-    const skillLine = bossSkillLine(s.level);
+    const skillLine = s.gearFight ? null : bossSkillLine(s.level);
     let startLabel = '⚔ 开始战斗';
     let startMode: 'start' | 'tidy' | 'block' = can.ok ? 'start' : 'block';
     if (!battle && temps) { startLabel = `整理装备（${temps}）`; startMode = 'tidy'; }
     else if (!battle && !armed) { startLabel = '配置攻击装备'; startMode = 'block'; }
     $('mid').innerHTML = `<div class="enemyCard ${lv.boss ? 'boss' : ''}">
-        <div class="eName">${lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
+        <div class="eName">${s.gearFight ? '训练：' : lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
         ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
         <div class="eAbil">✦ ${abil}${mech}${skillLine ? `<br/>✦ ${esc(skillLine)}` : ''}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
@@ -1107,12 +1109,16 @@ export class App {
   // ---------- 战斗 ----------
   runBattle() {
     const g = this.game!;
+    const trial = !!g.s.gearFight;
     this.selected = null; this.render();
     const c = g.makeCombat();
-    this.scene.setPreview(g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level), g.s.hp, g.s.maxHp, { eliteActive: !!g.s.eliteActive, levelNo: g.s.level });
+    const preview = trial
+      ? gearTrialLevel(g.s.currentChapter, g.s.level)
+      : (g.s.eliteActive ? applyEliteOverlay(getLevel(g.s.level), g.s.level) : getLevel(g.s.level));
+    this.scene.setPreview(preview, trial ? g.s.maxHp : g.s.hp, g.s.maxHp, { eliteActive: trial ? false : !!g.s.eliteActive, levelNo: trial ? 1 : g.s.level });
     this.scene.setSpeed(this.speed);
     this.battleFlip = !this.battleFlip;
-    const tune = g.s.eliteActive ? 'elite' : isBossLevel(g.s.level) ? (g.s.level >= 50 ? 'final' : 'boss') : (this.battleFlip ? 'battleA' : 'battleB');
+    const tune = trial ? (this.battleFlip ? 'battleA' : 'battleB') : g.s.eliteActive ? 'elite' : isBossLevel(g.s.level) ? (g.s.level >= 50 ? 'final' : 'boss') : (this.battleFlip ? 'battleA' : 'battleB');
     setBgm(tune);
     this.scene.start(c, g.s.items.map(i => ({ ...i })), {
       onEvents: (ev, cs) => this.onBattleEvents(ev, cs),
@@ -1136,7 +1142,14 @@ export class App {
   }
   endBattle(c: CombatState) {
     const g = this.game!;
+    const trial = c.encounterKind === 'gearTrial';
     const r = g.settle(c); if (!r.ok) return; // 只结算一次
+    if (trial) {
+      this.toast(r.msg || (c.won ? '寻找套装胜利。主线没有变化。' : '寻找套装失败。主线生命和关卡没有变。'), !c.won);
+      setBgm('prep');
+      this.render();
+      return;
+    }
     const s = g.s; const l = s.last!;
     this.render();
     if (!c.won) { setBgm('lose'); this.showEnd(false); return; }
@@ -1587,7 +1600,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.2 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.3 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
