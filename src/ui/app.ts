@@ -11,14 +11,16 @@ import { CAMPAIGN_LENGTH, getLevel, isBossLevel, isMidAct, applyEliteOverlay, V3
 import type { GameState, ItemInstance, ItemKind, Level, Settings } from '../models/types';
 import { gemBonus, weaponDamage, weaponsBoostedBy } from '../systems/adjacency';
 import type { CombatEvent, CombatState } from '../systems/combat';
+import { armorResist, isArmorKind } from '../config/v4/armor';
+import { ELEMENT_NAME, ELEMENTS, type Element as GearElement } from '../config/v4/elements';
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { slotBlurb, slotCost } from '../systems/slot';
 import { chapterBossElement, ensureGearTrials } from '../systems/gearTrial';
 import { activateGuard } from '../systems/combat';
-import { Game, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
+import { Game, RESERVE_CAP, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
 import { QUEST_CHOICES, evidenceOf, type ChoiceId } from '../config/v3/quests';
 import { canMerge, mergeTargetIds } from '../systems/merge';
-import { canPlace, inBag, itemAt, itemPlace, itemSize, occupiedCells } from '../systems/placement';
+import { canPlace, findSpot, inBag, itemAt, itemPlace, itemSize, occupiedCells } from '../systems/placement';
 import { clearSave, loadGame, loadSettings, saveGame, saveSettings } from '../systems/save';
 import { BattleScene } from '../scenes/BattleScene';
 import { AnimPreviewScene } from '../scenes/AnimPreviewScene';
@@ -36,22 +38,47 @@ import { iconSvg } from './icons';
 const $ = (id: string) => document.getElementById(id)!;
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
+type DragFrom = 'bag' | 'temp' | 'reserve' | 'legacy' | 'slot';
+type DragDrop =
+  | { type: 'place'; x: number; y: number; ok: boolean; unequip?: boolean }
+  | { type: 'merge'; targetId: string; ok: boolean; gamble?: boolean; reason?: string }
+  | { type: 'temp' }
+  | { type: 'wear'; slot: 'hand' | 'armor'; ok: boolean; reason?: string; land?: { x: number; y: number } | null }
+  | { type: 'reserve'; ok: boolean; reason?: string };
 interface DragState {
   id: string; startX: number; startY: number; active: boolean; rotated: boolean;
-  grabDx: number; grabDy: number; ghost: HTMLElement | null; from: 'bag' | 'temp';
-  drop: { type: 'place'; x: number; y: number; ok: boolean } | { type: 'merge'; targetId: string; ok: boolean; gamble?: boolean; reason?: string } | { type: 'temp' } | null;
+  grabDx: number; grabDy: number; ghost: HTMLElement | null; from: DragFrom;
+  drop: DragDrop | null;
   pointerType: string;
   t0: number;
   /** pending：还没决定。drag：这次手势归装备。scroll：交给页面滚动。 */
   claim: 'pending' | 'drag' | 'scroll';
 }
 const TUTORIAL = [
-  { sel: '#bag', text: '① 装备必须放进<b>背包</b>才会生效，临时区的装备不参与战斗。' },
+  { sel: '#bag', text: '① 装备必须放进<b>背包</b>才会生效，待整理的装备不参与战斗。' },
   { sel: '#bag', text: '② 把一件装备拖到<b>相同种类、相同等级</b>的装备上，即可合成升级，还能腾出空间。' },
   { sel: '#bag', text: '③ <b>红宝石</b>放在武器的上下左右（对角无效），可以强化武器伤害。' },
   { sel: '#bag', text: '④ <b>钱袋</b>胜利后额外给金币，但会占据宝贵的战斗格子。' },
   { sel: '#startBtn', text: '⑤ 整理好后，点击<b>开始战斗</b>，装备会自动出手！' },
 ];
+const WEAR_TUTORIAL = [
+  { sel: '#handSlot', text: '把武器拖进<b>主手</b>，把衬甲拖进<b>护甲</b>。它们仍占背包原来的格子。' },
+  { sel: '#tempWrap', text: '<b>待整理</b>紧挨背包。备用箱只有两件，放进去就不攻击、不加抗性。' },
+  { sel: '#sheetNav', text: '上面只留<b>背包、寻装、市集</b>。方案和战报在旁边，需要时再打开。' },
+];
+const TRIAL_NAME: Record<'guard' | 'counter' | 'special', string> = {
+  guard: '防护委托', counter: '克制委托', special: '专项委托',
+};
+const elName = (e: string | null | undefined) => (e && e in ELEMENT_NAME ? ELEMENT_NAME[e as GearElement] : '无属性');
+function noticeRepeats(ability: string, mech: string): boolean {
+  const a = ability.replace(/\s/g, '');
+  const m = mech.replace(/\s/g, '');
+  if (!m) return true;
+  if (a.includes(m) || m.includes(a)) return true;
+  if (m.length > 10 && a.includes(m.slice(0, 12))) return true;
+  const head = (s: string) => s.split('：')[0];
+  return head(a).length >= 2 && head(a) === head(m);
+}
 
 export class App {
   game: Game | null = null;
@@ -67,6 +94,9 @@ export class App {
   private titleClassSeeded = false;
   ironman = false;
   tutStep = -1;
+  wearStep = -1;
+  sheet: 'bag' | 'trial' | 'market' = 'bag';
+  sub: 'plan' | 'report' | null = null;
   busy = false; // 防止快速连点
   cell = 60;
   /** 最近一次摇奖结果，刷新商店面板时还留在机器上。 */
@@ -122,6 +152,17 @@ export class App {
     }, { passive: false });
     window.addEventListener('pointerup', e => this.onUp(e));
     window.addEventListener('pointercancel', () => this.cancelDrag());
+    window.addEventListener('blur', () => this.cancelDrag());
+    document.querySelectorAll<HTMLButtonElement>('#sheetNav [data-sheet]').forEach(b => {
+      b.onclick = () => { this.sheet = b.dataset.sheet as 'bag' | 'trial' | 'market'; this.render(); };
+    });
+    document.querySelectorAll<HTMLButtonElement>('.subNav [data-sub]').forEach(b => {
+      b.onclick = () => {
+        const next = b.dataset.sub as 'plan' | 'report';
+        this.sub = this.sub === next ? null : next;
+        this.render();
+      };
+    });
   }
   // ---------- 存档 ----------
   private persist = (s: GameState) => {
@@ -179,7 +220,7 @@ export class App {
       </div>
       <ul class="howto">
         <li>🎒 把装备拖进背包格子，<b>放进背包才生效</b>；手机点「旋转」，电脑按 R 键旋转。</li>
-        <li>✨ 同种同级装备拖到一起即可<b>合成升级</b>。临时区的也可以直接拖到背包里那一件上。</li>
+        <li>✨ 同种同级装备拖到一起即可<b>合成升级</b>。待整理的也可以直接拖到背包里那一件上。</li>
         <li>💎 红宝石强化<b>上下左右</b>相邻的武器。</li>
         <li>⚔ 开战后装备自动攻击，征战50关、10个章节，第20关只是中段折转，第50关才是终点！</li>
         <li>🎲 两件相同的 <b>Lv3</b> 可以赌合成：${gamblePct(LV4_GAMBLE.success)}% 得到 Lv4，${gamblePct(LV4_GAMBLE.loseOne)}% 只消失拖过去的那一件。</li>
@@ -326,30 +367,57 @@ export class App {
       this.toast(`通关第${lv}关！可以花钱解锁${what}`);
       this.persist(s);
     }
-    this.renderMid(); this.renderWear(); this.renderBag(); this.renderTemp(); this.renderDetails(); this.renderShop(); this.renderStats(); this.renderTutorial();
+    this.renderMid(); this.renderEquip(); this.renderBag(); this.renderTemp(); this.renderReserve(); this.renderTrial(); this.renderPlan(); this.renderDetails(); this.renderShop(); this.renderStats(); this.applySheet(); this.renderTutorial();
+  }
+  private applySheet() {
+    const bag = this.sheet === 'bag';
+    const trial = this.sheet === 'trial';
+    const market = this.sheet === 'market';
+    $('pageBag').hidden = !bag;
+    $('pageTrial').hidden = !trial;
+    $('pageMarket').hidden = !market;
+    $('planPanel').hidden = this.sub !== 'plan';
+    $('statsPanel').hidden = this.sub !== 'report';
+    document.querySelectorAll<HTMLButtonElement>('#sheetNav [data-sheet]').forEach(b => b.classList.toggle('on', b.dataset.sheet === this.sheet));
+    document.querySelectorAll<HTMLButtonElement>('.subNav [data-sub]').forEach(b => b.classList.toggle('on', b.dataset.sub === this.sub));
   }
   renderMid() {
     const g = this.game!, s = g.s, lv = getLevel(s.level), base = MONSTER_BASE[lv.monster];
     const battle = s.phase === 'battle';
     const can = g.canStartBattle();
     const abil = lv.armor ? base.ability.replace('固定值', `${lv.armor}点`) : base.ability;
+    const mech = lv.mechSummary && !noticeRepeats(abil, lv.mechSummary) ? `<br/>⚙ ${lv.mechSummary}` : '';
     const lvLine = LEVEL_LINES[s.level] ?? '';
+    const temps = g.tempItems.length;
+    const armed = g.bagItems.some(i => { const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle'; });
+    let startLabel = '⚔ 开始战斗';
+    let startMode: 'start' | 'tidy' | 'block' = can.ok ? 'start' : 'block';
+    if (!battle && temps) { startLabel = `整理装备（${temps}）`; startMode = 'tidy'; }
+    else if (!battle && !armed) { startLabel = '配置攻击装备'; startMode = 'block'; }
     $('mid').innerHTML = `<div class="enemyCard ${lv.boss ? 'boss' : ''}">
         <div class="eName">${lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
         ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
-        <div class="eAbil">✦ ${abil}${lv.mechSummary ? `<br/>⚙ ${lv.mechSummary}` : ''}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
+        <div class="eAbil">✦ ${abil}${mech}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
       </div>
       <div class="actions">
         ${battle ? `<div class="hint">⚔ 自动战斗中……背包已锁定</div>
           <div class="speed"><button class="btn small ${this.speed === 1 ? 'gold' : ''}" id="sp1">1倍速</button><button class="btn small ${this.speed === 2 ? 'gold' : ''}" id="sp2">2倍速</button></div>`
         : `<div class="hint">${can.ok ? '准备就绪！' : '⚠ ' + can.msg}</div>
-          <button class="btn gold big ${can.ok ? '' : 'disabled'}" id="startBtn">⚔ 开始战斗</button>`}
+          <button class="btn gold big ${startMode === 'block' ? 'disabled' : ''}" id="startBtn" ${startMode === 'block' ? 'disabled' : ''}>${startLabel}</button>`}
       </div>`;
     if (battle) {
       $('sp1').onclick = () => { this.speed = 1; this.scene.setSpeed(1); this.renderMid(); };
       $('sp2').onclick = () => { this.speed = 2; this.scene.setSpeed(2); this.renderMid(); };
     } else $('startBtn').onclick = () => this.guard(() => {
+      if (startMode === 'tidy') {
+        this.sheet = 'bag';
+        this.applySheet();
+        $('tempWrap').scrollIntoView({ block: 'nearest' });
+        this.toast('先把待整理的装备放进背包、合成或出售。');
+        return;
+      }
+      if (startMode === 'block') return;
       if (this.tutStep >= 0) this.endTutorial();
       if (this.act(() => g.startBattle())) this.runBattle();
     });
@@ -360,7 +428,7 @@ export class App {
     const small = Math.min(w, h) * cell < 50;
     return `<div class="item lv${it.level} ${extra}" data-id="${it.id}" style="width:${w * cell}px;height:${h * cell}px;--c:${d.color}">
       <div class="iconWrap ${it.rotated ? 'rot' : ''}">${iconSvg(it.kind)}</div>
-      <div class="iname ${small ? 'tiny' : ''}">${d.name}</div><div class="lvBadge">Lv${it.level}</div></div>`;
+      <div class="iname ${small ? 'tiny' : ''}">${d.name}</div><div class="lvBadge">Lv${it.level}</div>${extra.includes('worn') ? '<div class="wornTag">穿戴</div>' : ''}</div>`;
   }
   renderBag() {
     const g = this.game!, s = g.s, c = this.cell;
@@ -371,7 +439,8 @@ export class App {
     html += `<div id="preview"></div>`;
     const hi = this.highlightSet();
     for (const it of g.bagItems) {
-      const cls = [this.selected === it.id ? 'sel' : '', hi.has(it.id) ? 'boosted' : '', this.drag?.active && this.drag.id === it.id ? 'dragging' : ''].join(' ');
+      const worn = it.id === s.mainHandId || it.id === s.armorId;
+      const cls = [this.selected === it.id ? 'sel' : '', hi.has(it.id) ? 'boosted' : '', worn ? 'worn' : '', this.drag?.active && this.drag.id === it.id ? 'dragging' : ''].join(' ');
       html += `<div class="placed" style="left:${it.x! * c}px;top:${it.y! * c}px">${this.itemHtml(it, c, cls)}</div>`;
     }
     bag.innerHTML = html;
@@ -382,10 +451,12 @@ export class App {
     const exp = expansionLabel(s.level, s.rows, s.cols, s.expansions);
     const offer = expansionOffer(s.expansions);
     const poor = !!offer && !exp.itemCost && s.gold < offer.cost;
+    const short = offer && !exp.itemCost ? Math.max(0, offer.cost - s.gold) : 0;
     const mark = `<span class="knitMark">吉利达</span>`;
+    const expOk = exp.canBuy && !poor && s.phase === 'prep';
     $('expand').innerHTML = !exp.canBuy
       ? `<div class="expMax">${exp.text}</div>${mark}`
-      : `<button class="expandRow ${(!poor && s.phase === 'prep') ? '' : 'disabled'}" id="expBtn" style="width:${Math.min(s.cols * c, 360)}px">➕ ${exp.text}${poor ? ' · 金币不足' : ''}</button>${mark}`;
+      : `<button class="expandRow ${expOk ? '' : 'disabled'}" id="expBtn" style="width:${Math.min(s.cols * c, 360)}px" ${expOk ? '' : 'disabled'}>➕ ${exp.text}${poor ? ` · 还差${short}金币` : ''}</button>${mark}`;
     if (exp.canBuy) $('expBtn').onclick = () => this.guard(() => {
       if (exp.itemCost) { this.showSacrificeExpand(); return; }
       const before = g.s.expansions;
@@ -445,45 +516,70 @@ export class App {
     };
     draw();
   }
-  renderWear() {
+  private slotFig(it: ItemInstance | undefined, empty: string) {
+    if (!it) return `<div class="slotEmpty">${empty}</div>`;
+    const d = ITEMS[it.kind];
+    return `<div class="slotFig" data-id="${it.id}">${iconSvg(it.kind)}<div class="lvBadge">Lv${it.level}</div><div class="wornTag">${d.category === 'armor' ? '甲' : elName(it.element)}</div></div>`;
+  }
+  renderEquip() {
     const g = this.game!; const s = g.s; const prep = s.phase === 'prep';
-    if (s.level <= 10 && !g.handItem && !g.wornArmor) { $('wear').innerHTML = ''; return; }
-    if (g.maybeGrantV4Lesson()) this.persist(g.s);
+    if (s.level > 10 && g.maybeGrantV4Lesson()) this.persist(g.s);
     const hand = g.handItem; const armor = g.wornArmor;
-    const info = chapterBossElement(s.currentChapter);
-    ensureGearTrials(s);
-    const trials = s.gearTrials?.chapter === s.currentChapter ? s.gearTrials.trials : [];
+    const cls = s.heroClass || 'merchant';
+    const open = s.level > 10;
+    const armorKind = armor && isArmorKind(armor.kind) ? armor.kind : null;
+    const resist = armorKind
+      ? ELEMENTS.map(e => `${ELEMENT_NAME[e]}${armorResist(armorKind, armor!.level)[e]}`).join(' ')
+      : '未穿甲，抗性未生效';
     const guardBtn = s.phase === 'battle' && s.level >= 11
-      ? `<button class="btn small" id="guardBtn">🛡 战术防御</button>` : '';
-    $('wear').innerHTML = `<div class="ptitle">穿戴 <small>主手不吃邻接，备用箱不生效</small></div>
-      <div class="sDesc">主手：${hand ? ITEMS[hand.kind].name + ' Lv' + hand.level + (hand.element ? ' · ' + hand.element : ' · 无属性') : '空'}</div>
-      <div class="sDesc">护甲：${armor ? ITEMS[armor.kind].name + ' Lv' + armor.level : '空'}　备用 ${g.reserveItems.length}/6</div>
-      ${info ? `<div class="sDesc">本章首领偏${info.element}，弱点偏${info.weakness}。火抗甲只减火伤，不改变火输出。</div>` : ''}
-      <div class="detBtns">
-        ${hand ? `<button class="btn small" id="offHand" ${prep ? '' : 'disabled'}>卸下主手</button>` : ''}
-        ${armor ? `<button class="btn small" id="offArmor" ${prep ? '' : 'disabled'}>卸下护甲</button>` : ''}
-        ${guardBtn}
+      ? `<button class="btn small" id="guardBtn">战术防御</button>` : '';
+    $('equip').innerHTML = `<div class="eqBoard" aria-label="人物穿戴">
+        <div class="eqSlot" id="handSlot" data-slot="hand">${this.slotFig(hand, open ? '拖入武器' : '未开启')}<span class="slotName">主手</span></div>
+        <div class="heroPreview"><img src="art/characters/${cls}/${cls}_idle_512.png" alt="" draggable="false"></div>
+        <div class="eqSlot" id="armorSlot" data-slot="armor">${this.slotFig(armor, open ? '拖入护甲' : '未开启')}<span class="slotName">护甲</span></div>
       </div>
-      <div class="detBtns">
-        <button class="btn small" id="saveA" ${prep ? '' : 'disabled'}>记下方案甲</button>
-        <button class="btn small" id="loadA" ${prep ? '' : 'disabled'}>换上方案甲</button>
-        <button class="btn small" id="saveB" ${prep ? '' : 'disabled'}>记下方案乙</button>
-        <button class="btn small" id="loadB" ${prep ? '' : 'disabled'}>换上方案乙</button>
-      </div>
-      <div class="sDesc">${(s.loadouts ?? []).map(l => `${l.name}${l.handId && !g.find(l.handId) ? '（主手失效）' : ''}${l.armorId && !g.find(l.armorId) ? '（护甲失效）' : ''}`).join(' · ') || '两套方案都还是空的'}</div>
-      ${trials.length ? `<div class="sDesc">寻装：${trials.map(t => `${t.kind}${t.claimed ? '已领' : t.ready ? '可领' : '可打'}`).join(' · ')}</div>
-        <div class="detBtns">${trials.map(t => `<button class="btn small" data-trial="${t.id}" ${prep ? '' : 'disabled'}>${t.ready && !t.claimed ? '领取' : '练习'} ${t.kind}</button>`).join('')}</div>` : ''}`;
-    if (prep) {
-      $('saveA').onclick = () => this.guard(() => this.act(() => g.saveLoadout(0)));
-      $('loadA').onclick = () => this.guard(() => this.act(() => g.applyLoadout(0)));
-      $('saveB').onclick = () => this.guard(() => this.act(() => g.saveLoadout(1)));
-      $('loadB').onclick = () => this.guard(() => this.act(() => g.applyLoadout(1)));
-    }
-    if (hand && prep) $('offHand').onclick = () => this.guard(() => this.act(() => g.unequip(hand.id)));
-    if (armor && prep) $('offArmor').onclick = () => this.guard(() => this.act(() => g.unequip(armor.id)));
+      <div class="sDesc">${hand ? `攻击倾向：${elName(hand.element)} · ${ITEMS[hand.kind].name}` : '未指定主手，背包武器正常攻击'}</div>
+      <div class="sDesc">${resist}</div>
+      ${open ? '' : '<div class="muted">通关第10关后，可以把武器和衬甲拖进槽里。格子仍被占用。</div>'}
+      ${open && !g.s.items.some(i => isArmorKind(i.kind)) ? '<button class="btn small" id="gotoTrial" type="button">暂无护甲 → 查看防护委托</button>' : ''}
+      ${guardBtn}`;
+    const handFig = document.querySelector('#handSlot .slotFig') as HTMLElement | null;
+    const armorFig = document.querySelector('#armorSlot .slotFig') as HTMLElement | null;
+    if (handFig && prep) handFig.addEventListener('pointerdown', e => this.onDown(e, handFig.dataset.id!, 'slot'));
+    if (armorFig && prep) armorFig.addEventListener('pointerdown', e => this.onDown(e, armorFig.dataset.id!, 'slot'));
+    const go = document.getElementById('gotoTrial');
+    if (go) go.onclick = () => { this.sheet = 'trial'; this.render(); };
     const gb = document.getElementById('guardBtn');
     if (gb) gb.onclick = () => { const c = this.scene?.combat; if (c) activateGuard(c); };
-    $('wear').querySelectorAll<HTMLElement>('[data-trial]').forEach(b => b.onclick = () => this.guard(() => {
+  }
+  renderReserve() {
+    const g = this.game!; const s = g.s; const prep = s.phase === 'prep';
+    const tc = Math.min(40, this.cell * 0.7);
+    const box = g.reserveItems;
+    const old = g.legacyItems;
+    $('reserveWrap').innerHTML = `<details>
+        <summary>备用 ${box.length}/${RESERVE_CAP}${old.length ? ` · 旧档暂存 ${old.length}` : ''}</summary>
+        <div id="reserveItems">${box.length ? box.map(it => this.itemHtml(it, tc, this.selected === it.id ? 'sel' : '')).join('') : '<div class="empty">空。只收武器和衬甲，放进去就不生效。</div>'}</div>
+        ${old.length ? `<div class="muted">旧档多出来的只能取出或出售，不能再放回这个暂存。</div><div id="legacyList">${old.map(it => `<div class="detBtns"><span>${ITEMS[it.kind].name} Lv${it.level}</span><button class="btn small" data-out="${it.id}" ${prep ? '' : 'disabled'}>取出</button></div>`).join('')}</div>` : ''}
+      </details>`;
+    $('reserveItems').querySelectorAll<HTMLElement>('.item').forEach(el => el.addEventListener('pointerdown', e => this.onDown(e, el.dataset.id!, 'reserve')));
+    $('reserveWrap').querySelectorAll<HTMLButtonElement>('[data-out]').forEach(b => b.onclick = () => this.guard(() => this.act(() => g.unequip(b.dataset.out!))));
+  }
+  renderTrial() {
+    const g = this.game!; const s = g.s; const prep = s.phase === 'prep';
+    if (s.level > 10) ensureGearTrials(s);
+    const info = chapterBossElement(s.currentChapter);
+    const trials = s.level > 10 && s.gearTrials?.chapter === s.currentChapter ? s.gearTrials.trials : [];
+    const locked = s.level <= 10;
+    $('pageTrial').innerHTML = `<div class="panel"><div class="ptitle">寻装</div>
+      ${locked ? '<div class="empty">通关第10关后开放。训练不改主线生命、金币和关卡。</div>' : `
+      <p class="muted">训练用满血打一局，结束回到主线原来的生命和金币。奖励领一次。</p>
+      ${trials.map(t => {
+        const label = t.claimed ? '再次练习（无奖励）' : t.ready ? '领取奖励' : '挑战委托';
+        return `<div class="detBtns"><span>${TRIAL_NAME[t.kind]}</span><button class="btn small ${t.ready && !t.claimed ? 'gold' : ''}" data-trial="${t.id}" ${prep ? '' : 'disabled'}>${label}</button></div>`;
+      }).join('')}
+      ${info ? `<details><summary>第${s.currentChapter * 5}关首领预告</summary><div class="sDesc">偏${elName(info.element)}，弱点偏${elName(info.weakness)}。火抗甲只减受到的火伤，不改变自己的火输出。</div></details>` : ''}`}</div>`;
+    $('pageTrial').querySelectorAll<HTMLElement>('[data-trial]').forEach(b => b.onclick = () => this.guard(() => {
       const id = b.dataset.trial!;
       const trial = s.gearTrials?.trials.find(t => t.id === id);
       if (trial?.ready && !trial.claimed) this.act(() => g.claimGearTrial(id));
@@ -494,12 +590,31 @@ export class App {
       }
     }));
   }
+  renderPlan() {
+    const g = this.game!; const s = g.s; const prep = s.phase === 'prep';
+    const lines = (s.loadouts ?? []).map(l => `${l.name}${l.handId && !g.find(l.handId) ? '（主手失效）' : ''}${l.armorId && !g.find(l.armorId) ? '（护甲失效）' : ''}`).join(' · ');
+    $('planPanel').innerHTML = `<div class="ptitle">方案</div>
+      <div class="sDesc">${lines || '两套方案都还是空的。只保存引用，不复制装备。'}</div>
+      <div class="detBtns">
+        <button class="btn small" id="saveA" ${prep ? '' : 'disabled'}>记下方案甲</button>
+        <button class="btn small" id="loadA" ${prep ? '' : 'disabled'}>换上方案甲</button>
+        <button class="btn small" id="saveB" ${prep ? '' : 'disabled'}>记下方案乙</button>
+        <button class="btn small" id="loadB" ${prep ? '' : 'disabled'}>换上方案乙</button>
+      </div>`;
+    if (!prep) return;
+    $('saveA').onclick = () => this.guard(() => this.act(() => g.saveLoadout(0)));
+    $('loadA').onclick = () => this.guard(() => this.act(() => g.applyLoadout(0)));
+    $('saveB').onclick = () => this.guard(() => this.act(() => g.saveLoadout(1)));
+    $('loadB').onclick = () => this.guard(() => this.act(() => g.applyLoadout(1)));
+  }
   renderTemp() {
     const g = this.game!;
     const tc = Math.min(40, this.cell * 0.7);
     const t = $('temp');
-    t.innerHTML = g.tempItems.length ? g.tempItems.map(it => this.itemHtml(it, tc, this.selected === it.id ? 'sel' : '')).join('') : `<div class="empty">空</div>`;
-    $('tempWrap').classList.toggle('hasItems', g.tempItems.length > 0);
+    const n = g.tempItems.length;
+    $('tempTitle').textContent = n ? `待整理（${n}）` : '待整理';
+    t.innerHTML = n ? g.tempItems.map(it => this.itemHtml(it, tc, this.selected === it.id ? 'sel' : '')).join('') : `<div class="empty">没有待整理的装备</div>`;
+    $('tempWrap').classList.toggle('hasItems', n > 0);
     t.querySelectorAll<HTMLElement>('.item').forEach(el => el.addEventListener('pointerdown', e => this.onDown(e, el.dataset.id!, 'temp')));
   }
   /** 选中/拖动宝石时高亮被强化的武器；选中武器时高亮强化它的宝石 */
@@ -521,44 +636,72 @@ export class App {
     document.body.classList.toggle('sheetOpen', !!it);
     if (!it) { el.innerHTML = `<div class="ptitle">🔍 装备详情</div><div class="empty">点击一件装备查看详情</div>`; return; }
     const d = ITEMS[it.kind]; const v = d.values[it.level - 1]; const { w, h } = itemSize(it.kind, it.rotated);
+    const place = itemPlace(it);
+    let status = '背包中 · 按原规则生效';
+    if (place === 'reserve' || place === 'legacy') status = '备用中 · 不参与战斗';
+    else if (place === 'temp') status = '待整理 · 不参与战斗';
+    else if (d.category === 'armor') status = `${g.s.armorId === it.id ? '已穿戴 · 抗性生效' : '未穿戴 · 抗性未生效'} · 占格${w}×${h}`;
+    else if (d.category === 'weapon' || d.category === 'needle') status = g.s.mainHandId === it.id ? '已设为主手 · 攻击生效 · 仍占原格子' : '背包武器 · 攻击生效';
     let stats = '';
     if (d.category === 'weapon' || d.category === 'needle') {
-      const b = d.category === 'weapon' ? gemBonus(g.s.items, it) : { pct: 0 };
+      const b = d.category === 'weapon' ? gemBonus(g.s.items, it) : { pct: 0, gems: [] as string[] };
       const fin = d.category === 'weapon' ? weaponDamage(g.s.items, it) : v;
-      stats = `<div>基础伤害：<b>${v}</b> · 间隔 ${d.interval}秒</div><div>宝石加成：<b class="${b.pct ? 'up' : ''}">+${b.pct}%</b>${!inBag(it) ? '（临时区不生效）' : ''}</div>
-        <div>最终伤害：<b class="up">${inBag(it) ? fin : 0}</b>${d.category === 'needle' ? ' · 附毒' : ''}</div>`;
+      const names = (b.gems ?? []).map(id => g.find(id) ? ITEMS[g.find(id)!.kind].name : '').filter(Boolean).join('、') || '无';
+      stats = `<div>伤害：<b>${v}</b> · 间隔 ${d.interval}秒 · 元素 ${elName(it.element)}</div><div>邻接：${names} · 宝石 <b class="${b.pct ? 'up' : ''}">+${b.pct}%</b>${!inBag(it) ? '（待整理不生效）' : ''}</div>
+        <div>结算伤害：<b class="up">${inBag(it) ? fin : 0}</b>${d.category === 'needle' ? ' · 附毒' : ''}</div>`;
     } else if (d.category === 'gem') {
       const n = weaponsBoostedBy(g.s.items, it).length;
       stats = `<div>加成：<b>+${v}%</b></div><div>当前强化武器：<b class="${n ? 'up' : ''}">${n}</b> 件（已高亮）</div>`;
-    } else if (d.category === 'shield') stats = `<div>护盾生成：<b>${v}</b> / ${d.interval}秒</div><div>护盾上限：${Math.floor(g.s.maxHp * ECONOMY.shieldCapRate)}${d.maxTriggers ? ` · 每场最多${d.maxTriggers}次` : ''}</div>`;
-    else if (d.category === 'potion') stats = `<div>恢复：<b>${v}</b> 生命</div><div>触发：生命 ≤ ${Math.floor(g.s.maxHp * ECONOMY.potionThreshold)}</div>`;
+    } else if (d.category === 'shield') stats = `<div>护盾：<b>${v}</b> / ${d.interval}秒</div><div>护盾上限：${Math.floor(g.s.maxHp * ECONOMY.shieldCapRate)}${d.maxTriggers ? ` · 每场最多${d.maxTriggers}次` : ''}</div><div>这是背包护盾，不是穿戴甲。</div>`;
+    else if (d.category === 'potion') stats = `<div>单次治疗：<b>${v}</b> 生命</div><div>触发：生命 ≤ ${Math.floor(g.s.maxHp * ECONOMY.potionThreshold)}</div>`;
     else if (d.category === 'heal') stats = `<div>恢复：<b>${v}</b> · 间隔 ${d.interval}秒</div><div>每场最多 ${d.maxTriggers ?? 3} 次（非药水）</div>`;
     else if (d.category === 'passive') stats = `<div>减甲：<b>${v}</b> · 持续前8秒</div>`;
-    else if (d.category === 'economy') stats = `<div>开战金&lt;30时额外：<b>+${v}</b> 金币</div>`;
-    else if (d.category === 'armor') stats = `<div>穿上才生效。抗性见说明，不提供护盾。</div><div>元素：${it.element ?? '无属性武器才有元素改造'}</div>`;
-    else if (it.kind === 'luck_charm') stats = `<div>首次加盾额外：<b>+${v}</b> · 每场一次</div>`;
+    else if (d.category === 'economy') stats = `<div>开战金低于 30 时，本场额外 <b>+${v}</b> 金币</div>`;
+    else if (d.category === 'armor' && isArmorKind(it.kind)) {
+      const kind = it.kind;
+      const r = armorResist(kind, it.level);
+      stats = `<div>${ELEMENTS.map(e => `${ELEMENT_NAME[e]} ${r[e]}`).join(' · ')}</div><div>${g.s.armorId === it.id ? '抗性已计入下一场' : '未穿戴，抗性未计入'}。衬甲不提供护盾。</div>`;
+    }
+    else if (it.kind === 'luck_charm') stats = `<div>首次加盾额外：<b>+${v}</b> · 每场一次 · 固定一级</div>`;
     else stats = `<div>胜利金币：<b>+${v}</b></div>`;
-    const nextVal = it.level < 3 ? d.values[(it.level) as 1 | 2] : d.values[3];
-    const next = it.level < 3
-      ? `<div class="nextLv">合成后 Lv${it.level + 1}：${d.category === 'gem' ? '+' + nextVal + '%' : nextVal}</div>`
-      : it.level === 3
-        ? `<div class="nextLv">拖到另一件 Lv3 上可赌 Lv4（数值 ${d.values[3]}）：${gamblePct(LV4_GAMBLE.success)}% 成功，${gamblePct(LV4_GAMBLE.loseOne)}% 只消失拖过去的那一件。</div>`
-        : it.level === 4
-          ? `<div class="nextLv">拖到另一件 Lv4 上可赌 Lv5（数值 ${d.values[4]}）：${gamblePct(LV5_GAMBLE.success)}% 成功，${gamblePct(LV5_GAMBLE.loseOne)}% 只丢一件，${gamblePct(LV5_GAMBLE.loseBoth)}% 两件都消失。</div>`
-          : `<div class="nextLv">Lv5 · 已是最高等级</div>`;
+    let next = '';
+    if (d.category === 'armor' && isArmorKind(it.kind)) {
+      const kind = it.kind;
+      next = it.level >= 5
+        ? `<div class="nextLv">已是最高等级</div>`
+        : `<div class="nextLv">升至${it.level + 1}级：${ELEMENTS.map(e => `${ELEMENT_NAME[e]} ${armorResist(kind, (it.level + 1) as Level)[e]}`).join(' · ')}</div>`;
+    } else if (it.kind === 'luck_charm') {
+      next = `<div class="nextLv">固定一级，不能合成。</div>`;
+    } else {
+      const unit = d.category === 'gem' ? '%' : d.category === 'weapon' || d.category === 'needle' ? '伤害' : d.category === 'shield' ? '护盾' : d.category === 'potion' || d.category === 'heal' ? '治疗' : '金币';
+      const nextVal = it.level < 3 ? d.values[(it.level) as 1 | 2] : d.values[3];
+      next = it.level < 3
+        ? `<div class="nextLv">升至${it.level + 1}级：${unit}${d.category === 'gem' ? '+' : ''}${nextVal}${d.category === 'gem' ? '%' : ''}</div>`
+        : it.level === 3
+          ? `<div class="nextLv">拖到另一件 Lv3 上可赌 Lv4（${unit}${d.values[3]}）：${gamblePct(LV4_GAMBLE.success)}% 成功，${gamblePct(LV4_GAMBLE.loseOne)}% 只消失拖过去的那一件。</div>`
+          : it.level === 4
+            ? `<div class="nextLv">拖到另一件 Lv4 上可赌 Lv5（${unit}${d.values[4]}）：${gamblePct(LV5_GAMBLE.success)}% 成功，${gamblePct(LV5_GAMBLE.loseOne)}% 只丢一件，${gamblePct(LV5_GAMBLE.loseBoth)}% 两件都消失。</div>`
+            : `<div class="nextLv">已是最高等级</div>`;
+    }
     const sp = sellPrice(it.kind, it.level); const confirming = this.sellConfirm?.id === it.id && this.sellConfirm.until > Date.now();
     const prep = g.s.phase === 'prep';
-    el.innerHTML = `<div class="ptitle">🔍 装备详情 <button class="iconBtn closeSheet" id="closeDet">✕</button></div>
+    const wornHand = g.s.mainHandId === it.id;
+    const wornArmor = g.s.armorId === it.id;
+    const canBox = (d.category === 'weapon' || d.category === 'needle' || d.category === 'armor') && place !== 'legacy';
+    el.innerHTML = `<div class="ptitle">装备详情 <button class="iconBtn closeSheet" id="closeDet">✕</button></div>
       <div class="detHead"><div class="detIcon lv${it.level}" style="--c:${d.color}">${iconSvg(it.kind)}<div class="lvBadge">Lv${it.level}</div></div>
-      <div><div class="detName">${d.name} <span class="lvTxt">Lv${it.level}</span></div><div class="muted">占格 ${w}×${h}${d.rotatable ? ' · 可旋转' : ''} · ${itemPlace(it) === 'bag' ? '背包中（生效）' : itemPlace(it) === 'hand' ? '主手（不吃邻接）' : itemPlace(it) === 'armor' ? '已穿戴' : itemPlace(it) === 'reserve' ? '备用箱（不生效）' : '临时区（不生效）'}</div></div></div>
+      <div><div class="detName">${d.name} <span class="lvTxt">Lv${it.level}</span></div><div class="muted">占格 ${w}×${h}${d.rotatable ? ' · 可旋转' : ''} · ${status}</div></div></div>
       <div class="desc">${d.desc(v)}</div><div class="statsBox">${stats}${next}</div>
       <div class="detBtns">
-        ${d.rotatable ? `<button class="btn small" id="dRot" ${prep ? '' : 'disabled'}>⟳ 旋转</button>` : ''}
-        ${inBag(it) ? `<button class="btn small" id="dTemp" ${prep ? '' : 'disabled'}>移到临时区</button>` : `<button class="btn small gold" id="dPlace" ${prep ? '' : 'disabled'}>放入背包</button>`}
-        ${(d.category === 'weapon' || d.category === 'needle') ? `<button class="btn small" id="dHand" ${prep ? '' : 'disabled'}>设为主手</button><button class="btn small" id="dBox" ${prep ? '' : 'disabled'}>放入备用箱</button>` : ''}
-        ${d.category === 'armor' ? `<button class="btn small" id="dArmor" ${prep ? '' : 'disabled'}>穿上</button><button class="btn small" id="dBox" ${prep ? '' : 'disabled'}>放入备用箱</button>` : ''}
+        ${inBag(it) ? `<button class="btn small" id="dTemp" ${prep ? '' : 'disabled'}>移到待整理</button>` : `<button class="btn small gold" id="dPlace" ${prep ? '' : 'disabled'}>放入背包</button>`}
+        ${(d.category === 'weapon' || d.category === 'needle') ? `<button class="btn small" id="dHand" ${prep ? '' : 'disabled'}>${wornHand ? '卸下主手' : '设为主手'}</button>` : ''}
+        ${d.category === 'armor' ? `<button class="btn small" id="dArmor" ${prep ? '' : 'disabled'}>${wornArmor ? '卸下护甲' : '穿上'}</button>` : ''}
         <button class="btn small ${confirming ? 'danger' : ''}" id="dSell" ${prep ? '' : 'disabled'}>${confirming ? `确认出售？+${sp}金币` : `出售 +${sp}金币`}</button>
-      </div>`;
+      </div>
+      <details><summary>更多</summary><div class="detBtns">
+        ${d.rotatable ? `<button class="btn small" id="dRot" ${prep ? '' : 'disabled'}>旋转</button>` : ''}
+        ${canBox ? `<button class="btn small" id="dBox" ${prep ? '' : 'disabled'}>放入备用箱</button>` : ''}
+      </div></details>`;
     $('closeDet').onclick = () => { this.selected = null; this.render(); };
     if (d.rotatable) $('dRot').onclick = () => this.act(() => g.rotate(it.id));
     if (inBag(it)) $('dTemp').onclick = () => this.act(() => g.toTemp(it.id));
@@ -566,8 +709,8 @@ export class App {
     const dHand = document.getElementById('dHand');
     const dArmor = document.getElementById('dArmor');
     const dBox = document.getElementById('dBox');
-    if (dHand) dHand.onclick = () => this.act(() => g.equipHand(it.id));
-    if (dArmor) dArmor.onclick = () => this.act(() => g.equipArmor(it.id));
+    if (dHand) dHand.onclick = () => this.act(() => wornHand ? g.unequip(it.id) : g.equipHand(it.id));
+    if (dArmor) dArmor.onclick = () => this.act(() => wornArmor ? g.unequip(it.id) : g.equipArmor(it.id));
     if (dBox) dBox.onclick = () => this.act(() => g.toReserve(it.id));
     $('dSell').onclick = () => this.guard(() => {
       if (confirming) { this.sellConfirm = null; this.selected = null; this.act(() => g.sell(it.id), sfx.coin); }
@@ -584,17 +727,30 @@ export class App {
   renderShop() {
     const g = this.game!, s = g.s, prep = s.phase === 'prep';
     const rc = refreshCost(s.shop.refreshes, s.doctrine, s.heroClass, s.level);
-    $('shop').innerHTML = `<div class="ptitle">🏪 商店 <small>购买的装备进入临时区</small></div>
+    const picked = this.selected ? g.find(this.selected) : undefined;
+    const canImprint = !!picked && (ITEMS[picked.kind].category === 'weapon' || ITEMS[picked.kind].category === 'needle') && s.level > 10;
+    const imprint = `<div class="slotBox"><div class="sName">元素改造</div>
+      <div class="sDesc">${canImprint ? `当前 ${ITEMS[picked!.kind].name} · ${elName(picked!.element)}。每章 10 金一次。` : '先选中一把武器。每章 10 金一次。火抗甲不改变火输出。'}</div>
+      <div class="detBtns">${[{ id: '', label: '无属性' }, ...ELEMENTS.map(e => ({ id: e, label: ELEMENT_NAME[e] }))].map(e => `<button class="btn small" data-imprint="${e.id}" ${canImprint && prep ? '' : 'disabled'}>${e.label}</button>`).join('')}</div></div>`;
+    $('shop').innerHTML = `<div class="ptitle">市集 <small>买到的装备进入待整理</small></div>
       <div class="shopRow">${s.shop.slots.map((sl, i) => {
         const p = buyPrice(sl.kind, sl.level, s.heroClass); const poor = s.gold < p; const d = ITEMS[sl.kind];
+        const short = Math.max(0, p - s.gold);
         return `<div class="shopCard ${sl.bought ? 'bought' : ''}"><div class="detIcon lv${sl.level}" style="--c:${d.color}">${iconSvg(sl.kind)}<div class="lvBadge">Lv${sl.level}</div></div>
           <div class="sName">${d.name} Lv${sl.level}</div><div class="sDesc">${d.desc(d.values[sl.level - 1])}</div>
-          <button class="btn small ${sl.bought ? '' : 'gold'}" data-buy="${i}" ${sl.bought || poor || !prep ? 'disabled' : ''}>${sl.bought ? '已购买' : poor ? `金币不足（${p}）` : `<span class="coin"></span>${p} 购买`}</button></div>`;
+          <button class="btn small ${sl.bought ? '' : 'gold'}" data-buy="${i}" ${sl.bought || poor || !prep ? 'disabled' : ''}>${sl.bought ? '已购买' : poor ? `还差${short}金币` : `<span class="coin"></span>${p} 购买`}</button></div>`;
       }).join('')}</div>
-      <button class="btn small wideBtn" id="refBtn" ${s.gold < rc || !prep ? 'disabled' : ''}>🔄 刷新商店 · <span class="coin"></span>${rc}${s.gold < rc ? '（金币不足）' : ''}</button>
-      ${this.slotHtml(prep)}`;
+      <button class="btn small wideBtn" id="refBtn" ${s.gold < rc || !prep ? 'disabled' : ''}>刷新商店 · <span class="coin"></span>${rc}${s.gold < rc ? `（还差${rc - s.gold}金币）` : ''}</button>
+      ${imprint}
+      <details class="slotFold"><summary>摇奖机</summary>${this.slotHtml(prep)}</details>`;
     $('shop').querySelectorAll<HTMLElement>('[data-buy]').forEach(b => (b.onclick = () => this.guard(() => this.act(() => g.buy(+b.dataset.buy!), sfx.coin))));
     $('refBtn').onclick = () => this.guard(() => this.act(() => g.refreshShop(), sfx.coin));
+    $('shop').querySelectorAll<HTMLButtonElement>('[data-imprint]').forEach(b => b.onclick = () => this.guard(() => {
+      if (!picked) return;
+      const raw = b.dataset.imprint || '';
+      const element = (ELEMENTS as readonly string[]).includes(raw) ? raw as GearElement : null;
+      this.act(() => g.imprint(picked.id, element));
+    }));
     $('slotBtn').onclick = () => this.guard(() => this.act(() => {
       const r = g.pullSlot();
       if (r.ok) this.slotMsg = r.msg ?? '摇完了';
@@ -610,7 +766,7 @@ export class App {
       <div class="sName">🎰 守财奴摇奖机</div>
       <div class="sDesc">${slotBlurb()}</div>
       ${msg}
-      <button class="btn small gold wideBtn" id="slotBtn" ${poor || !prep ? 'disabled' : ''}>${poor ? `金币不足（${cost}）` : `摇一次 · <span class="coin"></span>${cost}`}</button>
+      <button class="btn small gold wideBtn" id="slotBtn" ${poor || !prep ? 'disabled' : ''}>${poor ? `还差${cost - s.gold}金币` : `摇一次 · <span class="coin"></span>${cost}`}</button>
     </div>`;
   }
   renderStats() {
@@ -626,19 +782,39 @@ export class App {
   renderTutorial() {
     document.querySelectorAll('.tutTarget').forEach(e => e.classList.remove('tutTarget'));
     document.getElementById('tutBubble')?.remove();
-    if (this.tutStep < 0 || this.game?.s.phase !== 'prep') return;
-    const st = TUTORIAL[this.tutStep]; const target = document.querySelector(st.sel); if (!target) return;
+    const s = this.game?.s;
+    if (!s || s.phase !== 'prep') return;
+    if (this.tutStep >= 0) {
+      const st = TUTORIAL[this.tutStep]; const target = document.querySelector(st.sel); if (!target) return;
+      this.placeTut(target, st.text, this.tutStep < TUTORIAL.length - 1, () => this.endTutorial(), () => {
+        this.tutStep++; if (this.tutStep >= TUTORIAL.length) this.endTutorial(); else this.renderTutorial();
+      });
+      return;
+    }
+    if (s.level >= 11 && !this.settings.wearLessonDone && this.wearStep < 0 && this.tutStep < 0) {
+      this.wearStep = 0;
+      this.sheet = 'bag';
+      this.applySheet();
+    }
+    if (this.wearStep < 0 || this.settings.wearLessonDone) return;
+    const st = WEAR_TUTORIAL[this.wearStep]; const target = document.querySelector(st.sel); if (!target) return;
+    this.placeTut(target, st.text, this.wearStep < WEAR_TUTORIAL.length - 1, () => this.endWearLesson(), () => {
+      this.wearStep++; if (this.wearStep >= WEAR_TUTORIAL.length) this.endWearLesson(); else this.renderTutorial();
+    });
+  }
+  private placeTut(target: Element, text: string, more: boolean, skip: () => void, next: () => void) {
     target.classList.add('tutTarget');
     const b = document.createElement('div'); b.id = 'tutBubble';
-    b.innerHTML = `<div>${st.text}</div><div class="tutBtns"><button class="btn small" id="tutSkip">跳过引导</button><button class="btn small gold" id="tutNext">${this.tutStep < TUTORIAL.length - 1 ? '下一步' : '知道了'}</button></div>`;
-    (st.sel === '#bag' ? $('bagWrap') : $('mid')).appendChild(b);
-    $('tutSkip').onclick = () => this.endTutorial();
-    $('tutNext').onclick = () => { this.tutStep++; if (this.tutStep >= TUTORIAL.length) this.endTutorial(); else this.renderTutorial(); };
+    b.innerHTML = `<div>${text}</div><div class="tutBtns"><button class="btn small" id="tutSkip">跳过引导</button><button class="btn small gold" id="tutNext">${more ? '下一步' : '知道了'}</button></div>`;
+    (target.id === 'bag' ? $('bagWrap') : target).appendChild(b);
+    $('tutSkip').onclick = () => skip();
+    $('tutNext').onclick = () => next();
   }
   endTutorial() { this.tutStep = -1; this.settings.tutorialDone = true; this.saveSettings(); this.renderTutorial(); }
+  endWearLesson() { this.wearStep = -1; this.settings.wearLessonDone = true; this.saveSettings(); this.renderTutorial(); }
 
   // ---------- 拖动 ----------
-  onDown(e: PointerEvent, id: string, from: 'bag' | 'temp') {
+  onDown(e: PointerEvent, id: string, from: DragFrom) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     const touch = e.pointerType !== 'mouse';
     if (!touch) e.preventDefault();
@@ -702,6 +878,34 @@ export class App {
     const under = document.elementFromPoint(px, py) as HTMLElement | null;
     d.ghost!.style.display = '';
     d.drop = null;
+    const cat = ITEMS[it.kind].category;
+    const slotEl = under?.closest('#handSlot, #armorSlot') as HTMLElement | null;
+    if (slotEl) {
+      const slot = slotEl.id === 'handSlot' ? 'hand' as const : 'armor' as const;
+      let ok = true;
+      let reason = '';
+      let land: { x: number; y: number } | null = null;
+      if (g.s.level <= 10) { ok = false; reason = '通关第10关后才能穿戴'; }
+      else if (slot === 'hand' && cat !== 'weapon' && cat !== 'needle') { ok = false; reason = '主手只能装武器'; }
+      else if (slot === 'armor' && cat !== 'armor') { ok = false; reason = '护甲槽只接受衬甲'; }
+      else if (!inBag(it)) {
+        const spot = findSpot(g.s.items, g.s.cols, g.s.rows, it.kind, it.id);
+        if (!spot) { ok = false; reason = '背包空间不足，先整理'; }
+        else land = { x: spot.x, y: spot.y };
+      }
+      d.drop = { type: 'wear', slot, ok, reason, land };
+      return;
+    }
+    if (under?.closest('#reserveWrap') && !under.closest('#legacyList')) {
+      const full = itemPlace(it) !== 'reserve' && g.reserveItems.length >= RESERVE_CAP;
+      const okType = cat === 'weapon' || cat === 'needle' || cat === 'armor';
+      let reason = '';
+      if (it.bin === 'legacy') reason = '旧档暂存只能取出或出售';
+      else if (!okType) reason = '备用箱只收武器和护甲';
+      else if (full) reason = '备用箱已满，请先取出或出售';
+      d.drop = { type: 'reserve', ok: !reason, reason };
+      return;
+    }
     const targetEl = under?.closest('.item') as HTMLElement | null;
     const bagRect = $('bag').getBoundingClientRect();
     const inGrid = px >= bagRect.left && px < bagRect.right && py >= bagRect.top && py < bagRect.bottom;
@@ -717,7 +921,7 @@ export class App {
     }
     if (inGrid) {
       const cx = Math.floor((px - bagRect.left) / this.cell) - d.grabDx, cy = Math.floor((py - bagRect.top) / this.cell) - d.grabDy;
-      d.drop = { type: 'place', x: cx, y: cy, ok: canPlace(g.s.items, g.s.cols, g.s.rows, it.kind, cx, cy, d.rotated, it.id) };
+      d.drop = { type: 'place', x: cx, y: cy, ok: canPlace(g.s.items, g.s.cols, g.s.rows, it.kind, cx, cy, d.rotated, it.id), unequip: d.from === 'slot' };
       return;
     }
     if (under?.closest('#tempWrap')) d.drop = { type: 'temp' };
@@ -732,11 +936,22 @@ export class App {
       }
     }
     $('tempWrap').classList.toggle('dropHere', d.drop?.type === 'temp');
+    document.querySelectorAll('.eqSlot').forEach(e => e.classList.remove('hot', 'bad'));
+    $('reserveWrap').classList.toggle('dropHere', d.drop?.type === 'reserve' && d.drop.ok);
     let tip = '';
-    if (d.drop?.type === 'place') {
+    if (d.drop?.type === 'wear') {
+      document.getElementById(d.drop.slot === 'hand' ? 'handSlot' : 'armorSlot')?.classList.add(d.drop.ok ? 'hot' : 'bad');
+      if (d.drop.land) {
+        for (const c of occupiedCells(it.kind, d.drop.land.x, d.drop.land.y, d.rotated))
+          html += `<div class="pv ok" style="left:${c.x * this.cell}px;top:${c.y * this.cell}px"></div>`;
+      }
+      tip = d.drop.ok ? '松开穿戴' : (d.drop.reason ?? '');
+    } else if (d.drop?.type === 'reserve') {
+      tip = d.drop.ok ? '放入备用，不生效' : (d.drop.reason ?? '');
+    } else if (d.drop?.type === 'place') {
       for (const c of occupiedCells(it.kind, d.drop.x, d.drop.y, d.rotated))
         if (c.x >= 0 && c.y >= 0 && c.x < g.s.cols && c.y < g.s.rows) html += `<div class="pv ${d.drop.ok ? 'ok' : 'bad'}" style="left:${c.x * this.cell}px;top:${c.y * this.cell}px"></div>`;
-      tip = d.drop.ok ? '' : '这里放不下';
+      tip = d.drop.ok ? (d.drop.unequip ? '卸下' : '') : '这里放不下';
     } else if (d.drop?.type === 'merge') {
       document.querySelectorAll(`.item[data-id="${d.drop.targetId}"]`).forEach(e => { if (!e.closest('.ghost')) e.classList.add((d.drop as any).ok ? 'mergeTarget' : 'mergeBad'); });
       if (d.drop.ok && d.drop.gamble) {
@@ -748,7 +963,7 @@ export class App {
       }
       else if (d.drop.ok) { const def = ITEMS[it.kind]; const nv = def.values[it.level as number]; tip = `✨ 合成预览：${def.name} Lv${it.level + 1}（${def.category === 'gem' ? '+' + nv + '%' : def.category === 'weapon' ? '伤害' + nv : def.category === 'shield' ? '护盾' + nv : def.category === 'potion' ? '治疗' + nv : '金币+' + nv}）`; }
       else tip = d.drop.reason ?? '';
-    } else if (d.drop?.type === 'temp') tip = '放回临时区';
+    } else if (d.drop?.type === 'temp') tip = '放到待整理';
     pv.innerHTML = html;
     // 宝石高亮预览
     const hi = this.highlightSet();
@@ -764,12 +979,13 @@ export class App {
     const g = this.game!;
     if (!d.active) { // 点击 → 查看详情
       this.releaseDrag(false);
-      if (!(e.target as HTMLElement).closest('.item')) return;
+      if (!(e.target as HTMLElement).closest('.item, .slotFig')) return;
       this.selected = this.selected === d.id ? null : d.id; this.sellConfirm = null; sfx.click(); this.render(); return;
     }
     this.computeDrop(e.clientX, e.clientY);
     const drop = d.drop; d.ghost?.remove(); this.drag = null;
     $('tempWrap').classList.remove('dropHere');
+    $('reserveWrap').classList.remove('dropHere');
     if (!drop) { sfx.drop(); this.render(); return; } // 无效位置：回到原处
     if (drop.type === 'merge') {
       const src = g.find(d.id); const tgt = g.find(drop.targetId);
@@ -779,8 +995,19 @@ export class App {
       if (drop.ok) { if (this.act(() => g.merge(d.id, drop.targetId), sfx.merge)) { this.selected = drop.targetId; this.render(); this.flashMerge(drop.targetId); } }
       else { sfx.error(); this.toast(drop.reason ?? '需要相同种类和等级才能合成。', true); this.render(); }
     } else if (drop.type === 'place') {
-      if (drop.ok) this.act(() => g.move(d.id, drop.x, drop.y, d.rotated), sfx.drop);
-      else { sfx.error(); this.toast('这里放不下。', true); this.render(); }
+      if (!drop.ok) { sfx.error(); this.toast('这里放不下。', true); this.render(); return; }
+      const it = g.find(d.id)!;
+      const same = inBag(it) && it.x === drop.x && it.y === drop.y && it.rotated === d.rotated;
+      if (!same && !this.act(() => g.move(d.id, drop.x, drop.y, d.rotated), sfx.drop)) return;
+      if (drop.unequip) this.act(() => g.unequip(d.id), sfx.drop);
+      else if (same) this.render();
+    } else if (drop.type === 'wear') {
+      if (!drop.ok) { sfx.error(); this.toast(drop.reason || '不能穿上', true); this.render(); return; }
+      this.act(() => drop.slot === 'hand' ? g.equipHand(d.id) : g.equipArmor(d.id), sfx.drop);
+    } else if (drop.type === 'reserve') {
+      if (!drop.ok) { sfx.error(); this.toast(drop.reason || '放不进备用箱', true); this.render(); return; }
+      if (itemPlace(g.find(d.id)!) === 'reserve') { this.render(); return; }
+      this.act(() => g.toReserve(d.id), sfx.drop);
     } else { if (inBag(g.find(d.id)!)) this.act(() => g.toTemp(d.id), sfx.drop); else this.render(); }
   }
   private releaseDrag(render: boolean) {
@@ -798,7 +1025,7 @@ export class App {
     const g = this.game!;
     const src = g.find(sourceId); const tgt = g.find(targetId);
     if (!src || !tgt) return;
-    const nameOf = (e: string | null | undefined) => e === 'metal' ? '金' : e === 'wood' ? '木' : e === 'water' ? '水' : e === 'fire' ? '火' : e === 'earth' ? '土' : '无属性';
+    const nameOf = elName;
     const ov = $('overlay');
     ov.className = 'show';
     ov.innerHTML = `<div class="modal"><h3>保留哪种元素</h3>
@@ -1361,7 +1588,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.7.1 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

@@ -20,8 +20,8 @@ export interface ItemInstance {
   burdenMaxHpPct?: number;
   /** 武器元素改造。缺省是无属性。旧档不填。 */
   element?: 'metal' | 'wood' | 'water' | 'fire' | 'earth' | null;
-  /** 不在格子上时的归属。缺省且没有坐标就是临时区。 */
-  bin?: 'hand' | 'armor' | 'reserve';
+  /** 不在格子上时的归属。reserve 是备用箱，legacy 是旧档超额暂存。穿戴不再用 bin 把物品移出背包。 */
+  bin?: 'reserve' | 'legacy' | 'hand' | 'armor';
 }
 export interface ShopSlot { kind: ItemKind; level: Level; bought: boolean; }
 export type Phase = 'prep' | 'battle' | 'loot' | 'camp' | 'victory' | 'defeat' | 'event' | 'route';
@@ -169,6 +169,10 @@ export interface GameState {
   loadouts?: { name: string; handId: string | null; armorId: string | null; autoGuard: boolean }[];
   gearTrials?: { chapter: number; trials: { id: string; kind: 'guard' | 'counter' | 'special'; claimed: boolean; ready: boolean }[] } | null;
   gearFight?: { trialId: string; hp: number } | null;
+  /** 主手引用，物品仍在背包原格。 */
+  mainHandId?: string | null;
+  /** 护甲引用，物品仍在背包原格。 */
+  armorId?: string | null;
 }
 export type HeroClass = 'merchant' | 'guard' | 'ranger';
 export type CampKind = 'chapter' | 'final';
@@ -177,4 +181,4 @@ export interface PendingChoice { id: string; options: string[] }
 /** 援助整备：同一检查点只生成一次候选 */
 export interface AssistState { level: number; attempt: number; options: { kind: ItemKind; level: Level }[]; used: boolean }
 export interface CompletionRecord { type: 'pure' | 'assisted' | 'ironman'; ending: string | null; retries: number; level: number }
-export interface Settings { sound: boolean; tutorialDone: boolean; openingSeen?: boolean; voice: number; openingFor?: HeroClass; }
+export interface Settings { sound: boolean; tutorialDone: boolean; openingSeen?: boolean; voice: number; openingFor?: HeroClass; wearLessonDone?: boolean; }

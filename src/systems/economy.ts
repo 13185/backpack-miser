@@ -58,13 +58,16 @@ export function expansionUnlocked(level: number, expansions: number): boolean {
 export function expansionLabel(level: number, rows: number, cols: number, expansions: number): { text: string; canBuy: boolean; locked: boolean; itemCost: boolean } {
   const offer = expansionOffer(expansions);
   if (!offer) return { text: `背包已到本局上限（${cols}×${rows}）`, canBuy: false, locked: false, itemCost: false };
-  const what = offer.axis === 'col' ? `第${cols + 1}列` : `第${rows + 1}行`;
+  const nextCols = offer.axis === 'col' ? cols + 1 : cols;
+  const nextRows = offer.axis === 'row' ? rows + 1 : rows;
+  const added = offer.axis === 'col' ? rows : cols;
+  const size = `当前${cols}列×${rows}行 → 扩至${nextCols}列×${nextRows}行；新增${added}格`;
   if (level <= offer.unlockAfterLevel) {
-    return { text: `通关第${offer.unlockAfterLevel}关解锁${what}`, canBuy: false, locked: true, itemCost: !!offer.itemCost };
+    return { text: `通关第${offer.unlockAfterLevel}关后可${size}`, canBuy: false, locked: true, itemCost: !!offer.itemCost };
   }
   if (offer.itemCost) {
-    return { text: `献祭扩容：新增${what}（${cols}×${rows}） · 4件Lv3 或 2件Lv4 或 1件Lv5`, canBuy: true, locked: false, itemCost: true };
+    return { text: `献祭扩容：${size} · 4件Lv3 或 2件Lv4 或 1件Lv5`, canBuy: true, locked: false, itemCost: true };
   }
-  return { text: `扩容：新增${what}（${cols}×${rows}） · ${offer.cost} 金币`, canBuy: true, locked: false, itemCost: false };
+  return { text: `扩容：${size} · ${offer.cost} 金币`, canBuy: true, locked: false, itemCost: false };
 }
 export function canAfford(gold: number, cost: number): boolean { return cost >= 0 && gold >= cost; }

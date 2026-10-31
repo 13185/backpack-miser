@@ -218,7 +218,7 @@ describe('经济与流程', () => {
   });
   it('有临时区装备或无武器时不能开战；开战后不能操作', () => {
     const g = new Game(newGameState(5)); g.s.gold = 100; g.buy(0);
-    expect(g.startBattle()).toEqual({ ok: false, msg: '请先处理临时区装备。' });
+    expect(g.startBattle()).toEqual({ ok: false, msg: '请先处理待整理的装备。' });
     g.sell(g.tempItems[0].id);
     g.toTemp(g.s.items[0].id); g.sell(g.s.items[0].id);
     expect(g.startBattle()).toEqual({ ok: false, msg: '至少装备一把武器才能战斗。' });

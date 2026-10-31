@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { splitDirect, splitIncoming } from '../src/config/v4/elements';
 import { getLevel } from '../src/config/v3/levels';
-import { Game, newGameState } from '../src/systems/game';
+import { Game, RESERVE_CAP, newGameState } from '../src/systems/game';
 import { activateGuard, createCombat, simulate, stepCombat } from '../src/systems/combat';
+import { ITEMS } from '../src/config/items';
+import { weaponDamage } from '../src/systems/adjacency';
 import { itemPlace } from '../src/systems/placement';
 import { nextRandom } from '../src/systems/rng';
 import { isArmorKind } from '../src/config/v4/armor';
+import { migrateV3 } from '../src/systems/save';
 
 describe('V4 元素公式', () => {
   it('无属性保持原值，火打高抗变少，水打负抗变多，火打木略增', () => {
@@ -18,33 +21,100 @@ describe('V4 元素公式', () => {
   });
 });
 
-describe('V4 归属', () => {
-  it('主手只在一处，备用箱不进战斗，卸下进临时区', () => {
-    const g = new Game(newGameState(1));
-    const dagger = g.s.items.find(i => i.kind === 'dagger')!;
+describe('V4.1 穿戴引用', () => {
+  it('主手留在原格，只生成一个攻击者，邻接仍然计入', () => {
+    const g = new Game(newGameState(1, { heroClass: 'ranger' }));
+    g.s.items = [
+      { id: 'd', kind: 'dagger', level: 1, x: 0, y: 0, rotated: false },
+      { id: 'r', kind: 'ruby', level: 1, x: 1, y: 0, rotated: false },
+    ];
+    const dagger = g.find('d')!;
+    const x = dagger.x!;
+    const y = dagger.y!;
+    const marked = weaponDamage(g.s.items, dagger);
+    expect(marked).toBeGreaterThan(ITEMS.dagger.values[0]);
     expect(g.equipHand(dagger.id).ok).toBe(true);
-    expect(itemPlace(dagger)).toBe('hand');
-    expect(g.bagItems.some(i => i.id === dagger.id)).toBe(false);
-    expect(g.tempItems.some(i => i.id === dagger.id)).toBe(false);
+    expect(itemPlace(dagger)).toBe('bag');
+    expect(dagger.x).toBe(x);
+    expect(dagger.y).toBe(y);
+    expect(g.s.mainHandId).toBe(dagger.id);
     const c = g.makeCombat();
-    expect(c.actors.filter(a => a.id === dagger.id)).toHaveLength(1);
+    const actors = c.actors.filter(a => a.id === dagger.id);
+    expect(actors).toHaveLength(1);
+    expect(actors[0].value).toBe(marked);
     expect(g.toReserve(dagger.id).ok).toBe(true);
-    const quiet = g.makeCombat();
-    expect(quiet.actors.some(a => a.id === dagger.id)).toBe(false);
+    expect(g.s.mainHandId).toBeNull();
+    expect(g.makeCombat().actors.some(a => a.id === dagger.id)).toBe(false);
     expect(g.unequip(dagger.id).ok).toBe(true);
     expect(itemPlace(dagger)).toBe('temp');
   });
 
-  it('护甲在背包不提供抗性，穿上才有', () => {
+  it('护甲未引用时没有抗性，穿上后仍占格', () => {
     const g = new Game(newGameState(2));
     const it = g.addTemp('furnace_lining', 3);
-    const bare = createCombat(g.s.items, 100, 100, getLevel(1));
-    expect(bare.playerResist.fire).toBe(0);
-    g.equipArmor(it.id);
-    const worn = g.makeCombat();
-    expect(worn.playerResist.fire).toBe(40);
-    g.toReserve(it.id);
+    expect(createCombat(g.s.items, 100, 100, getLevel(1)).playerResist.fire).toBe(0);
+    expect(g.equipArmor(it.id).ok).toBe(true);
+    expect(itemPlace(it)).toBe('bag');
+    expect(g.s.armorId).toBe(it.id);
+    expect(g.makeCombat().playerResist.fire).toBe(40);
+    const x = it.x; const y = it.y;
+    expect(g.unequip(it.id).ok).toBe(true);
+    expect(it.x).toBe(x);
+    expect(it.y).toBe(y);
     expect(g.makeCombat().playerResist.fire).toBe(0);
+    expect(g.toReserve(it.id).ok).toBe(true);
+    expect(g.makeCombat().playerResist.fire).toBe(0);
+  });
+
+  it('备用箱只有两件，多出来的不能再塞进去', () => {
+    const g = new Game(newGameState(3));
+    const a = g.addTemp('dagger', 1);
+    const b = g.addTemp('dagger', 1);
+    const c = g.addTemp('dagger', 1);
+    expect(RESERVE_CAP).toBe(2);
+    expect(g.toReserve(a.id).ok).toBe(true);
+    expect(g.toReserve(b.id).ok).toBe(true);
+    expect(g.toReserve(c.id).ok).toBe(false);
+    expect(itemPlace(c)).toBe('temp');
+    expect(g.reserveItems).toHaveLength(2);
+  });
+
+  it('旧档主手放回格子，超额备用进只取出暂存', () => {
+    const s = newGameState(4);
+    const dagger = s.items.find(i => i.kind === 'dagger')!;
+    dagger.bin = 'hand';
+    dagger.x = null;
+    dagger.y = null;
+    s.items.push(
+      { id: 'r1', kind: 'dagger', level: 1, x: null, y: null, rotated: false, bin: 'reserve' },
+      { id: 'r2', kind: 'dagger', level: 1, x: null, y: null, rotated: false, bin: 'reserve' },
+      { id: 'r3', kind: 'dagger', level: 1, x: null, y: null, rotated: false, bin: 'reserve' },
+    );
+    migrateV3(s);
+    expect(s.mainHandId).toBe(dagger.id);
+    expect(itemPlace(dagger)).toBe('bag');
+    expect(s.items.filter(i => i.bin === 'reserve')).toHaveLength(2);
+    expect(s.items.find(i => i.id === 'r3')?.bin).toBe('legacy');
+    const g = new Game(s);
+    expect(g.makeCombat().actors.filter(a => a.id === dagger.id)).toHaveLength(1);
+    expect(g.toReserve('r3').ok).toBe(false);
+    expect(g.unequip('r3').ok).toBe(true);
+    expect(itemPlace(g.find('r3')!)).toBe('temp');
+    migrateV3(s);
+    expect(s.items.filter(i => i.id === dagger.id)).toHaveLength(1);
+  });
+
+  it('待整理拖进槽之前，没有格子就拒绝', () => {
+    const g = new Game(newGameState(5));
+    g.s.cols = 1;
+    g.s.rows = 2;
+    g.s.items = [{ id: 'd', kind: 'dagger', level: 1, x: 0, y: 0, rotated: false }];
+    const extra = g.addTemp('dagger', 1);
+    expect(g.equipHand(extra.id).ok).toBe(false);
+    expect(g.s.mainHandId ?? null).toBeNull();
+    expect(itemPlace(extra)).toBe('temp');
+    expect(g.equipHand('d').ok).toBe(true);
+    expect(g.find('d')?.x).toBe(0);
   });
 });
 

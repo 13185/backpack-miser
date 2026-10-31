@@ -6,7 +6,6 @@ import { doctrineT01Mult } from '../config/v3/doctrines';
 import { HEART_TUNE, seasonedMult } from '../config/v3/campaign';
 import { emptyResist, splitDirect, splitIncoming, type Element } from '../config/v4/elements';
 import { armorResist, isArmorKind } from '../config/v4/armor';
-import { itemPlace } from './placement';
 import type { ItemInstance, ItemKind, RuneInstance } from '../models/types';
 import { weaponDamage, bannerShorten, gemBonus } from './adjacency';
 import { inBag } from './placement';
@@ -171,6 +170,8 @@ export interface CombatMods {
   startGold?: number;
   heroClass?: string | null;
   autoGuard?: boolean;
+  /** 护甲槽引用。物品必须仍在背包里才计入抗性。 */
+  armorId?: string | null;
 }
 
 const ms = (s: number) => Math.round(s * 1000);
@@ -248,15 +249,14 @@ function tryAutoGuard(s: CombatState) {
 
 export function createCombat(items: ItemInstance[], hp: number, maxHp: number, lv: LevelDef, mods: CombatMods = {}): CombatState {
   const bag = items.filter(inBag).map(i => ({ ...i })).sort((a, b) => a.y! - b.y! || a.x! - b.x!);
-  const hand = items.find(i => itemPlace(i) === 'hand');
-  const worn = items.find(i => itemPlace(i) === 'armor' && isArmorKind(i.kind));
+  const worn = mods.armorId ? bag.find(i => i.id === mods.armorId && isArmorKind(i.kind)) : undefined;
   const runes = (mods.runes ?? []).filter(r => r.itemId);
   const relics = mods.relics ?? [];
   const doctrine = mods.doctrine ?? null;
   const weaponCount = bag.filter(i => {
     const c = ITEMS[i.kind].category;
     return c === 'weapon' || c === 'needle';
-  }).length + (hand && (ITEMS[hand.kind].category === 'weapon' || ITEMS[hand.kind].category === 'needle') ? 1 : 0);
+  }).length;
   const doctrineMult = doctrine === 'T01' ? doctrineT01Mult(weaponCount) : 1;
   let doctrineShorten = 0;
   if (doctrine === 'T02') doctrineShorten = weaponCount >= 3 ? 0.06 : 0.02;
@@ -362,22 +362,6 @@ export function createCombat(items: ItemInstance[], hp: number, maxHp: number, l
         maxUses: d.maxTriggers ?? 3, uses: 0,
       });
     }
-  }
-  if (hand && (ITEMS[hand.kind].category === 'weapon' || ITEMS[hand.kind].category === 'needle')) {
-    const d = ITEMS[hand.kind];
-    let value = d.values[hand.level - 1];
-    if (runeOn(runes, hand.id, 'U01')) value = Math.round(value * 1.10);
-    value = Math.round(value * doctrineMult);
-    if (hasRelic(relics, 'C02')) value = Math.round(value * 1.10);
-    if (hasRelic(relics, 'R07') && weaponCount <= 2) value = Math.round(value * 1.25);
-    if (mods.heroClass === 'merchant' && bag.some(b => b.kind === 'moneybag')) {
-      value = Math.round(value * ((lv.level ?? 0) >= 31 ? 1.20 : 1.12));
-    }
-    actors.push({
-      id: hand.id, kind: d.category === 'needle' ? 'needle' : 'weapon',
-      interval: ms(d.interval!), nextAt: ms(d.interval!), value, order: order++, itemKind: hand.kind,
-      element: hand.element ?? null,
-    });
   }
   actors.push({ id: 'monster', kind: 'monster', interval: ms(lv.interval), nextAt: ms(lv.interval), value: lv.atk, order: 100000 });
 

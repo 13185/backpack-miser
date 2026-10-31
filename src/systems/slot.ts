@@ -46,7 +46,7 @@ export function slotOddsText(): string {
 
 /** 店面上的诱惑文案。不写概率、不写数字赔率。掉落表仍是 SLOT_WEIGHTS。 */
 export function slotBlurb(): string {
-  return '传闻这台机器的深处，藏着 5级神器大奖。金币一投，命运自有安排。中奖的装备落入临时区。';
+  return '传闻这台机器的深处，藏着 5级神器大奖。金币一投，命运自有安排。中奖的装备落入待整理。';
 }
 
 function prizeLevel(unit: number): SlotLevel {

@@ -26,7 +26,7 @@ describe('摇奖机', () => {
     expect(SLOT_WEIGHTS.find(r => r.level === 5)!.w).toBe(100);
     const text = slotBlurb();
     expect(text).toContain('5级神器大奖');
-    expect(text).toContain('临时区');
+    expect(text).toContain('待整理');
     expect(text).not.toContain('%');
     expect(text).not.toContain('长期是亏的');
     expect(text).not.toMatch(/\d+\.\d/);

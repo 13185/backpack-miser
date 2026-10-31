@@ -50,7 +50,9 @@ describe('背包扩容 3.3', () => {
     g.s.level = 18;
     g.s.gold = 75;
     const label = expansionLabel(18, g.s.rows, g.s.cols, g.s.expansions);
-    expect(label.text).toContain('第6列');
+    expect(label.text).toContain('5列×6行');
+    expect(label.text).toContain('6列×6行');
+    expect(label.text).toContain('新增6格');
     expect(label.itemCost).toBe(true);
     expect(g.expand().ok).toBe(false);
     expect(g.s.cols).toBe(5);

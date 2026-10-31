@@ -7,7 +7,7 @@
 html, body { margin: 0; background: repeating-linear-gradient(90deg, #141a24 0 2px, #10161e 2px 7px) fixed; color: var(--text); font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; overscroll-behavior: none; }
 body { min-height: 100vh; user-select: none; -webkit-user-select: none; }
 button { font-family: inherit; }
-#app { max-width: 1400px; margin: 0 auto; padding-bottom: 40px; }
+#app { max-width: 1280px; margin: 0 auto; padding-bottom: calc(28px + env(safe-area-inset-bottom)); }
 #hud { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background:
   radial-gradient(circle at 10px 10px, var(--brass) 0 2.5px, transparent 3px),
   radial-gradient(circle at calc(100% - 10px) 10px, var(--brass) 0 2.5px, transparent 3px),
@@ -43,9 +43,9 @@ button { font-family: inherit; }
 .coin.big { width: 26px; height: 26px; }
 .gold b { color: var(--gold2); font-size: 17px; }
 .iconBtn { background: linear-gradient(#3a2c22, #24180f); border: 2px solid var(--leather); color: var(--stitch); border-radius: 10px; min-width: 40px; height: 40px; font-size: 18px; cursor: pointer; box-shadow: inset 0 0 0 1px var(--brass); }
-#layout { display: grid; grid-template-columns: 1fr; gap: 10px; padding: 10px; }
-body.wide #layout { grid-template-columns: minmax(540px, 1fr) 380px; align-items: start; }
-#left { display: flex; flex-direction: column; gap: 10px; align-items: center; min-width: 0; }
+#layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 10px 16px 16px; }
+body.wide #layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 20px; }
+#left { display: flex; flex-direction: column; gap: 12px; align-items: stretch; min-width: 0; }
 #battle { width: 100%; height: 38vh; min-height: 240px; max-height: 380px; border: 4px solid var(--leather); border-radius: 16px; overflow: hidden; box-shadow: inset 0 0 0 2px var(--stitch), inset 0 0 0 5px var(--leather-dark), 0 8px 18px #000a; }
 body.wide #battle { height: 340px; }
 #mid { width: 100%; display: grid; grid-template-columns: 1fr; gap: 8px; }
@@ -136,7 +136,7 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .expandRow.disabled { background: #2a2824; color: #8d8578; border-color: #4a4036; cursor: not-allowed; }
 .knitMark { pointer-events: none; margin-left: 8px; padding: 4px 8px; border-radius: 6px; background: #efe6d4; color: #5a3a22; font-size: 12px; border: 2px solid #8a6240; box-shadow: inset 0 0 0 1px #fff; }
 .expMax { color: var(--muted); font-size: 13px; }
-#tempWrap { width: 100%; max-width: 600px; border-radius: 14px; padding: 8px 10px; border-style: dashed; }
+#tempWrap { width: 100%; border-radius: 14px; padding: 8px 10px; border-style: dashed; }
 #tempWrap.hasItems { border-color: var(--gold2); border-style: solid; box-shadow: 0 0 12px #ffd45c44; }
 #tempWrap.dropHere { background: #ffd45c22; }
 #temp { display: flex; flex-wrap: wrap; gap: 8px; min-height: 48px; align-items: flex-start; margin-top: 6px; touch-action: pan-y; }
@@ -161,8 +161,39 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .shopCard, .lootCard { background: #0004; border: 2px solid #6b5230; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; color: var(--text); }
 .shopCard.bought { opacity: .5; }
 .shopCard .btn { width: 100%; font-size: 13px; padding: 4px; }
-#wear { margin: 8px 0; padding: 8px; }
-#wear:empty { display: none; }
+.sheetNav, .subNav { display: flex; gap: 8px; }
+.sheetNav { padding: 8px 16px 0; }
+.sheetNav button, .subNav button { flex: 1; border: 2px solid #5c4030; background: #24180f; color: var(--text); border-radius: 10px; padding: 8px 6px; font-weight: bold; cursor: pointer; }
+.sheetNav button.on, .subNav button.on { background: linear-gradient(#e8c27a, #a07830); color: #2a1c10; }
+.prepGrid { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 12px; align-items: start; }
+.eqBoard { display: grid; grid-template-columns: 76px 1fr 76px; gap: 6px; align-items: center; }
+.heroPreview { display: flex; align-items: flex-end; justify-content: center; min-height: 96px; }
+.heroPreview img { width: 72px; height: 96px; object-fit: contain; animation: breath 2.8s ease-in-out infinite; transform-origin: center bottom; }
+@keyframes breath { 50% { transform: scale(1.035); } }
+.eqSlot { width: 76px; min-height: 76px; border: 2px dashed #8a7355; border-radius: 12px; background: #120e0a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; touch-action: none; }
+.eqSlot .slotName { font-size: 11px; color: var(--muted); }
+.eqSlot .slotEmpty { font-size: 11px; color: var(--gold2); text-align: center; line-height: 1.2; }
+.eqSlot .slotFig { width: 48px; height: 48px; position: relative; }
+.eqSlot .slotFig .icon, .eqSlot .slotFig img.icon { width: 48px; height: 48px; }
+.eqSlot.hot { border-style: solid; border-color: var(--gold2); box-shadow: 0 0 12px #ffd45c88; }
+.eqSlot.bad { border-color: #ff6b5a; background: #3a1814; }
+.item.worn { opacity: .55; outline: 2px dashed var(--gold2); }
+.wornTag { position: absolute; left: 2px; top: 2px; z-index: 2; font-size: 10px; background: #000c; color: var(--gold2); padding: 0 3px; border-radius: 4px; }
+#reserveWrap { border: 2px solid #5c4030; border-radius: 12px; padding: 8px 10px; background: #1a140f; }
+#reserveWrap .item { position: relative; }
+button:disabled, .expandRow:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 959px) {
+  .prepGrid { grid-template-columns: minmax(0, 1fr); }
+  .eqBoard { grid-template-columns: 64px 1fr 64px; }
+  .eqSlot { width: 64px; min-height: 64px; }
+  .heroPreview img { width: 64px; height: 84px; }
+}
+@media (max-width: 430px) {
+  #battle { height: 168px; min-height: 140px; max-height: 180px; }
+  .eqSlot { width: 56px; min-height: 56px; }
+  .eqBoard { grid-template-columns: 56px 1fr 56px; }
+  #layout { padding: 8px; }
+}
 .slotBox { margin-top: 10px; padding: 8px; border: 2px dashed #8a5a18; border-radius: 12px; background: #3a220812; text-align: center; }
 .slotBox .sDesc { margin: 4px 0 8px; }
 .slotMsg { font-weight: bold; color: var(--gold2); font-size: 14px; margin: 4px 0; }

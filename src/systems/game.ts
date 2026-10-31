@@ -21,7 +21,7 @@ import { rollSlot, slotCost } from './slot';
 import { canMerge, mergeItems } from './merge';
 import { canPlace, findSpot, inBag, itemPlace } from './placement';
 import { isArmorKind } from '../config/v4/armor';
-import { ELEMENTS, type Element } from '../config/v4/elements';
+import { ELEMENT_NAME, ELEMENTS, type Element } from '../config/v4/elements';
 import { chapterBossElement, ensureGearTrials, trialEnemy } from './gearTrial';
 import { LV4_GAMBLE, LV5_GAMBLE, gambleOutcome } from '../config/gamble';
 import { nextRandom, Rng } from './rng';
@@ -294,6 +294,7 @@ function advanceAfterLoot(s: GameState, cleared: number) {
   }
 }
 
+export const RESERVE_CAP = 2;
 export const itemLabel = (i: { kind: ItemKind; level: Level }) => `${ITEMS[i.kind].name} Lv${i.level}`;
 
 export function endingAvailability(s: GameState): Record<EndingId, { ok: boolean; reason?: string }> {
@@ -309,13 +310,51 @@ export function endingAvailability(s: GameState): Record<EndingId, { ok: boolean
 
 export class Game {
   constructor(public s: GameState, private onChange: (s: GameState) => void = () => {}) {}
-  private commit(r: Result = OK): Result { if (r.ok) this.onChange(this.s); return r; }
+  private commit(r: Result = OK): Result {
+    if (r.ok) {
+      this.syncWear();
+      this.onChange(this.s);
+    }
+    return r;
+  }
+  /** 穿戴引用必须指向仍在背包里的那一件。卖掉、入箱、待整理后引用失效，不复制。 */
+  private syncWear() {
+    const live = (id: string | null | undefined, weapon: boolean) => {
+      if (!id) return null;
+      const it = this.bagItems.find(i => i.id === id);
+      if (!it) return null;
+      if (weapon && !this.ownsWeapon(it.kind)) return null;
+      if (!weapon && !isArmorKind(it.kind)) return null;
+      return id;
+    };
+    this.s.mainHandId = live(this.s.mainHandId, true);
+    this.s.armorId = live(this.s.armorId, false);
+  }
+  /** 备用箱和待整理要先落到真实格子，才允许被引用。 */
+  private landInBag(it: ItemInstance): Result | null {
+    if (inBag(it)) { it.bin = undefined; return null; }
+    const spot = findSpot(this.s.items, this.s.cols, this.s.rows, it.kind, it.id);
+    if (!spot) return fail('背包空间不足，先整理');
+    it.bin = undefined;
+    it.x = spot.x; it.y = spot.y; it.rotated = spot.rotated;
+    return null;
+  }
   private prepOnly(): Result | null { return this.s.phase === 'prep' ? null : fail('战斗中无法整理背包。'); }
   get bagItems() { return this.s.items.filter(inBag); }
   get tempItems() { return this.s.items.filter(i => itemPlace(i) === 'temp'); }
-  get handItem() { return this.s.items.find(i => itemPlace(i) === 'hand'); }
-  get wornArmor() { return this.s.items.find(i => itemPlace(i) === 'armor'); }
+  get handItem() {
+    const id = this.s.mainHandId;
+    if (!id) return undefined;
+    const it = this.bagItems.find(i => i.id === id);
+    return it && this.ownsWeapon(it.kind) ? it : undefined;
+  }
+  get wornArmor() {
+    const id = this.s.armorId;
+    if (!id) return undefined;
+    return this.bagItems.find(i => i.id === id && isArmorKind(i.kind));
+  }
   get reserveItems() { return this.s.items.filter(i => itemPlace(i) === 'reserve'); }
+  get legacyItems() { return this.s.items.filter(i => itemPlace(i) === 'legacy'); }
   find(id: string) { return this.s.items.find(i => i.id === id); }
   getLevelDef() { return getLevel(this.s.level); }
   chapterName() {
@@ -335,7 +374,7 @@ export class Game {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
     if (it.kind === 'burden') return fail('负担物必须留在背包中（营地可花15金移除）。');
-    it.x = null; it.y = null; return this.commit();
+    it.bin = undefined; it.x = null; it.y = null; return this.commit();
   }
   rotate(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -437,7 +476,7 @@ export class Game {
     if (burTax) p = Math.max(1, Math.ceil(p * (1 + burTax / 100)));
     if (!canAfford(this.s.gold, p)) return fail('金币不足。');
     this.s.gold -= p; sl.bought = true; this.addTemp(sl.kind, sl.level);
-    return this.commit({ ok: true, msg: `购买了${itemLabel(sl)}，已放入临时区` });
+    return this.commit({ ok: true, msg: `购买了${itemLabel(sl)}，已放入待整理` });
   }
   refreshShop(): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -464,7 +503,7 @@ export class Game {
     }
     const it = this.addTemp(pull.kind, pull.level);
     const label = `${ITEMS[it.kind].name} Lv${it.level}`;
-    return this.commit({ ok: true, msg: `摇出${label}，已放入临时区（-${cost}金）` });
+    return this.commit({ ok: true, msg: `摇出${label}，已放入待整理（-${cost}金）` });
   }
   private ownsWeapon(kind: ItemKind) {
     const c = ITEMS[kind].category;
@@ -480,32 +519,43 @@ export class Game {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
     if (!this.ownsWeapon(it.kind)) return fail('主手只能装武器。');
-    const prev = this.handItem;
-    if (prev && prev.id !== it.id) { prev.bin = undefined; prev.x = null; prev.y = null; }
-    it.bin = 'hand'; it.x = null; it.y = null;
-    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已拿在主手。` });
+    const landed = this.landInBag(it); if (landed) return landed;
+    this.s.mainHandId = it.id;
+    if (this.s.armorId === it.id) this.s.armorId = null;
+    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已设为主手，仍占原格。` });
   }
   equipArmor(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
     if (!isArmorKind(it.kind)) return fail('这不是护甲。');
-    const prev = this.wornArmor;
-    if (prev && prev.id !== it.id) { prev.bin = undefined; prev.x = null; prev.y = null; }
-    it.bin = 'armor'; it.x = null; it.y = null;
-    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已穿上。` });
+    const landed = this.landInBag(it); if (landed) return landed;
+    this.s.armorId = it.id;
+    if (this.s.mainHandId === it.id) this.s.mainHandId = null;
+    return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已穿上，仍占原格。` });
   }
   unequip(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
-    if (it.bin !== 'hand' && it.bin !== 'armor' && it.bin !== 'reserve') return fail('这件不在穿戴或备用箱里。');
-    it.bin = undefined; it.x = null; it.y = null;
-    return this.commit({ ok: true, msg: '已放回临时区。' });
+    if (this.s.mainHandId === id) {
+      this.s.mainHandId = null;
+      return this.commit({ ok: true, msg: '已卸下主手。背包里的武器仍会攻击。' });
+    }
+    if (this.s.armorId === id) {
+      this.s.armorId = null;
+      return this.commit({ ok: true, msg: '已卸下护甲。抗性不再计入。' });
+    }
+    if (it.bin === 'reserve' || it.bin === 'legacy') {
+      it.bin = undefined; it.x = null; it.y = null;
+      return this.commit({ ok: true, msg: '已放到待整理。' });
+    }
+    return fail('这件没有穿戴标记。');
   }
   toReserve(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');
     if (!this.ownsWeapon(it.kind) && !isArmorKind(it.kind)) return fail('备用箱只收武器和护甲。');
-    if (itemPlace(it) !== 'reserve' && this.reserveItems.length >= 6) return fail('备用箱已满，请先取出或出售。');
+    if (it.bin === 'legacy') return fail('旧档暂存只能取出或出售。');
+    if (itemPlace(it) !== 'reserve' && this.reserveItems.length >= RESERVE_CAP) return fail('备用箱已满，请先取出或出售。');
     it.bin = 'reserve'; it.x = null; it.y = null;
     return this.commit({ ok: true, msg: '已放入备用箱。备用箱里的装备不生效。' });
   }
@@ -534,13 +584,19 @@ export class Game {
     if (slot.handId) {
       const it = this.find(slot.handId);
       if (!it || !this.ownsWeapon(it.kind)) missing.push('主手');
-      else this.equipHand(it.id);
-    }
+      else {
+        const r = this.equipHand(it.id);
+        if (!r.ok) missing.push('主手');
+      }
+    } else this.s.mainHandId = null;
     if (slot.armorId) {
       const it = this.find(slot.armorId);
       if (!it || !isArmorKind(it.kind)) missing.push('护甲');
-      else this.equipArmor(it.id);
-    }
+      else {
+        const r = this.equipArmor(it.id);
+        if (!r.ok) missing.push('护甲');
+      }
+    } else this.s.armorId = null;
     this.s.autoGuard = slot.autoGuard;
     if (missing.length) return this.commit({ ok: true, msg: `${slot.name}里的${missing.join('、')}已经不在了，没有生成替身。` });
     return this.commit({ ok: true, msg: `已换上${slot.name}。` });
@@ -556,16 +612,16 @@ export class Game {
     this.s.gold -= 10;
     this.s.imprintChapter = this.s.currentChapter;
     it.element = element;
-    return this.commit({ ok: true, msg: element ? `改造成${element}。` : '已恢复无属性。' });
+    const name = element ? ELEMENT_NAME[element] : '无属性';
+    return this.commit({ ok: true, msg: element ? `改造成${name}。` : '已恢复无属性。' });
   }
   startGearTrial(trialId: string): Result {
     const g = this.prepOnly(); if (g) return g;
-    this.maybeGrantV4Lesson();
-    if (this.tempItems.length) return fail('请先处理临时区装备。');
+    if (this.tempItems.length) return fail('请先处理待整理的装备。');
     ensureGearTrials(this.s);
     const trial = this.s.gearTrials?.trials.find(t => t.id === trialId);
     if (!trial) return fail('没有这张寻装委托。');
-    const armed = [...this.bagItems, this.handItem].some(i => i && this.ownsWeapon(i.kind));
+    const armed = this.bagItems.some(i => this.ownsWeapon(i.kind));
     if (!armed) return fail('至少装备一把武器才能战斗。');
     this.s.gearFight = { trialId, hp: this.s.hp };
     this.s.phase = 'battle';
@@ -611,7 +667,7 @@ export class Game {
     } else {
       this.addTemp('potion', 1);
     }
-    return this.commit({ ok: true, msg: '寻装奖励已放入临时区。' });
+    return this.commit({ ok: true, msg: '寻装奖励已放入待整理。' });
   }
   expand(sacrificeIds?: string[]): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -647,18 +703,18 @@ export class Game {
     if (offer.axis === 'col') this.s.cols++;
     else this.s.rows++;
     const size = `${this.s.cols}×${this.s.rows}`;
+    const prevCols = offer.axis === 'col' ? this.s.cols - 1 : this.s.cols;
+    const prevRows = offer.axis === 'row' ? this.s.rows - 1 : this.s.rows;
     const paid = offer.itemCost ? '献祭完成' : `${offer.cost}金`;
-    const msg = offer.axis === 'col'
-      ? `背包扩容！新增第${this.s.cols}列（${size}，${paid}）`
-      : `背包扩容！新增第${this.s.rows}行（${size}，${paid}）`;
+    const msg = `背包扩容！${prevCols}×${prevRows} → ${size}（${paid}）`;
     return this.commit({ ok: true, msg });
   }
 
   canStartBattle(): Result {
     if (this.s.phase !== 'prep') return fail('当前不能开始战斗。');
-    if (this.tempItems.length > 0) return fail('请先处理临时区装备。');
-    const armed = [...this.bagItems, this.handItem].filter(Boolean).some(i => {
-      const c = ITEMS[i!.kind].category; return c === 'weapon' || c === 'needle';
+    if (this.tempItems.length > 0) return fail('请先处理待整理的装备。');
+    const armed = this.bagItems.some(i => {
+      const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle';
     });
     if (!armed) return fail('至少装备一把武器才能战斗。');
     if (this.s.pendingRelicChoices?.length) return fail('请先选择遗物。');
@@ -711,6 +767,7 @@ export class Game {
       startGold: this.s.gold,
       heroClass: this.s.heroClass,
       autoGuard: this.s.autoGuard !== false,
+      armorId: this.s.armorId ?? null,
     });
   }
   settle(c: CombatState): Result {
@@ -777,7 +834,7 @@ export class Game {
     advanceAfterLoot(this.s, cleared);
     const midNote = isMidAct(cleared) ? ' 中段折转：王库只是收税站……旅程继续。' : '';
     const campNote = (this.s.phase as string) === 'camp' ? (this.s.campKind === 'final' ? ' 进入最终整备站。' : ' 进入章节营地。') : '';
-    return this.commit({ ok: true, msg: `获得${itemLabel(it)}，已放入临时区${midNote}${campNote}` });
+    return this.commit({ ok: true, msg: `获得${itemLabel(it)}，已放入待整理${midNote}${campNote}` });
   }
   /**
    * 不拿装备：21关前回收2金币；21关后可选“回收4金币”或“休整恢复4生命”（V3 §09），A05 额外+2金币。

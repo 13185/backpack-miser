@@ -4,7 +4,7 @@
 
 | 需求 | 代码 | 状态 |
 |---|---|---|
-| 主手、护甲、备用箱 | `src/systems/game.ts` 的 equip / reserve；`itemPlace` | 已验证：主手只有一个演员，备用不进战斗，护甲穿上才有抗性 |
+| 主手、护甲、备用箱 | `mainHandId` / `armorId` 引用，物品留在背包；备用箱 2 件 | 3.8.0 已验证：原格仍在，只一个演员，邻接保留，护甲未引用无抗性 |
 | 6×6 硬顶 | `ECONOMY.expansions` | 保持 3.6.5 规则，未按规格 §15 放大 |
 | 元素表、60% 转换 | `src/config/v4/elements.ts` | 已验证公式例子 |
 | 火抗与火输出分开 | 护甲只写 `playerResist`，武器只写 `element` | 已实现。没有角色倾向惩罚 |

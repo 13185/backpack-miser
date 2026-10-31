@@ -1,7 +1,7 @@
 import { BAG_MAX_COLS, BAG_MAX_ROWS, ECONOMY } from '../config/economy';
 import { CAMPAIGN_LENGTH, CAMPAIGN_VERSION } from '../config/v3';
 import type { GameState, ItemInstance, Settings } from '../models/types';
-import { occupiedCells } from './placement';
+import { findSpot, occupiedCells } from './placement';
 
 export const SAVE_VERSION = 3;
 export const SAVE_KEY = 'backpack-miser-save';
@@ -51,6 +51,43 @@ export function migrateV3(s: any) {
     s.a10Compensated = true;
   } else if (s.a10Compensated === undefined) s.a10Compensated = false;
   clampBagToCap(s);
+  migrateWearRefs(s);
+}
+
+/**
+ * 3.8：穿戴是背包引用。旧档里 bin=hand/armor 的装备尝试放回格子并记下引用；
+ * 放不下就进待整理，不生效、不删除。备用箱只留两件，多出来的进只取出/出售的旧暂存。
+ */
+export function migrateWearRefs(s: { cols?: number; rows?: number; items?: ItemInstance[]; mainHandId?: string | null; armorId?: string | null }) {
+  if (!s || !Array.isArray(s.items)) return;
+  const cols = s.cols ?? 5;
+  const rows = s.rows ?? 4;
+  const pending = s.items.filter(i => i.bin === 'hand' || i.bin === 'armor');
+  for (const it of pending) {
+    const was = it.bin;
+    it.bin = undefined;
+    const spot = findSpot(s.items, cols, rows, it.kind, it.id);
+    if (spot) {
+      it.x = spot.x; it.y = spot.y; it.rotated = spot.rotated;
+      if (was === 'hand' && !s.mainHandId) s.mainHandId = it.id;
+      if (was === 'armor' && !s.armorId) s.armorId = it.id;
+    } else {
+      it.x = null; it.y = null;
+    }
+  }
+  let kept = 0;
+  for (const it of s.items) {
+    if (it.bin !== 'reserve') continue;
+    if (kept < 2) { kept++; continue; }
+    it.bin = 'legacy';
+  }
+  const held = (id: string | null | undefined) => {
+    if (!id) return false;
+    const it = s.items!.find(i => i.id === id);
+    return !!it && it.x != null && it.y != null && it.bin !== 'reserve' && it.bin !== 'legacy';
+  };
+  if (!held(s.mainHandId)) s.mainHandId = null;
+  if (!held(s.armorId)) s.armorId = null;
 }
 
 /**
@@ -114,7 +151,7 @@ export function loadSettings(st: Storage): Settings {
     const s = JSON.parse(st.getItem(SETTINGS_KEY) || '{}');
     const voice = typeof s.voice === 'number' ? Math.max(0, Math.min(100, s.voice)) : 100;
     const openingFor = s.openingFor === 'merchant' || s.openingFor === 'guard' || s.openingFor === 'ranger' ? s.openingFor : undefined;
-    return { sound: s.sound !== false, tutorialDone: !!s.tutorialDone, openingSeen: !!s.openingSeen, voice, openingFor };
+    return { sound: s.sound !== false, tutorialDone: !!s.tutorialDone, openingSeen: !!s.openingSeen, voice, openingFor, wearLessonDone: !!s.wearLessonDone };
   }
   catch { return { sound: true, tutorialDone: false, openingSeen: false, voice: 100 }; }
 }

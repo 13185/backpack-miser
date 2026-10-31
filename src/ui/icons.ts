@@ -22,6 +22,12 @@ const S: Partial<Record<ItemKind, string>> = {
   burden: `<rect x="18" y="14" width="28" height="36" rx="3" fill="#6a5060" stroke="#c8a0b0" stroke-width="2"/><path d="M24 24 H40 M24 32 H36 M24 40 H38" stroke="#c8a0b0" stroke-width="2"/>`,
   poison_needle: `<g transform="rotate(-45 32 32)"><rect x="30" y="8" width="4" height="36" fill="#b8e080" stroke="#4a6a2a"/><path d="M28 8 L36 8 L32 2 Z" fill="#d0f0a0"/><rect x="24" y="44" width="16" height="6" rx="2" fill="#5a8a3a"/><circle cx="40" cy="20" r="4" fill="#7dff9a" opacity=".7"/></g>`,
   luck_charm: `<path d="M32 6 L56 18 L50 46 L32 58 L14 46 L8 18 Z" fill="#1a3058" stroke="#e8b64c" stroke-width="3"/><text x="32" y="38" text-anchor="middle" font-size="16" font-weight="bold" fill="#ffd45c">吉</text>`,
+  gilded_lining: `<path d="M12 18 L32 8 L52 18 L48 50 L32 58 L16 50 Z" fill="#e6c36a" stroke="#7a5418" stroke-width="3"/><path d="M32 14 L44 20 V36 L32 42 L20 36 V20 Z" fill="#fff1c4" stroke="#7a5418"/>`,
+  root_lining: `<path d="M14 20 L32 10 L50 20 L46 48 L32 58 L18 48 Z" fill="#6a8f4a" stroke="#2d4a22" stroke-width="3"/><path d="M32 18 C40 28 44 36 32 48 C20 36 24 28 32 18 Z" fill="#c6e6a0"/>`,
+  tide_lining: `<path d="M12 20 H52 L46 52 H18 Z" fill="#3a78b0" stroke="#d0ecff" stroke-width="3"/><path d="M16 34 Q24 28 32 34 T48 34 V44 H16 Z" fill="#9fd4f0"/>`,
+  furnace_lining: `<path d="M16 16 H48 L52 50 H12 Z" fill="#d46a45" stroke="#5a2418" stroke-width="3"/><rect x="24" y="26" width="16" height="16" fill="#ffd27a" stroke="#5a2418"/><path d="M28 42 L32 50 L36 42 Z" fill="#ffefb0"/>`,
+  stone_lining: `<path d="M14 18 L24 10 H44 L52 20 L48 52 L16 54 Z" fill="#8a8a90" stroke="#3a3a40" stroke-width="3"/><path d="M24 22 H42 V40 H24 Z" fill="#c8c8ce" stroke="#3a3a40"/>`,
+  travel_lining: `<path d="M18 12 H46 L52 28 L32 58 L12 28 Z" fill="#cbb98a" stroke="#6a5030" stroke-width="3"/><path d="M32 18 V48" stroke="#6a5030" stroke-width="2"/><circle cx="32" cy="24" r="4" fill="#f3e2b8"/>`,
 };
 /** 手绘装备图标（统一画风，128px 透明 PNG，public/art/items/<kind>.png）；SVG 仅作缺图回退 */
 const PAINTED: ReadonlySet<ItemKind> = new Set<ItemKind>([

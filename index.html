@@ -27,22 +27,40 @@
 </div>
 <div id="app">
   <header id="hud"></header>
+  <nav id="sheetNav" class="sheetNav" aria-label="主入口">
+    <button type="button" data-sheet="bag">背包</button>
+    <button type="button" data-sheet="trial">寻装</button>
+    <button type="button" data-sheet="market">市集</button>
+  </nav>
   <main id="layout">
     <section id="left">
       <div id="battle"></div>
       <div id="mid"></div>
-      <div id="bagWrap">
-        <div id="bagHead"></div>
-        <div id="bagScroll"><div id="bag"></div></div>
-        <div id="expand"></div>
+      <div id="pageBag">
+        <div class="prepGrid">
+          <div id="equip"></div>
+          <div id="bagWrap">
+            <div id="bagHead"></div>
+            <div id="bagScroll"><div id="bag"></div></div>
+            <div id="expand"></div>
+          </div>
+        </div>
+        <div id="tempWrap"><div class="ptitle" id="tempTitle">待整理</div><div id="temp"></div></div>
+        <div id="reserveWrap"></div>
       </div>
-      <div id="wear" class="panel"></div>
-      <div id="tempWrap"><div class="ptitle">📦 临时区 <small>（不参与战斗，请放入背包、合成或出售）</small></div><div id="temp"></div></div>
+      <div id="pageTrial" hidden></div>
+      <div id="pageMarket" hidden>
+        <div id="shop" class="panel"></div>
+      </div>
     </section>
     <aside id="side">
+      <div class="subNav" aria-label="次级入口">
+        <button type="button" data-sub="plan">方案</button>
+        <button type="button" data-sub="report">战报</button>
+      </div>
+      <div id="planPanel" class="panel" hidden></div>
       <div id="details" class="panel"></div>
-      <div id="shop" class="panel"></div>
-      <div id="statsPanel" class="panel"></div>
+      <div id="statsPanel" class="panel" hidden></div>
     </aside>
   </main>
   <div id="overlay"></div>
