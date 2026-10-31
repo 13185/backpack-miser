@@ -464,8 +464,21 @@ export class App {
         ${armor ? `<button class="btn small" id="offArmor" ${prep ? '' : 'disabled'}>卸下护甲</button>` : ''}
         ${guardBtn}
       </div>
+      <div class="detBtns">
+        <button class="btn small" id="saveA" ${prep ? '' : 'disabled'}>记下方案甲</button>
+        <button class="btn small" id="loadA" ${prep ? '' : 'disabled'}>换上方案甲</button>
+        <button class="btn small" id="saveB" ${prep ? '' : 'disabled'}>记下方案乙</button>
+        <button class="btn small" id="loadB" ${prep ? '' : 'disabled'}>换上方案乙</button>
+      </div>
+      <div class="sDesc">${(s.loadouts ?? []).map(l => `${l.name}${l.handId && !g.find(l.handId) ? '（主手失效）' : ''}${l.armorId && !g.find(l.armorId) ? '（护甲失效）' : ''}`).join(' · ') || '两套方案都还是空的'}</div>
       ${trials.length ? `<div class="sDesc">寻装：${trials.map(t => `${t.kind}${t.claimed ? '已领' : t.ready ? '可领' : '可打'}`).join(' · ')}</div>
         <div class="detBtns">${trials.map(t => `<button class="btn small" data-trial="${t.id}" ${prep ? '' : 'disabled'}>${t.ready && !t.claimed ? '领取' : '练习'} ${t.kind}</button>`).join('')}</div>` : ''}`;
+    if (prep) {
+      $('saveA').onclick = () => this.guard(() => this.act(() => g.saveLoadout(0)));
+      $('loadA').onclick = () => this.guard(() => this.act(() => g.applyLoadout(0)));
+      $('saveB').onclick = () => this.guard(() => this.act(() => g.saveLoadout(1)));
+      $('loadB').onclick = () => this.guard(() => this.act(() => g.applyLoadout(1)));
+    }
     if (hand && prep) $('offHand').onclick = () => this.guard(() => this.act(() => g.unequip(hand.id)));
     if (armor && prep) $('offArmor').onclick = () => this.guard(() => this.act(() => g.unequip(armor.id)));
     const gb = document.getElementById('guardBtn');
@@ -759,6 +772,9 @@ export class App {
     $('tempWrap').classList.remove('dropHere');
     if (!drop) { sfx.drop(); this.render(); return; } // 无效位置：回到原处
     if (drop.type === 'merge') {
+      const src = g.find(d.id); const tgt = g.find(drop.targetId);
+      const differ = !!src && !!tgt && (src.element ?? null) !== (tgt.element ?? null);
+      if (drop.ok && differ) { this.confirmElementMerge(d.id, drop.targetId, !!drop.gamble); return; }
       if (drop.ok && drop.gamble) { this.confirmGamble(d.id, drop.targetId); return; }
       if (drop.ok) { if (this.act(() => g.merge(d.id, drop.targetId), sfx.merge)) { this.selected = drop.targetId; this.render(); this.flashMerge(drop.targetId); } }
       else { sfx.error(); this.toast(drop.reason ?? '需要相同种类和等级才能合成。', true); this.render(); }
@@ -778,7 +794,32 @@ export class App {
   flashMerge(id: string) {
     document.querySelectorAll(`.item[data-id="${id}"]`).forEach(el => { el.classList.add('merged'); });
   }
-  private confirmGamble(sourceId: string, targetId: string) {
+  private confirmElementMerge(sourceId: string, targetId: string, gamble: boolean) {
+    const g = this.game!;
+    const src = g.find(sourceId); const tgt = g.find(targetId);
+    if (!src || !tgt) return;
+    const nameOf = (e: string | null | undefined) => e === 'metal' ? '金' : e === 'wood' ? '木' : e === 'water' ? '水' : e === 'fire' ? '火' : e === 'earth' ? '土' : '无属性';
+    const ov = $('overlay');
+    ov.className = 'show';
+    ov.innerHTML = `<div class="modal"><h3>保留哪种元素</h3>
+      <p>两件 ${ITEMS[tgt.kind].name} 元素不同。默认留下被拖到的那一件（主装备）。失败时主装备原样保留。</p>
+      <div class="btns">
+        <button class="btn gold" id="keepA">留下主装备：${nameOf(tgt.element)}</button>
+        <button class="btn" id="keepB">留下拖来的：${nameOf(src.element)}</button>
+        <button class="btn" id="keepNo">取消</button>
+      </div></div>`;
+    $('keepNo').onclick = () => { this.closeOverlay(); this.render(); };
+    const go = (keep: 'source' | 'target') => {
+      this.closeOverlay();
+      if (gamble) { this.confirmGamble(sourceId, targetId, keep); return; }
+      if (this.act(() => g.merge(sourceId, targetId, keep), sfx.merge)) {
+        this.selected = targetId; this.render(); this.flashMerge(targetId);
+      }
+    };
+    $('keepA').onclick = () => go('target');
+    $('keepB').onclick = () => go('source');
+  }
+  private confirmGamble(sourceId: string, targetId: string, keep: 'source' | 'target' = 'target') {
     const g = this.game!;
     const it = g.find(sourceId);
     if (!it) return;
@@ -802,7 +843,7 @@ export class App {
     $('gambleNo').onclick = () => { this.closeOverlay(); this.render(); };
     if (it.level === 3) $('forgeSafe').onclick = () => {
       this.closeOverlay();
-      const r = g.safeForge(sourceId, targetId);
+      const r = g.safeForge(sourceId, targetId, keep);
       if (!r.ok) { sfx.error(); this.toast(r.msg, true); this.render(); return; }
       sfx.merge();
       this.selected = targetId;
@@ -812,7 +853,7 @@ export class App {
     };
     $('gambleYes').onclick = () => {
       this.closeOverlay();
-      const r = g.gambleMerge(sourceId, targetId);
+      const r = g.gambleMerge(sourceId, targetId, keep);
       if (!r.ok) { sfx.error(); this.toast(r.msg, true); this.render(); return; }
       const msg = r.msg ?? '';
       const wiped = msg.includes('两件') && msg.includes('都消失');
@@ -1320,7 +1361,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.7.0 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.7.1 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

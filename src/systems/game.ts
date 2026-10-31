@@ -121,6 +121,16 @@ function rollShop(s: GameState) {
   });
   s.shop.slots = slots.map(o => ({ ...o, bought: false }));
   s.rng = r.state;
+  // 衬甲用独立随机流，不推进商店主随机。只卖 1–3 级，四五级仍走锻造。
+  if (s.level >= 11) {
+    s.elementRng = s.elementRng ?? ((s.rng ^ 0x51ed) >>> 0);
+    const er = new Rng(s.elementRng);
+    const kinds = ['gilded_lining', 'root_lining', 'tide_lining', 'furnace_lining', 'stone_lining', 'travel_lining'] as const;
+    const kind = kinds[er.int(kinds.length)];
+    const level: Level = s.level >= 25 ? 3 : s.level >= 15 ? 2 : 1;
+    s.elementRng = er.state;
+    s.shop.slots.push({ kind, level, bought: false });
+  }
 }
 
 /** 完整状态快照（不含检查点自身），恢复以此为准，避免遗漏字段 */
@@ -335,21 +345,23 @@ export class Game {
     if (!canPlace(this.s.items, this.s.cols, this.s.rows, it.kind, it.x!, it.y!, !it.rotated, id)) return fail('这里放不下，无法原地旋转。');
     it.rotated = !it.rotated; return this.commit();
   }
-  merge(sourceId: string, targetId: string): Result {
+  merge(sourceId: string, targetId: string, keep: 'source' | 'target' = 'target'): Result {
     const g = this.prepOnly(); if (g) return g;
     const a = this.find(sourceId), b = this.find(targetId);
     if (a?.kind === 'burden' || b?.kind === 'burden') return fail('负担物不可合成。');
     if (a && b && a.kind === b.kind && a.level === b.level && (a.level === 3 || a.level === 4)) {
       return fail(a.level === 4 ? '两件 Lv4 要先确认再赌。' : '两件 Lv3 要先确认再赌。');
     }
+    const keepEl = keep === 'source' ? (a?.element ?? null) : (b?.element ?? null);
     const r = mergeItems(this.s.items, sourceId, targetId);
     if (r.error) return fail(r.error);
+    if (r.result) r.result.element = keepEl;
     this.s.items = r.items;
     this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
     return this.commit({ ok: true, msg: `合成成功：${itemLabel(r.result!)}` });
   }
   /** Lv3→Lv4 或 Lv4→Lv5。先改 rng 再改物品，立刻存档。 */
-  gambleMerge(sourceId: string, targetId: string): Result {
+  gambleMerge(sourceId: string, targetId: string, keep: 'source' | 'target' = 'target'): Result {
     const g = this.prepOnly(); if (g) return g;
     const a = this.find(sourceId), b = this.find(targetId);
     if (!a || !b) return fail('找不到装备。');
@@ -377,12 +389,13 @@ export class Game {
     this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
     if (outcome === 'success') {
       b.level = (a.level + 1) as Level;
+      b.element = keep === 'source' ? (a.element ?? null) : (b.element ?? null);
       return this.commit({ ok: true, msg: `赌成了：${name} Lv${b.level}` });
     }
     return this.commit({ ok: true, msg: `赌输了：一件${name}消失了，另一件 Lv${b.level} 还在` });
   }
   /** 两件 Lv3 + 60 金，或一张锻造券。100% 得到 Lv4。 */
-  safeForge(sourceId: string, targetId: string): Result {
+  safeForge(sourceId: string, targetId: string, keep: 'source' | 'target' = 'target'): Result {
     const g = this.prepOnly(); if (g) return g;
     const a = this.find(sourceId), b = this.find(targetId);
     if (!a || !b) return fail('找不到装备。');
@@ -396,6 +409,7 @@ export class Game {
     this.s.items = this.s.items.filter(i => i.id !== sourceId);
     this.s.runes = this.s.runes.map(rn => rn.itemId === sourceId ? { ...rn, itemId: null } : rn);
     b.level = 4;
+    b.element = keep === 'source' ? (a.element ?? null) : (b.element ?? null);
     const paid = vouchers > 0 ? '用掉锻造券' : `-${FORGE_SAFE_COST}金`;
     return this.commit({ ok: true, msg: `稳妥锻成：${ITEMS[b.kind].name} Lv4（${paid}）` });
   }
@@ -494,6 +508,42 @@ export class Game {
     if (itemPlace(it) !== 'reserve' && this.reserveItems.length >= 6) return fail('备用箱已满，请先取出或出售。');
     it.bin = 'reserve'; it.x = null; it.y = null;
     return this.commit({ ok: true, msg: '已放入备用箱。备用箱里的装备不生效。' });
+  }
+  private ensureLoadouts() {
+    if (!this.s.loadouts || this.s.loadouts.length < 2) {
+      this.s.loadouts = [
+        { name: '方案甲', handId: null, armorId: null, autoGuard: this.s.autoGuard !== false },
+        { name: '方案乙', handId: null, armorId: null, autoGuard: this.s.autoGuard !== false },
+      ];
+    }
+  }
+  saveLoadout(index: 0 | 1): Result {
+    const g = this.prepOnly(); if (g) return g;
+    this.ensureLoadouts();
+    const slot = this.s.loadouts![index];
+    slot.handId = this.handItem?.id ?? null;
+    slot.armorId = this.wornArmor?.id ?? null;
+    slot.autoGuard = this.s.autoGuard !== false;
+    return this.commit({ ok: true, msg: `已记下${slot.name}。只保存引用，不复制装备。` });
+  }
+  applyLoadout(index: 0 | 1): Result {
+    const g = this.prepOnly(); if (g) return g;
+    this.ensureLoadouts();
+    const slot = this.s.loadouts![index];
+    const missing: string[] = [];
+    if (slot.handId) {
+      const it = this.find(slot.handId);
+      if (!it || !this.ownsWeapon(it.kind)) missing.push('主手');
+      else this.equipHand(it.id);
+    }
+    if (slot.armorId) {
+      const it = this.find(slot.armorId);
+      if (!it || !isArmorKind(it.kind)) missing.push('护甲');
+      else this.equipArmor(it.id);
+    }
+    this.s.autoGuard = slot.autoGuard;
+    if (missing.length) return this.commit({ ok: true, msg: `${slot.name}里的${missing.join('、')}已经不在了，没有生成替身。` });
+    return this.commit({ ok: true, msg: `已换上${slot.name}。` });
   }
   imprint(id: string, element: Element | null): Result {
     const g = this.prepOnly(); if (g) return g;

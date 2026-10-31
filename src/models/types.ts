@@ -166,7 +166,7 @@ export interface GameState {
   elementRng?: number;
   /** 本章已用的付费改造。0 表示还没用。 */
   imprintChapter?: number;
-  loadouts?: { name: string; handId: string | null; armorId: string | null }[];
+  loadouts?: { name: string; handId: string | null; armorId: string | null; autoGuard: boolean }[];
   gearTrials?: { chapter: number; trials: { id: string; kind: 'guard' | 'counter' | 'special'; claimed: boolean; ready: boolean }[] } | null;
   gearFight?: { trialId: string; hp: number } | null;
 }

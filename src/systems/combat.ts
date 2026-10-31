@@ -979,7 +979,7 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
       s.furnaceNormals = 0;
       s.armor = 0;
       s.furnaceVentUntil = s.t + 3000;
-      if (s.furnaceBroke) { s.furnaceBroke = false; ev.push({ t: s.t, type: 'heavyWindup' }); return; }
+      if (s.furnaceBroke) { s.furnaceBroke = false; return; }
       const mult = enrageMult(s.enrageStage, s.enrageBonus) * (s.mHp / s.mMaxHp <= 0.4 ? 2 : 1.8);
       let dmg = Math.round(s.mAtk * mult);
       if (s.bossElement) dmg = splitIncoming(dmg, s.bossElement, s.heavyPlainShare, s.playerResist[s.bossElement] ?? 0, s.guardUntil > s.t);
@@ -1125,7 +1125,7 @@ export function stepCombat(s: CombatState, dtMs: number): CombatEvent[] {
       }
     }
   }
-  if (!s.over) s.t = target;
+  if (!s.over) { s.t = target; tryAutoGuard(s); }
   return ev;
 }
 export function simulate(s: CombatState): CombatEvent[] {
