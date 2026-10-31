@@ -4,6 +4,7 @@ import { applyEliteOverlay, getLevel, CAMPAIGN_LENGTH } from '../config/v3';
 import { pickEnemyArt } from './enemyArt';
 import type { HeroAnimState, HeroClassId } from './types';
 import { webAsset } from './webAsset';
+import elementFrames from './elementFrames.json';
 
 export interface ArtEntry { key: string; url: string }
 
@@ -38,6 +39,22 @@ export function levelArtEntries(levelNo: number, elite: boolean): ArtEntry[] {
   if (art) out.push({ key: art.key, url: webAsset(art.src) });
   const fb = MONSTER_ART[lv.monster];
   if (fb && fb.key !== art?.key) out.push({ key: fb.key, url: webAsset(fb.src) });
+  if (levelNo === 35) {
+    for (const pose of ['windup', 'attack', 'hurt', 'defeat'] as const) {
+      out.push({ key: `furnace_${pose}`, url: webAsset(`art/enemies/B35_furnace_${pose}.png`) });
+    }
+  }
+  out.push(...elementVfxEntries());
+  return out;
+}
+
+export function elementVfxEntries(): ArtEntry[] {
+  const out: ArtEntry[] = [];
+  for (const [el, pack] of Object.entries(elementFrames)) {
+    for (const frame of pack.frames) {
+      out.push({ key: `vfx_${el}_${frame.order}`, url: frame.file });
+    }
+  }
   return out;
 }
 

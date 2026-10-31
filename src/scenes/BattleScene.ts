@@ -7,6 +7,7 @@ import { stepCombat, type CombatEvent, type CombatState } from '../systems/comba
 import type { ItemInstance } from '../models/types';
 import { drawHero, drawMonster } from './art';
 import { pickEnemyArt, ENEMY_FOOT_ORIGIN_Y } from '../art/enemyArt';
+import elementFrames from '../art/elementFrames.json';
 import { heroArtEntries, levelArtEntries, loadTextures } from '../art/artLoad';
 import { CAMPAIGN_LENGTH } from '../config/v3';
 import { V3_LEVELS } from '../config/v3/levels';
@@ -49,6 +50,9 @@ export class BattleScene extends Phaser.Scene {
   artReady = false;
   private footMark: Phaser.GameObjects.Arc | null = null;
   private monIsBoss = false;
+  private baseMonKey: string | null = null;
+  private poseBack: Phaser.Time.TimerEvent | null = null;
+  private poseLocked = false;
   private artGen = 0;
   private heroToken = 0;
   private combatArtClass: HeroClassId | null = null;
@@ -217,6 +221,8 @@ export class BattleScene extends Phaser.Scene {
         this.monImg.setTexture(key).setOrigin(0.5, ENEMY_FOOT_ORIGIN_Y);
       }
       this.monImg.setVisible(true).setFlipX(false);
+      this.baseMonKey = key;
+      this.poseLocked = false;
       this.layout();
     } else {
       this.monImg?.setVisible(false);
@@ -289,7 +295,10 @@ export class BattleScene extends Phaser.Scene {
         this.target = { hp: c.hp, maxHp: c.maxHp, shield: c.shield, mHp: c.mHp, mMax: c.mMaxHp };
         const left = c.enrageAt - c.t / 1000;
         this.timerText.setText(`⏱ ${(c.t / 1000).toFixed(1)}s  ${left > 0 ? `${Math.ceil(left)}秒后狂暴` : `🔥狂暴 ×${(1 + c.enrageStage * c.enrageBonus).toFixed(2)}  ${Math.ceil(ECONOMY.timeout - c.t / 1000)}秒后超时`}`);
-        if (c.over) this.endTimer = 1100;
+        if (c.over) {
+          this.endTimer = 1100;
+          if (c.won && this.level?.furnaceCycle) this.setMonsterPose('furnace_defeat');
+        }
       } else if (this.endTimer > 0) {
         this.endTimer -= dt;
         if (this.endTimer <= 0) { const h = this.hooks; this.combat = null; h?.onEnd(c); }
@@ -314,6 +323,37 @@ export class BattleScene extends Phaser.Scene {
     bar(w * 0.72 - bw / 2, h * 0.2, bw, this.shown.mHp / this.shown.mMax, 0xff6b5a);
   }
 
+  private setMonsterPose(key: string | null) {
+    if (!this.monImg || !key || !this.textures.exists(key)) return;
+    this.monImg.setTexture(key).setOrigin(0.5, ENEMY_FOOT_ORIGIN_Y);
+  }
+  private flashPose(key: string, ms: number) {
+    if (this.poseLocked || !this.textures.exists(key)) return;
+    this.poseBack?.remove(false);
+    this.setMonsterPose(key);
+    this.poseBack = this.time.delayedCall(ms, () => {
+      const winding = !!this.combat && this.combat.furnaceWindupUntil > this.combat.t && this.textures.exists('furnace_windup');
+      this.setMonsterPose(winding ? 'furnace_windup' : this.baseMonKey);
+    });
+  }
+  private playElement(el: string, x: number, y: number) {
+    const pack = elementFrames[el as keyof typeof elementFrames];
+    if (!pack?.frames.length) return;
+    const first = `vfx_${el}_0`;
+    if (!this.textures.exists(first)) return;
+    const img = this.add.image(x, y, first).setDepth(7).setDisplaySize(72, 72);
+    let i = 0;
+    const step = () => {
+      const frame = pack.frames[i];
+      const key = `vfx_${el}_${frame.order}`;
+      if (!this.textures.exists(key)) { img.destroy(); return; }
+      img.setTexture(key);
+      i++;
+      if (i < pack.frames.length) this.time.delayedCall(frame.ms / Math.max(1, this.speed), step);
+      else img.destroy();
+    };
+    step();
+  }
   private float(x: number, y: number, text: string, color: string, size = 20) {
     const t = this.add.text(x + Phaser.Math.Between(-14, 14), y, text, { fontFamily: 'sans-serif', fontSize: `${size}px`, color, stroke: '#1a1010', strokeThickness: 4, fontStyle: 'bold' }).setOrigin(0.5).setDepth(9);
     this.tweens.add({ targets: t, y: y - 46, alpha: 0, duration: 900, ease: 'Cubic.out', onComplete: () => t.destroy() });
@@ -325,7 +365,10 @@ export class BattleScene extends Phaser.Scene {
     for (const e of ev) {
       if (e.type === 'weapon') {
         this.heroSprite?.play('attack');
-        const kind = this.items.find(i => i.id === e.itemId)?.kind ?? 'dagger';
+        const worn = this.items.find(i => i.id === e.itemId);
+        const kind = worn?.kind ?? 'dagger';
+        if (worn?.element) this.playElement(worn.element, mx, my - 30);
+        if (this.level?.furnaceCycle) this.flashPose('furnace_hurt', 160);
         const col = Phaser.Display.Color.HexStringToColor(ITEMS[kind].color).color;
         if (kind === 'dagger') {
           const p = this.add.triangle(hx + 30, hy - 10, 0, 0, 18, 4, 0, 8, col).setDepth(6);
@@ -343,6 +386,9 @@ export class BattleScene extends Phaser.Scene {
         if (e.amount > 0) this.float(hx, hy - 70, `+${e.amount}护盾`, '#8fd8ff', 16);
       } else if (e.type === 'monsterAttack') {
         this.heroSprite?.play('hurt');
+        if (this.level?.furnaceCycle && !(this.combat && this.combat.furnaceWindupUntil > this.combat.t)) {
+          this.flashPose('furnace_attack', 200);
+        }
         this.tweens.add({ targets: this.mon, x: mx - (e.crit ? 70 : 40), duration: e.crit ? 160 : 110, yoyo: true, ease: 'Quad.out' });
         if (e.crit) {
           this.showBanner('大暴击！', '#ff4040');
@@ -379,9 +425,11 @@ export class BattleScene extends Phaser.Scene {
       } else if (e.type === 'heavyWindup') {
         this.showBanner('⚠ 蓄力施法！', '#ffcc66');
         this.castRing(0xffcc44, 1.6, 1600);
+        if (this.level?.furnaceCycle) this.setMonsterPose('furnace_windup');
       } else if (e.type === 'heavyStrike') {
         this.showBanner(`💥 技能重击 ×${e.mult}`, '#ff8844');
         this.slamFx(0xff6622);
+        if (this.level?.furnaceCycle) this.flashPose('furnace_attack', 280);
       } else if (e.type === 'phaseShield') {
         this.showBanner(`🛡 施法：阶段护盾 +${e.shield}`, '#88ccff');
         this.castRing(0x66ccff, 1.5, 600);

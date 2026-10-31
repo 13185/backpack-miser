@@ -34,6 +34,7 @@ import { playVoice, prefetchClassVoice, prefetchVoice, setVoiceEnabled, setVoice
 import { bossCinema, isBossStory, openingBeats } from './cinema';
 import { bagCellSize } from './bagLayout';
 import { iconSvg } from './icons';
+import { sealHue, sealSvg } from './seals';
 
 const $ = (id: string) => document.getElementById(id)!;
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -1514,7 +1515,7 @@ export class App {
       <p class="muted">最多2枚；可附着到合法装备，或暂存（暂存不生效）。</p>
       <div class="lootRow">${choices.map(id => {
         const d = RUNES[id as RuneId]; if (!d) return '';
-        return `<div class="lootCard" style="cursor:default"><div class="sName">${d.name}</div><div class="sDesc">${d.desc}</div>
+        return `<div class="lootCard" style="cursor:default"><div class="detIcon">${sealSvg(d.name, sealHue(id))}</div><div class="sName">${d.name}</div><div class="sDesc">${d.desc}</div>
           <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
             ${hosts.filter(w => runeLegalForItem(id as RuneId, w.kind)).slice(0, 5).map(w =>
               `<button class="btn small" data-rune="${id}" data-item="${w.id}">附着到 ${itemLabel(w)}</button>`
@@ -1537,7 +1538,7 @@ export class App {
       <p class="muted">本局只能保留一项专精。</p>
       <div class="lootRow">${choices.map(id => {
         const d = DOCTRINES[id as keyof typeof DOCTRINES]; if (!d) return '';
-        return `<button class="lootCard" data-doc="${id}"><div class="sName">${d.name}</div><div class="sDesc">${d.desc}</div></button>`;
+        return `<button class="lootCard" data-doc="${id}">${sealSvg(d.name, sealHue(id))}<div class="sName">${d.name}</div><div class="sDesc">${d.desc}</div></button>`;
       }).join('')}</div></div>`;
     ov.querySelectorAll<HTMLElement>('[data-doc]').forEach(b => b.onclick = () => this.guard(() => {
       if (this.act(() => g.chooseDoctrine(b.dataset.doc!))) {
@@ -1553,7 +1554,7 @@ export class App {
       <p class="muted">当前持有 ${s.relics.length}/3</p>
       <div class="lootRow">${choices.map(id => {
         const d = V3_RELICS[id as RelicId]; if (!d) return '';
-        return `<button class="lootCard" data-rel="${id}"><div class="sName">${d.name}</div><div class="sDesc">${d.desc}${d.implemented ? '' : '（效果待深化）'}</div></button>`;
+        return `<button class="lootCard" data-rel="${id}">${sealSvg(d.name, sealHue(id))}<div class="sName">${d.name}</div><div class="sDesc">${d.desc}${d.implemented ? '' : '（效果待深化）'}</div></button>`;
       }).join('')}</div>
       <div class="btns"><button class="btn" id="skipRelic">放弃</button></div></div>`;
     ov.querySelectorAll<HTMLElement>('[data-rel]').forEach(b => b.onclick = () => this.guard(() => {
@@ -1586,7 +1587,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.1 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.9.0 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

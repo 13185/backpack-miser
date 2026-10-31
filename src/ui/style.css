@@ -167,13 +167,13 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .sheetNav button.on, .subNav button.on { background: linear-gradient(#e8c27a, #a07830); color: #2a1c10; }
 .prepGrid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
 .eqBoard { display: flex; gap: 8px; align-items: stretch; width: max-content; }
-.eqSlot { width: 76px; min-height: 76px; border: 2px dashed #8a7355; border-radius: 12px; background: #120e0a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; touch-action: none; }
+.eqSlot { width: 76px; min-height: 76px; border: 3px solid #c8a15a; border-radius: 14px; background: radial-gradient(circle at 50% 35%, #4a3422, #120e0a 72%); box-shadow: inset 0 0 0 2px #5c3c22, inset 0 0 0 4px #e8d2a4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; touch-action: none; }
 .eqSlot .slotName { font-size: 11px; color: var(--muted); }
 .eqSlot .slotEmpty { font-size: 11px; color: var(--gold2); text-align: center; line-height: 1.2; }
 .eqSlot .slotFig { width: 48px; height: 48px; position: relative; }
 .eqSlot .slotFig .icon, .eqSlot .slotFig img.icon { width: 48px; height: 48px; }
-.eqSlot.hot { border-style: solid; border-color: var(--gold2); box-shadow: 0 0 12px #ffd45c88; }
-.eqSlot.bad { border-color: #ff6b5a; background: #3a1814; }
+.eqSlot.hot { border-color: #fff1c4; box-shadow: inset 0 0 0 2px #fff6d0, 0 0 16px #ffd45c; }
+.eqSlot.bad { border-color: #ff8a7a; background: #3a1814; box-shadow: inset 0 0 0 2px #ffb0a8, 0 0 12px #ff6b5a; }
 .item.worn { opacity: .55; outline: 2px dashed var(--gold2); }
 .wornTag { position: absolute; left: 2px; top: 2px; z-index: 2; font-size: 10px; background: #000c; color: var(--gold2); padding: 0 3px; border-radius: 4px; }
 #reserveWrap { border: 2px solid #5c4030; border-radius: 12px; padding: 8px 10px; background: #1a140f; }

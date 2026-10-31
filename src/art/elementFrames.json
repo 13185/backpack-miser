@@ -1,0 +1,207 @@
+{
+  "metal": {
+    "id": "elem_metal",
+    "effectId": "element.metal",
+    "loop": false,
+    "anchor": [
+      0.5,
+      0.62
+    ],
+    "blend": "normal",
+    "frames": [
+      {
+        "file": "art/vfx/metal_f01.png",
+        "ms": 80,
+        "order": 0
+      },
+      {
+        "file": "art/vfx/metal_f02.png",
+        "ms": 80,
+        "order": 1
+      },
+      {
+        "file": "art/vfx/metal_f03.png",
+        "ms": 80,
+        "order": 2
+      },
+      {
+        "file": "art/vfx/metal_f04.png",
+        "ms": 80,
+        "order": 3
+      },
+      {
+        "file": "art/vfx/metal_f05.png",
+        "ms": 80,
+        "order": 4
+      },
+      {
+        "file": "art/vfx/metal_f06.png",
+        "ms": 80,
+        "order": 5
+      },
+      {
+        "file": "art/vfx/metal_f07.png",
+        "ms": 80,
+        "order": 6
+      }
+    ]
+  },
+  "wood": {
+    "id": "elem_wood",
+    "effectId": "element.wood",
+    "loop": false,
+    "anchor": [
+      0.5,
+      0.62
+    ],
+    "blend": "normal",
+    "frames": [
+      {
+        "file": "art/vfx/wood_f01.png",
+        "ms": 80,
+        "order": 0
+      },
+      {
+        "file": "art/vfx/wood_f02.png",
+        "ms": 80,
+        "order": 1
+      },
+      {
+        "file": "art/vfx/wood_f03.png",
+        "ms": 80,
+        "order": 2
+      },
+      {
+        "file": "art/vfx/wood_f04.png",
+        "ms": 80,
+        "order": 3
+      },
+      {
+        "file": "art/vfx/wood_f05.png",
+        "ms": 80,
+        "order": 4
+      },
+      {
+        "file": "art/vfx/wood_f06.png",
+        "ms": 80,
+        "order": 5
+      }
+    ]
+  },
+  "water": {
+    "id": "elem_water",
+    "effectId": "element.water",
+    "loop": false,
+    "anchor": [
+      0.5,
+      0.62
+    ],
+    "blend": "normal",
+    "frames": [
+      {
+        "file": "art/vfx/water_f01.png",
+        "ms": 80,
+        "order": 0
+      },
+      {
+        "file": "art/vfx/water_f02.png",
+        "ms": 80,
+        "order": 1
+      },
+      {
+        "file": "art/vfx/water_f03.png",
+        "ms": 80,
+        "order": 2
+      },
+      {
+        "file": "art/vfx/water_f04.png",
+        "ms": 80,
+        "order": 3
+      },
+      {
+        "file": "art/vfx/water_f05.png",
+        "ms": 80,
+        "order": 4
+      },
+      {
+        "file": "art/vfx/water_f06.png",
+        "ms": 80,
+        "order": 5
+      }
+    ]
+  },
+  "fire": {
+    "id": "elem_fire",
+    "effectId": "element.fire",
+    "loop": false,
+    "anchor": [
+      0.5,
+      0.62
+    ],
+    "blend": "normal",
+    "frames": [
+      {
+        "file": "art/vfx/fire_f01.png",
+        "ms": 80,
+        "order": 0
+      },
+      {
+        "file": "art/vfx/fire_f02.png",
+        "ms": 80,
+        "order": 1
+      },
+      {
+        "file": "art/vfx/fire_f03.png",
+        "ms": 80,
+        "order": 2
+      },
+      {
+        "file": "art/vfx/fire_f04.png",
+        "ms": 80,
+        "order": 3
+      },
+      {
+        "file": "art/vfx/fire_f05.png",
+        "ms": 80,
+        "order": 4
+      },
+      {
+        "file": "art/vfx/fire_f06.png",
+        "ms": 80,
+        "order": 5
+      }
+    ]
+  },
+  "earth": {
+    "id": "elem_earth",
+    "effectId": "element.earth",
+    "loop": false,
+    "anchor": [
+      0.5,
+      0.62
+    ],
+    "blend": "normal",
+    "frames": [
+      {
+        "file": "art/vfx/earth_f01.png",
+        "ms": 80,
+        "order": 0
+      },
+      {
+        "file": "art/vfx/earth_f02.png",
+        "ms": 80,
+        "order": 1
+      },
+      {
+        "file": "art/vfx/earth_f03.png",
+        "ms": 80,
+        "order": 2
+      },
+      {
+        "file": "art/vfx/earth_f04.png",
+        "ms": 80,
+        "order": 3
+      }
+    ]
+  }
+}

@@ -34,6 +34,7 @@ const PAINTED: ReadonlySet<ItemKind> = new Set<ItemKind>([
   'dagger', 'greatsword', 'shield', 'potion', 'ruby', 'moneybag', 'spear', 'compass', 'firework_crossbow',
   'fold_wall', 'travel_lamp', 'emergency_ledger', 'poison_needle', 'crossbow', 'chain_hammer', 'warhammer', 'ice_crystal', 'war_banner',
   'luck_charm',
+  'gilded_lining', 'root_lining', 'tide_lining', 'furnace_lining', 'stone_lining', 'travel_lining',
 ]);
 function svgIcon(kind: ItemKind): string {
   return `<svg viewBox="0 0 64 64" class="icon" aria-hidden="true">${S[kind] ?? ''}</svg>`;
