@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { bagCellSize } from '../src/ui/bagLayout';
 import { getLevel } from '../src/config/v3/levels';
 import { lateTrashMult, seasonedMult, wallEase } from '../src/config/v3/campaign';
-import { createCombat, stepCombat } from '../src/systems/combat';
+import { BOSS_CRIT_HP_PCT, HEART_CRIT_HP_PCT, HEART_FIRE_HP_PCT, createCombat, stepCombat } from '../src/systems/combat';
 import type { ItemInstance } from '../src/models/types';
 
 const mk = (kind: ItemInstance['kind'], id: string): ItemInstance => ({ id, kind, level: 3, x: 0, y: 0, rotated: false });
@@ -54,8 +54,13 @@ describe('3.6.4 后期血量与心脏', () => {
     expect(getLevel(35).hp).toBe(2245);
     expect(getLevel(35).atk).toBe(28);
     expect(getLevel(50).boss).toBe(true);
-    expect(getLevel(50).hp).toBe(Math.floor(6204 * 3 * 0.85));
-    expect(getLevel(50).atk).toBe(Math.floor(43 * 0.85));
+    const l50hp = Math.floor(6204 * 3 * 0.85);
+    const l50atk = Math.floor(43 * 0.85);
+    expect(getLevel(50).hp).toBe(Math.floor(l50hp * 1.20));
+    expect(getLevel(50).atk).toBe(Math.floor(l50atk * 0.90));
+    expect(HEART_FIRE_HP_PCT).toBeCloseTo(0.35 * 0.9, 5);
+    expect(HEART_CRIT_HP_PCT).toBeCloseTo(0.38 * 0.9, 5);
+    expect(BOSS_CRIT_HP_PCT).toBe(0.32);
     expect(seasonedMult(25)).toBe(1);
     expect(seasonedMult(46)).toBeCloseTo(1 + 0.012 * 21, 5);
     expect(seasonedMult(50)).toBeCloseTo(1.3, 5);

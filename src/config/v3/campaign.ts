@@ -403,10 +403,11 @@ export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
       hp = Math.floor(hp * wall);
       damage = Math.floor(damage * wall);
     }
-    // 3.6.10：只削第 50 关的生命和攻击，floor(×0.85)。无敌、暴击、大火的机制不动。
+    // 3.6.10：第 50 关 floor(×0.85)。
+    // 3.6.11：在那一档上生命再 ×1.20、攻击再 ×0.90。无敌、暴击、大火的机制仍在。
     if (s.level === 50) {
-      hp = Math.floor(hp * 0.85);
-      damage = Math.floor(damage * 0.85);
+      hp = Math.floor(Math.floor(hp * 0.85) * 1.20);
+      damage = Math.floor(Math.floor(damage * 0.85) * 0.90);
     }
     // 3.6.9：43–46 关（含杂兵和首领）在现有预算上再 floor(×0.965)。其他关不动。
     if (s.level >= 43 && s.level <= 46) {

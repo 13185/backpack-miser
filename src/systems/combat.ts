@@ -8,6 +8,13 @@ import type { ItemInstance, ItemKind, RuneInstance } from '../models/types';
 import { weaponDamage, bannerShorten, gemBonus } from './adjacency';
 import { inBag } from './placement';
 
+/** 其他首领的大暴击保底，占玩家最大生命。 */
+export const BOSS_CRIT_HP_PCT = 0.32;
+/** 黄金心脏大暴击保底。3.6.10 是 38%，3.6.11 再 ×0.90。 */
+export const HEART_CRIT_HP_PCT = 0.342;
+/** 黄金心脏大火。3.6.10 是最大生命的 35%，3.6.11 再 ×0.90。 */
+export const HEART_FIRE_HP_PCT = 0.315;
+
 export type CombatEvent =
   | { t: number; type: 'weapon'; itemId: string; dmg: number; raw: number; heavy: boolean }
   | { t: number; type: 'shield'; itemId: string; amount: number }
@@ -540,7 +547,7 @@ function processTimeline(s: CombatState, ev: CombatEvent[]) {
   if (s.t >= ms(ECONOMY.timeout)) { finish(s, ev, false, `战斗超过${ECONOMY.timeout}秒仍未分出胜负，冒险失败：火力不足，被怪物拖垮了。`); return; }
   if (s.fireArmed && s.fireWindupUntil > 0 && s.t >= s.fireWindupUntil && s.mHp > 0 && !s.over) {
     s.fireArmed = false;
-    const dmg = Math.max(1, Math.round(s.maxHp * 0.35));
+    const dmg = Math.max(1, Math.round(s.maxHp * HEART_FIRE_HP_PCT));
     const r = applyDamageToPlayer(s.hp, s.shield, dmg);
     s.hp = r.hp; s.shield = r.shield; s.stats.absorbed += r.absorbed;
     ev.push({ t: s.t, type: 'fireBreath', dmg, hpLoss: r.hpLoss });
@@ -912,7 +919,7 @@ function runActor(s: CombatState, a: Actor, ev: CombatEvent[]) {
     }
     let dmg = Math.round(s.mAtk * mult);
     const crit = bossCrit(s);
-    if (crit) dmg = Math.max(dmg, Math.round(s.maxHp * (s.heartPhases ? 0.38 : 0.32)));
+    if (crit) dmg = Math.max(dmg, Math.round(s.maxHp * (s.heartPhases ? HEART_CRIT_HP_PCT : BOSS_CRIT_HP_PCT)));
     if (hasRelic(s.relics, 'K04')) dmg = Math.round(dmg * 1.20);
     // 冰晶减速对伤害无影响，仅间隔
     const hpBefore = s.hp;

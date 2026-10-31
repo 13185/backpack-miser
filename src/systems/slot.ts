@@ -3,17 +3,16 @@ import type { ItemKind, Level } from '../models/types';
 import { sellPrice } from './economy';
 
 /**
- * 商店摇奖机。权重合计 1000。
- * 4 级 15/1000 = 1.5%，5 级 5/1000 = 0.5%。其余多数是空或低级货。
- * 售价按卖出金币算长期为负，守财奴不该靠它印钱。
+ * 商店摇奖机。权重合计 1000。店面文案不写这些数字。
+ * 5 级 10%，4 级 15%。剩下的 75% 按原先空/1/2/3 的比例收成整数：35 / 23 / 12 / 5。
  */
 export const SLOT_WEIGHTS = [
-  { level: 0 as const, w: 460, label: '空' },
-  { level: 1 as const, w: 300, label: '1级' },
-  { level: 2 as const, w: 150, label: '2级' },
-  { level: 3 as const, w: 70, label: '3级' },
-  { level: 4 as const, w: 15, label: '4级' },
-  { level: 5 as const, w: 5, label: '5级' },
+  { level: 0 as const, w: 350, label: '空' },
+  { level: 1 as const, w: 230, label: '1级' },
+  { level: 2 as const, w: 120, label: '2级' },
+  { level: 3 as const, w: 50, label: '3级' },
+  { level: 4 as const, w: 150, label: '4级' },
+  { level: 5 as const, w: 100, label: '5级' },
 ] as const;
 
 export const SLOT_WEIGHT_TOTAL = 1000;

@@ -16,10 +16,14 @@ function stateFor(pred: (u: number) => boolean): number {
 }
 
 describe('摇奖机', () => {
-  it('4级 1.5%、5级 0.5%，权重合计 1000，文案写得出来', () => {
+  it('4级 15%、5级 10%，权重合计 1000，店面不写概率', () => {
     expect(SLOT_WEIGHTS.reduce((a, r) => a + r.w, 0)).toBe(SLOT_WEIGHT_TOTAL);
-    expect(SLOT_WEIGHTS.find(r => r.level === 4)!.w).toBe(15);
-    expect(SLOT_WEIGHTS.find(r => r.level === 5)!.w).toBe(5);
+    expect(SLOT_WEIGHTS.find(r => r.level === 0)!.w).toBe(350);
+    expect(SLOT_WEIGHTS.find(r => r.level === 1)!.w).toBe(230);
+    expect(SLOT_WEIGHTS.find(r => r.level === 2)!.w).toBe(120);
+    expect(SLOT_WEIGHTS.find(r => r.level === 3)!.w).toBe(50);
+    expect(SLOT_WEIGHTS.find(r => r.level === 4)!.w).toBe(150);
+    expect(SLOT_WEIGHTS.find(r => r.level === 5)!.w).toBe(100);
     const text = slotBlurb();
     expect(text).toContain('5级神器大奖');
     expect(text).toContain('临时区');
@@ -32,16 +36,15 @@ describe('摇奖机', () => {
       if (lv === 4) lv4++;
       if (lv === 5) lv5++;
     }
-    expect(lv4).toBe(15);
-    expect(lv5).toBe(5);
+    expect(lv4).toBe(150);
+    expect(lv5).toBe(100);
   });
 
-  it('卖出价期望低于花费', () => {
-    for (const lv of [1, 10, 15, 25, 40, 50]) {
-      expect(slotCost(lv)).toBeGreaterThan(slotExpectedSell(lv));
-    }
+  it('花费仍按关卡涨', () => {
     expect(slotCost(1)).toBe(18);
     expect(slotCost(50)).toBe(18 + 8);
+    expect(slotCost(50)).toBeGreaterThan(slotCost(1));
+    expect(slotExpectedSell(1)).toBeGreaterThan(0);
   });
 
   it('金币不够不动档；摇空只扣钱；5级进临时区，卖了就能开战', () => {
@@ -55,7 +58,7 @@ describe('摇奖机', () => {
 
     const miss = new Game(newGameState(4));
     miss.s.gold = 80;
-    miss.s.rng = stateFor(u => u < 0.46);
+    miss.s.rng = stateFor(u => u < 0.35);
     const before = miss.s.items.length;
     const r = miss.pullSlot();
     expect(r.ok).toBe(true);
@@ -66,7 +69,7 @@ describe('摇奖机', () => {
     const hit = new Game(newGameState(5));
     hit.s.phase = 'prep';
     hit.s.gold = 80;
-    hit.s.rng = stateFor(u => u >= 0.995);
+    hit.s.rng = stateFor(u => u >= 0.9);
     const prize = hit.pullSlot();
     expect(prize.ok).toBe(true);
     expect(prize.msg).toContain('Lv5');
