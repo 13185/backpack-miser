@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isBossLevel } from '../src/config/v3/campaign';
-import { GOBLIN_LV4_CHANCE, GOBLIN_NAME, GOBLIN_SECONDS, goblinHp, goblinReferenceDps } from '../src/config/v4/goblin';
+import { GOBLIN_HP_MULT, GOBLIN_LV4_CHANCE, GOBLIN_NAME, GOBLIN_SECONDS, goblinHp, goblinReferenceDps } from '../src/config/v4/goblin';
 import { ITEMS } from '../src/config/items';
 import type { ItemInstance } from '../src/models/types';
 import { createCombat, stepCombat } from '../src/systems/combat';
@@ -45,11 +45,13 @@ describe('罗纹口袋哥布林', () => {
     expect(late && late.level >= 41 && late.level <= 49 && !isBossLevel(late.level)).toBe(true);
   });
 
-  it('血量按参考火力打满 40 秒，攻击是 0，没有五行括号', () => {
+  it('三段血量是参考火力打满 40 秒再乘 2，攻击是 0，没有五行括号', () => {
     expect(GOBLIN_SECONDS).toBe(40);
-    expect(goblinHp('10-20')).toBe(Math.floor(goblinReferenceDps('10-20') * 40));
-    expect(goblinHp('20-30')).toBeGreaterThan(goblinHp('10-20'));
-    expect(goblinHp('40-50')).toBeGreaterThan(goblinHp('20-30'));
+    expect(GOBLIN_HP_MULT).toBe(2);
+    expect(goblinHp('10-20')).toBe(Math.floor(goblinReferenceDps('10-20') * 40) * 2);
+    expect(goblinHp('10-20')).toBe(3172);
+    expect(goblinHp('20-30')).toBe(4640);
+    expect(goblinHp('40-50')).toBe(8064);
     const lv = goblinLevel(16);
     expect(lv.title).toBe(GOBLIN_NAME);
     expect(lv.boss).toBe(false);
@@ -58,23 +60,23 @@ describe('罗纹口袋哥布林', () => {
     expect(lv.title.includes('（')).toBe(false);
   });
 
-  it('参考武器大约 40 秒打死，期间怪物不出手', () => {
+  it('参考武器 40 秒大约打掉一半，然后逃走，期间怪物不出手', () => {
     const lv = goblinLevel(16);
     const c = createCombat(pack(['dagger', 'greatsword', 'crossbow', 'warhammer'], 2).map((it, i) => (
       i === 3 ? { ...it, level: 1 as const } : it
     )), 80, 80, lv, { encounterKind: 'lootGoblin' });
     // 连弩参考是 2 级。上面 warhammer 被改成 1 级，dagger/greatsword/crossbow 仍是 2 级。
-    expect(c.mMaxHp).toBe(goblinHp('10-20'));
-    while (!c.over && c.t < 36000) stepCombat(c, 200);
-    expect(c.over).toBe(false);
-    expect(c.mHp).toBeGreaterThan(0);
+    expect(c.mMaxHp).toBe(3172);
     const attacks = [];
-    while (!c.over && c.t < 44000) attacks.push(...stepCombat(c, 200));
-    expect(c.over).toBe(true);
+    while (!c.over) attacks.push(...stepCombat(c, 200));
+    expect(c.won).toBe(false);
+    expect(c.escaped).toBe(true);
+    expect(c.t).toBe(GOBLIN_SECONDS * 1000);
+    const dealt = c.mMaxHp - c.mHp;
+    expect(dealt).toBeGreaterThan(c.mMaxHp * 0.4);
+    expect(dealt).toBeLessThan(c.mMaxHp * 0.6);
     expect(attacks.some(e => e.type === 'monsterAttack')).toBe(false);
     expect(c.hp).toBe(80);
-    if (c.won) expect(c.t).toBeGreaterThanOrEqual(36000);
-    else expect(c.mHp).toBeLessThan(c.mMaxHp * 0.12);
   });
 
   it('击杀进待整理且不推进关卡；超时逃走不掉东西、不扣生命金币', () => {

@@ -3,6 +3,8 @@ import type { ItemKind, Level } from '../../models/types';
 
 /** 限时打宝的秒数。击倒窗口和逃走都用这一条。 */
 export const GOBLIN_SECONDS = 40;
+/** 相对「参考火力打满 40 秒」的血量倍数。三段一起乘。 */
+export const GOBLIN_HP_MULT = 2;
 export const GOBLIN_NAME = '罗纹口袋哥布林';
 export const GOBLIN_TAUNT = '哈哈哈，给你机会你中用啊，傻瓜。';
 export const GOBLIN_VOICE = 'audio/voice/goblin_taunt';
@@ -24,9 +26,9 @@ export type GoblinBandId = typeof GOBLIN_BANDS[number]['id'];
  * 10–20：匕首 2、大剑 2、连弩 2、战锤 1。
  * 20–30：再换成匕首 3、战锤 2，加上长矛 1。
  * 40–50：匕首 3、大剑 3、连弩 3、战锤 3、长矛 2、链锤 2。
- * 血量 = floor(这些武器每秒伤害之和 × GOBLIN_SECONDS)。
- * 护甲是 0，所以这套火力大约要打满 40 秒。
- * 后段普通怪本身已经很厚，这里不按关卡生命再乘 3 倍，否则 40 秒内打不完。
+ * 先算这套武器打满 GOBLIN_SECONDS 的伤害，再乘 GOBLIN_HP_MULT。
+ * 护甲是 0。倍数是 2 时，参考火力在 40 秒里大约只打掉一半，时限一到它就逃走。
+ * 后段普通怪本身已经很厚，这里不按关卡生命再乘 3 倍。
  */
 export const GOBLIN_REFERENCE: Record<GoblinBandId, readonly { kind: ItemKind; level: 1 | 2 | 3; shots?: number }[]> = {
   '10-20': [
@@ -62,7 +64,7 @@ export function goblinReferenceDps(band: GoblinBandId): number {
 }
 
 export function goblinHp(band: GoblinBandId): number {
-  return Math.floor(goblinReferenceDps(band) * GOBLIN_SECONDS);
+  return Math.floor(goblinReferenceDps(band) * GOBLIN_SECONDS) * GOBLIN_HP_MULT;
 }
 
 export function goblinBandForLevel(level: number): GoblinBandId | null {
