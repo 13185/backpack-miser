@@ -8,7 +8,9 @@ import { weaponDamage } from '../src/systems/adjacency';
 import { itemPlace } from '../src/systems/placement';
 import { nextRandom } from '../src/systems/rng';
 import { isArmorKind } from '../src/config/v4/armor';
-import { SKILL_RAMP_STEP, bossSkillLine } from '../src/config/v4/bosses';
+import { SKILL_RAMP_STEP, bossElementMark, bossSkillLine, withBossElement } from '../src/config/v4/bosses';
+import { resolveStoryText } from '../src/config/v3/story';
+import { bossCinema } from '../src/ui/cinema';
 import { migrateV3 } from '../src/systems/save';
 import { gearTrialLevel } from '../src/systems/gearTrial';
 
@@ -42,6 +44,8 @@ describe('穿戴离开背包', () => {
     const actors = c.actors.filter(a => a.id === dagger.id);
     expect(actors).toHaveLength(1);
     expect(actors[0].value).toBe(ITEMS.dagger.values[0]);
+    expect(actors[0].interval).toBe(Math.round(ITEMS.dagger.interval! * 1000));
+    expect(actors[0].element ?? null).toBeNull();
     expect(g.unequip(dagger.id).ok).toBe(true);
     expect(itemPlace(dagger)).toBe('bag');
     expect(g.s.mainHandId).toBeNull();
@@ -315,6 +319,58 @@ describe('V4 方案、合成、商店和防御', () => {
     auto.heavyWindupUntil = 600;
     stepCombat(auto, 200);
     expect(auto.guardUses).toBe(1);
+  });
+});
+
+describe('主手武器参与输出', () => {
+  it('穿戴后的伤害、攻速和元素来自主手，背包里另一件各自结算', () => {
+    const g = new Game(newGameState(1));
+    g.s.items = [
+      { id: 'd', kind: 'dagger', level: 1, x: null, y: null, rotated: false, element: 'fire', bin: 'hand' },
+      { id: 's', kind: 'greatsword', level: 1, x: 0, y: 0, rotated: false, element: 'wood' },
+    ];
+    g.s.mainHandId = 'd';
+    const c = g.makeCombat();
+    const hand = c.actors.find(a => a.id === 'd');
+    const bag = c.actors.find(a => a.id === 's');
+    expect(hand).toBeTruthy();
+    expect(bag).toBeTruthy();
+    expect(hand!.value).toBe(ITEMS.dagger.values[0]);
+    expect(hand!.interval).toBe(Math.round(ITEMS.dagger.interval! * 1000));
+    expect(hand!.element).toBe('fire');
+    expect(bag!.value).toBe(ITEMS.greatsword.values[0]);
+    expect(bag!.interval).toBe(Math.round(ITEMS.greatsword.interval! * 1000));
+    expect(bag!.element).toBe('wood');
+    expect(c.actors.filter(a => a.kind === 'weapon')).toHaveLength(2);
+  });
+});
+
+describe('首领名五行标记', () => {
+  it('从 bossElements 派生，第 50 关合成一个括号', () => {
+    expect(bossElementMark(5)).toBe('');
+    expect(bossElementMark(10)).toBe('');
+    expect(bossElementMark(11)).toBe('');
+    expect(bossElementMark(15)).toBe('（木）');
+    expect(bossElementMark(20)).toBe('（金）');
+    expect(bossElementMark(25)).toBe('（水）');
+    expect(bossElementMark(30)).toBe('（土）');
+    expect(bossElementMark(35)).toBe('（火）');
+    expect(bossElementMark(40)).toBe('（金）');
+    expect(bossElementMark(45)).toBe('（木）');
+    expect(bossElementMark(50)).toBe('（金水火）');
+    expect(withBossElement(15, getLevel(15).title)).toBe('巢穴的女王（木）');
+    expect(withBossElement(50, getLevel(50).title)).toBe('黄金心脏（金水火）');
+    expect(withBossElement(15, '巢穴的女王（木）')).toBe('巢穴的女王（木）');
+    expect(withBossElement(1, getLevel(1).title)).toBe(getLevel(1).title);
+    expect(getLevel(15).title).toBe('巢穴的女王');
+    expect(resolveStoryText('boss_pre_1').title).toBe('贪婪矿洞·战前');
+    expect(resolveStoryText('boss_pre_3').title).toBe('幽毒巢穴·战前（木）');
+    expect(resolveStoryText('boss_post_10').title).toBe('黄金心脏·战后（金水火）');
+    expect(bossCinema(5)?.title).toBe('箱盖卡住');
+    expect(bossCinema(15)?.title).toContain('巢穴的女王（木）');
+    expect(bossCinema(50)?.title).toContain('黄金心脏（金水火）');
+    expect(gearTrialLevel(3, 11).title).toBe('寻找套装训练');
+    expect(withBossElement(11, gearTrialLevel(3, 11).title)).toBe('寻找套装训练');
   });
 });
 

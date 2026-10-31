@@ -1,4 +1,4 @@
-import type { Element } from './elements';
+import { ELEMENT_NAME, type Element } from './elements';
 
 export interface BossElements {
   element?: Element;
@@ -40,6 +40,23 @@ export function bossSkillLine(level: number): string | null {
   if (row.element === 'earth') return '元素：土。土抗沿用既有表，没有额外关键技能。';
   const name = row.element === 'wood' ? '木' : row.element === 'fire' ? '火' : row.element === 'water' ? '水' : '金';
   return `元素：${name}。${name}抗。技能：${ELEMENT_SKILLS[row.element].name}。${ramp}。`;
+}
+
+/** 有主属性的首领显示名后缀。第 5、10 关和第 50 关以外的非阶段首领各一个字；黄金心脏三阶段合成一个括号。 */
+export function bossElementMark(level: number): string {
+  const row = bossElements(level);
+  if (!row?.element) return '';
+  const chars = row.phases?.length
+    ? row.phases.map(p => ELEMENT_NAME[p.element]).join('')
+    : ELEMENT_NAME[row.element];
+  return `（${chars}）`;
+}
+
+/** 只在该关 bossElements 有主属性时追加后缀。非首领、第 5、10 关原样返回。 */
+export function withBossElement(level: number, title: string): string {
+  const mark = bossElementMark(level);
+  if (!mark || title.includes(mark)) return title;
+  return title + mark;
 }
 
 /** 第 5、10 关不考核元素。15 关起用规格表，不另乘一套抗性。 */

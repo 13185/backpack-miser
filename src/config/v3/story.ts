@@ -3,6 +3,7 @@
  * 主线信息全部挂在必经节点；跳过文字不跳过选择。
  */
 import type { HeroClass } from '../../models/types';
+import { withBossElement } from '../v4/bosses';
 
 export type EndingId = 'break_bond' | 'public_ledger' | 'takeover';
 export type StoryTone = HeroClass; // merchant | guard | ranger
@@ -299,14 +300,14 @@ export function resolveStoryText(
     const s = CHAPTER_STORIES[ch];
     if (!s) return { title: '战前', body: id };
     const body = (opts?.heroClass && s.bossPreByClass?.[opts.heroClass]) || s.bossPre;
-    return { title: `${s.title}·战前`, body };
+    return { title: withBossElement(ch * 5, `${s.title}·战前`), body };
   }
   if (id.startsWith('boss_post_')) {
     const ch = Number(id.slice('boss_post_'.length));
     const s = CHAPTER_STORIES[ch];
     if (!s) return { title: '战后', body: id };
     const body = (opts?.heroClass && s.bossPostByClass?.[opts.heroClass]) || s.bossPost;
-    return { title: `${s.title}·战后`, body };
+    return { title: withBossElement(ch * 5, `${s.title}·战后`), body };
   }
   if (id.startsWith('lv_')) {
     const lv = Number(id.slice(3));

@@ -1,4 +1,6 @@
+import { getLevel } from '../config/v3/levels';
 import { CHAPTER_STORIES } from '../config/v3/story';
+import { bossElementMark } from '../config/v4/bosses';
 import type { HeroClass } from '../models/types';
 
 export interface CinemaBeat {
@@ -46,7 +48,9 @@ export function bossCinema(level: number): CinemaBeat | null {
   const story = CHAPTER_STORIES[ch];
   const vanish = VANISH[level];
   if (!story || !vanish) return null;
-  return { id: `boss_post_${ch}`, ms: 8000, look: vanish.look, title: vanish.title, plate: vanish.plate, line: story.bossPost };
+  const mark = bossElementMark(level);
+  const named = mark ? `${getLevel(level).title}${mark}` : '';
+  return { id: `boss_post_${ch}`, ms: 8000, look: vanish.look, title: named ? `${vanish.title} · ${named}` : vanish.title, plate: vanish.plate, line: story.bossPost };
 }
 
 export function isBossStory(id: string | null | undefined): boolean {

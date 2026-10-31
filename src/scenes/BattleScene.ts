@@ -9,6 +9,7 @@ import { drawHero, drawMonster } from './art';
 import { pickEnemyArt, ENEMY_FOOT_ORIGIN_Y } from '../art/enemyArt';
 import { heroArtEntries, levelArtEntries, loadTextures } from '../art/artLoad';
 import { CAMPAIGN_LENGTH } from '../config/v3';
+import { bossElementMark, withBossElement } from '../config/v4/bosses';
 import { V3_LEVELS } from '../config/v3/levels';
 import { HeroSprite } from '../art/HeroSprite';
 import type { HeroClassId } from '../art/types';
@@ -233,7 +234,9 @@ export class BattleScene extends Phaser.Scene {
     this.applyBackground(lv.chapter ?? 1);
     this.applyMonsterArt(lv);
     const baseName = MONSTER_BASE[lv.monster]?.name;
-    this.monName.setText(`${lv.boss ? '👑 ' : ''}${lv.title}${baseName && baseName !== lv.title ? `（${baseName}）` : ''}`);
+    const mark = lv.boss ? bossElementMark(lv.level ?? 0) : '';
+    const species = baseName && baseName !== lv.title ? `（${baseName}）` : '';
+    this.monName.setText(`${lv.boss ? '👑 ' : ''}${lv.title}${mark}${species}`);
     this.mon.setAlpha(1).setAngle(0);
     this.target = { hp, maxHp, shield: 0, mHp: lv.hp, mMax: lv.hp }; this.shown = { ...this.target };
     this.shieldBubble?.setVisible(false); this.timerText?.setText(''); this.banner?.setAlpha(0);
@@ -419,12 +422,13 @@ export class BattleScene extends Phaser.Scene {
         this.cameras.main.shake(260, 0.014);
       } else if (e.type === 'heartPhase') {
         const names = ['', '重击', '回响', '过热'];
-        this.showBanner(`💛 黄金心脏 · 阶段${e.phase}（${names[e.phase] ?? ''}）`, '#ffd45c');
+        this.showBanner(`💛 ${withBossElement(this.level?.level ?? 50, '黄金心脏')} · 阶段${e.phase}（${names[e.phase] ?? ''}）`, '#ffd45c');
         this.castRing(0xffd45c, 2.0, 900);
         this.cameras.main.shake(200, 0.008);
       } else if (e.type === 'bossHaste') {
         const nm = this.level?.monster === 'salt_captain' ? '盐雾船长' : '首领';
-        this.showBanner(`💢 ${nm}暴怒施法：攻速提升！`);
+        const mark = this.level?.boss ? bossElementMark(this.level.level ?? 0) : '';
+        this.showBanner(`💢 ${nm}${mark}暴怒施法：攻速提升！`);
         this.castRing(0xff4040, 1.8, 700);
         this.cameras.main.shake(160, 0.007);
       } else if (e.type === 'regen') {

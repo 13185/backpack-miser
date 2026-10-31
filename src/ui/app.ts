@@ -15,7 +15,7 @@ import { armorResist, isArmorKind } from '../config/v4/armor';
 import { ELEMENT_NAME, ELEMENTS, type Element as GearElement } from '../config/v4/elements';
 import { buyPrice, expansionLabel, expansionOffer, refreshCost, sellPrice } from '../systems/economy';
 import { slotBlurb, slotCost } from '../systems/slot';
-import { bossSkillLine } from '../config/v4/bosses';
+import { bossSkillLine, withBossElement } from '../config/v4/bosses';
 import { chapterBossElement, ensureGearTrials, gearTrialLevel } from '../systems/gearTrial';
 import { activateGuard } from '../systems/combat';
 import { Game, RESERVE_CAP, applyBossPrep, endingAvailability, itemLabel, newGameState, type Result } from '../systems/game';
@@ -351,9 +351,10 @@ export class App {
     // HUD
     const ch = V3_CHAPTERS.find(c => c.id === (s.currentChapter ?? 1));
     const lvDef = getLevel(s.level);
+    const hudTitle = withBossElement(s.level, lvDef.title);
     const cap = s.campaignLength ?? CAMPAIGN_LENGTH;
     $('hud').innerHTML = `<div class="hudItem lvl">第 <b>${s.level}</b>/${cap} 关</div>
-      <div class="hudItem chap" title="${lvDef.title}">${ch ? ch.name : ''} · ${lvDef.title}</div>
+      <div class="hudItem chap" title="${esc(hudTitle)}">${ch ? ch.name : ''} · ${esc(hudTitle)}</div>
       <div class="hudItem hp"><span>❤</span><div class="hpbar"><i style="width:${(s.hp / s.maxHp) * 100}%"></i></div><b>${s.hp}/${s.maxHp}</b></div>
       <div class="hudItem gold"><span class="coin"></span><b id="goldNum">${s.gold}</b></div>
       <button class="iconBtn" id="logBtn" aria-label="剧情日志" title="剧情日志">📜</button>
@@ -395,12 +396,13 @@ export class App {
     const temps = g.tempItems.length;
     const armed = g.bagItems.some(i => { const c = ITEMS[i.kind].category; return c === 'weapon' || c === 'needle'; }) || !!g.handItem;
     const skillLine = s.gearFight ? null : bossSkillLine(s.level);
+    const eTitle = s.gearFight ? lv.title : withBossElement(lv.level ?? s.level, lv.title);
     let startLabel = '⚔ 开始战斗';
     let startMode: 'start' | 'tidy' | 'block' = can.ok ? 'start' : 'block';
     if (!battle && temps) { startLabel = `整理装备（${temps}）`; startMode = 'tidy'; }
     else if (!battle && !armed) { startLabel = '配置攻击装备'; startMode = 'block'; }
     $('mid').innerHTML = `<div class="enemyCard ${lv.boss ? 'boss' : ''}">
-        <div class="eName">${s.gearFight ? '训练：' : lv.boss ? '👑 首领 · ' : '下一关：'}${lv.title}</div>
+        <div class="eName">${s.gearFight ? '训练：' : lv.boss ? '👑 首领 · ' : '下一关：'}${esc(eTitle)}</div>
         ${lvLine ? `<div class="muted" style="margin:4px 0 8px">「${esc(lvLine)}」</div>` : ''}
         <div class="eStats"><span>❤ ${lv.hp}</span><span>⚔ ${lv.atk}/${lv.interval}秒</span>${lv.armor ? `<span>🛡 减伤${lv.armor}</span>` : ''}</div>
         <div class="eAbil">✦ ${abil}${mech}${skillLine ? `<br/>✦ ${esc(skillLine)}` : ''}<br/>⚠ ${(lv.boss && (lv.level ?? 0) >= 40 ? 36 : ECONOMY.enrageAt)}秒后狂暴（+${lv.boss && (lv.level ?? 0) >= 40 ? 14 : 10}%，之后每${ECONOMY.enrageStep}秒再加一次）；${ECONOMY.timeout}秒未击败即失败。</div>
@@ -581,7 +583,7 @@ export class App {
         const label = t.claimed ? '再次练习（无奖励）' : t.ready ? '领取奖励' : '挑战委托';
         return `<div class="detBtns"><span>${TRIAL_NAME[t.kind]}</span><button class="btn small ${t.ready && !t.claimed ? 'gold' : ''}" data-trial="${t.id}" ${prep ? '' : 'disabled'}>${label}</button></div>`;
       }).join('')}
-      ${info ? `<details><summary>第${s.currentChapter * 5}关首领预告</summary><div class="sDesc">偏${elName(info.element)}，弱点偏${elName(info.weakness)}。火抗甲只减受到的火伤，不改变自己的火输出。</div></details>` : ''}`}</div>`;
+      ${info ? `<details><summary>第${s.currentChapter * 5}关首领 ${esc(withBossElement(s.currentChapter * 5, getLevel(s.currentChapter * 5).title))}</summary><div class="sDesc">偏${elName(info.element)}，弱点偏${elName(info.weakness)}。火抗甲只减受到的火伤，不改变自己的火输出。</div></details>` : ''}`}</div>`;
     $('pageTrial').querySelectorAll<HTMLElement>('[data-trial]').forEach(b => b.onclick = () => this.guard(() => {
       const id = b.dataset.trial!;
       const trial = s.gearTrials?.trials.find(t => t.id === id);
@@ -1267,9 +1269,10 @@ export class App {
     const g = this.game!, s = g.s, l = s.last!, loot = s.loot!;
     const ov = $('overlay'); ov.className = 'show';
     const midBanner = isMidAct(l.level)
-      ? `<div class="warn" style="margin:8px 0">⚔ 中段折转：王库只是收税站……黄金心脏仍在更深处。继续第21关。</div>`
+      ? `<div class="warn" style="margin:8px 0">⚔ 中段折转：王库只是收税站……${esc(withBossElement(50, '黄金心脏'))}仍在更深处。继续第21关。</div>`
       : '';
-    ov.innerHTML = `<div class="modal"><h2>🏆 第${l.level}关胜利！</h2>
+    const bossBit = isBossLevel(l.level) ? ` ${esc(withBossElement(l.level, getLevel(l.level).title))}` : '';
+    ov.innerHTML = `<div class="modal"><h2>🏆 第${l.level}关胜利！${bossBit}</h2>
       ${midBanner}
       <div class="goldGain"><span class="coin big"></span> +${l.baseGold + l.bagGold} 金币 <small>（胜利${l.baseGold}${l.bagGold ? ` + 钱袋${l.bagGold}` : ''}）</small></div>
       <div class="muted">生命恢复 ${s.relics.includes('K02') ? 0 : winHealAmount(s.maxHp, isBossLevel(l.level))} 点（当前 ${s.hp}/${s.maxHp}）</div>
@@ -1345,7 +1348,9 @@ export class App {
     const ov = $('overlay'); ov.className = 'show';
     const canCheckpoint = !won && s.mode === 'story' && !!s.chapterCheckpoint;
     const end = s.endingChoice ? ENDING_CHOICES[s.endingChoice as EndingId] : null;
-    const winTitle = won ? (end ? `👑 通关 · ${end.title}` : '👑 通关！黄金心脏已沉寂，你走完了五十关旅程！') : '💀 冒险失败';
+    const heart = withBossElement(50, '黄金心脏');
+    const fought = isBossLevel(l.level) ? withBossElement(l.level, getLevel(l.level).title) : '';
+    const winTitle = won ? (end ? `👑 通关 · ${heart} · ${end.title}` : `👑 通关！${heart}已沉寂，你走完了五十关旅程！`) : `💀 冒险失败${fought ? ' · ' + fought : ''}`;
     ov.innerHTML = `<div class="modal ${won ? 'win' : 'lose'}"><h2>${winTitle}</h2>
       ${won && end ? `<p style="line-height:1.6">${esc(end.finale)}</p>` : ''}
       ${won && s.completion ? `<p class="muted">记录：${s.completion.type === 'pure' ? '无援助故事通关' : s.completion.type === 'assisted' ? '援助通关（与纯净记录分开）' : '单命远征通关'} · 重试 ${s.completion.retries} 次</p>` : ''}${won ? '' : `<p class="warn">${esc(l.reason)}</p>`}
@@ -1403,7 +1408,7 @@ export class App {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal"><h2>🗺 路线选择 · 第${s.level}关</h2>
       <p style="line-height:1.6">本关可选<strong>普通</strong>或<strong>精英</strong>分支。精英：敌人生命×1.25、胜利金币×1.4，并额外三选一遗物；敌人机制更强。</p>
-      <p class="muted">普通对手：${esc(lv.title)}（${esc(base?.name ?? lv.monster)}）${lv.mechSummary ? ' · ' + esc(lv.mechSummary) : ''}</p>
+      <p class="muted">普通对手：${esc(withBossElement(s.level, lv.title))}（${esc(base?.name ?? lv.monster)}）${lv.mechSummary ? ' · ' + esc(lv.mechSummary) : ''}</p>
       <div class="btns col" style="gap:8px;margin-top:12px">
         <button class="btn gold big" id="routeNormal">普通路线</button>
         <button class="btn big" id="routeElite">精英路线（高风险高回报）</button>
@@ -1607,7 +1612,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.4 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.5 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
