@@ -620,7 +620,7 @@ export class Game {
     if (this.tempItems.length) return fail('请先处理待整理的装备。');
     ensureGearTrials(this.s);
     const trial = this.s.gearTrials?.trials.find(t => t.id === trialId);
-    if (!trial) return fail('没有这张寻装委托。');
+    if (!trial) return fail('没有这张寻找套装委托。');
     const armed = this.bagItems.some(i => this.ownsWeapon(i.kind));
     if (!armed) return fail('至少装备一把武器才能战斗。');
     this.s.gearFight = { trialId, hp: this.s.hp };
@@ -631,7 +631,7 @@ export class Game {
   private settleGearTrial(c: CombatState): Result {
     if (this.s.phase !== 'battle' || !c.over) return fail('战斗未结束。');
     const fight = this.s.gearFight;
-    if (!fight) return fail('没有寻装战斗。');
+    if (!fight) return fail('没有寻找套装战斗。');
     if (this.s.settledToken === this.s.battleToken) return fail('已结算。');
     this.s.settledToken = this.s.battleToken;
     const trial = this.s.gearTrials?.trials.find(t => t.id === fight.trialId);
@@ -639,8 +639,8 @@ export class Game {
     this.s.hp = Math.max(1, fight.hp);
     this.s.gearFight = null;
     this.s.phase = 'prep';
-    this.s.last = { level: this.s.level, won: c.won, reason: c.won ? '寻装完成' : c.reason, time: c.t / 1000, weaponDamage: [], shieldAbsorb: c.stats.absorbed, potionHeal: c.stats.healed, bagGold: 0, baseGold: 0 };
-    return this.commit({ ok: true, msg: c.won ? '寻装胜利。主线生命和金币没有变。' : '寻装失败。主线生命和金币没有变。' });
+    this.s.last = { level: this.s.level, won: c.won, reason: c.won ? '寻找套装完成' : c.reason, time: c.t / 1000, weaponDamage: [], shieldAbsorb: c.stats.absorbed, potionHeal: c.stats.healed, bagGold: 0, baseGold: 0 };
+    return this.commit({ ok: true, msg: c.won ? '寻找套装胜利。主线生命和金币没有变。' : '寻找套装失败。主线生命和金币没有变。' });
   }
   claimGearTrial(trialId: string): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -667,7 +667,7 @@ export class Game {
     } else {
       this.addTemp('potion', 1);
     }
-    return this.commit({ ok: true, msg: '寻装奖励已放入待整理。' });
+    return this.commit({ ok: true, msg: '寻找套装奖励已放入待整理。' });
   }
   expand(sacrificeIds?: string[]): Result {
     const g = this.prepOnly(); if (g) return g;
@@ -750,7 +750,7 @@ export class Game {
       const enemy = trialEnemy(lv.hp, lv.atk, info?.element ?? null);
       hp = maxHp;
       lv = {
-        ...lv, hp: enemy.hp, atk: enemy.atk, boss: false, title: '寻装训练',
+        ...lv, hp: enemy.hp, atk: enemy.atk, boss: false, title: '寻找套装训练',
         resist: enemy.resist, bossElement: enemy.element ?? undefined, furnaceCycle: false,
         heavyStrike: undefined, phaseShields: undefined, summons: undefined, heartPhases: undefined,
         overheat: undefined, echo: undefined, pray: undefined,

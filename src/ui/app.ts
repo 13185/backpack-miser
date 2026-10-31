@@ -64,7 +64,7 @@ const TUTORIAL = [
 const WEAR_TUTORIAL = [
   { sel: '#handSlot', text: '把武器拖进<b>主手</b>，把衬甲拖进<b>护甲</b>。它们仍占背包原来的格子。' },
   { sel: '#tempWrap', text: '<b>待整理</b>紧挨背包。备用箱只有两件，放进去就不攻击、不加抗性。' },
-  { sel: '#sheetNav', text: '上面只留<b>背包、寻装、市集</b>。方案和战报在旁边，需要时再打开。' },
+  { sel: '#sheetNav', text: '上面只留<b>背包、寻找套装、商店</b>。方案和战报在旁边，需要时再打开。' },
 ];
 const TRIAL_NAME: Record<'guard' | 'counter' | 'special', string> = {
   guard: '防护委托', counter: '克制委托', special: '专项委托',
@@ -525,7 +525,6 @@ export class App {
     const g = this.game!; const s = g.s; const prep = s.phase === 'prep';
     if (s.level > 10 && g.maybeGrantV4Lesson()) this.persist(g.s);
     const hand = g.handItem; const armor = g.wornArmor;
-    const cls = s.heroClass || 'merchant';
     const open = s.level > 10;
     const armorKind = armor && isArmorKind(armor.kind) ? armor.kind : null;
     const resist = armorKind
@@ -535,7 +534,6 @@ export class App {
       ? `<button class="btn small" id="guardBtn">战术防御</button>` : '';
     $('equip').innerHTML = `<div class="eqBoard" aria-label="人物穿戴">
         <div class="eqSlot" id="handSlot" data-slot="hand">${this.slotFig(hand, open ? '拖入武器' : '未开启')}<span class="slotName">主手</span></div>
-        <div class="heroPreview"><img src="art/characters/${cls}/${cls}_idle_512.png" alt="" draggable="false"></div>
         <div class="eqSlot" id="armorSlot" data-slot="armor">${this.slotFig(armor, open ? '拖入护甲' : '未开启')}<span class="slotName">护甲</span></div>
       </div>
       <div class="sDesc">${hand ? `攻击倾向：${elName(hand.element)} · ${ITEMS[hand.kind].name}` : '未指定主手，背包武器正常攻击'}</div>
@@ -571,7 +569,7 @@ export class App {
     const info = chapterBossElement(s.currentChapter);
     const trials = s.level > 10 && s.gearTrials?.chapter === s.currentChapter ? s.gearTrials.trials : [];
     const locked = s.level <= 10;
-    $('pageTrial').innerHTML = `<div class="panel"><div class="ptitle">寻装</div>
+    $('pageTrial').innerHTML = `<div class="panel"><div class="ptitle">寻找套装</div>
       ${locked ? '<div class="empty">通关第10关后开放。训练不改主线生命、金币和关卡。</div>' : `
       <p class="muted">训练用满血打一局，结束回到主线原来的生命和金币。奖励领一次。</p>
       ${trials.map(t => {
@@ -732,7 +730,7 @@ export class App {
     const imprint = `<div class="slotBox"><div class="sName">元素改造</div>
       <div class="sDesc">${canImprint ? `当前 ${ITEMS[picked!.kind].name} · ${elName(picked!.element)}。每章 10 金一次。` : '先选中一把武器。每章 10 金一次。火抗甲不改变火输出。'}</div>
       <div class="detBtns">${[{ id: '', label: '无属性' }, ...ELEMENTS.map(e => ({ id: e, label: ELEMENT_NAME[e] }))].map(e => `<button class="btn small" data-imprint="${e.id}" ${canImprint && prep ? '' : 'disabled'}>${e.label}</button>`).join('')}</div></div>`;
-    $('shop').innerHTML = `<div class="ptitle">市集 <small>买到的装备进入待整理</small></div>
+    $('shop').innerHTML = `<div class="ptitle">商店 <small>买到的装备进入待整理</small></div>
       <div class="shopRow">${s.shop.slots.map((sl, i) => {
         const p = buyPrice(sl.kind, sl.level, s.heroClass); const poor = s.gold < p; const d = ITEMS[sl.kind];
         const short = Math.max(0, p - s.gold);
@@ -1588,7 +1586,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.0 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.1 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>

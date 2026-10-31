@@ -165,11 +165,8 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 .sheetNav { padding: 8px 16px 0; }
 .sheetNav button, .subNav button { flex: 1; border: 2px solid #5c4030; background: #24180f; color: var(--text); border-radius: 10px; padding: 8px 6px; font-weight: bold; cursor: pointer; }
 .sheetNav button.on, .subNav button.on { background: linear-gradient(#e8c27a, #a07830); color: #2a1c10; }
-.prepGrid { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 12px; align-items: start; }
-.eqBoard { display: grid; grid-template-columns: 76px 1fr 76px; gap: 6px; align-items: center; }
-.heroPreview { display: flex; align-items: flex-end; justify-content: center; min-height: 96px; }
-.heroPreview img { width: 72px; height: 96px; object-fit: contain; animation: breath 2.8s ease-in-out infinite; transform-origin: center bottom; }
-@keyframes breath { 50% { transform: scale(1.035); } }
+.prepGrid { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.eqBoard { display: flex; gap: 8px; align-items: stretch; width: max-content; }
 .eqSlot { width: 76px; min-height: 76px; border: 2px dashed #8a7355; border-radius: 12px; background: #120e0a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; touch-action: none; }
 .eqSlot .slotName { font-size: 11px; color: var(--muted); }
 .eqSlot .slotEmpty { font-size: 11px; color: var(--gold2); text-align: center; line-height: 1.2; }
@@ -184,14 +181,13 @@ body.wide #mid, #mid { grid-template-columns: 1.3fr 1fr; }
 button:disabled, .expandRow:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 959px) {
   .prepGrid { grid-template-columns: minmax(0, 1fr); }
-  .eqBoard { grid-template-columns: 64px 1fr 64px; }
+  .eqBoard { width: auto; }
   .eqSlot { width: 64px; min-height: 64px; }
-  .heroPreview img { width: 64px; height: 84px; }
 }
 @media (max-width: 430px) {
   #battle { height: 168px; min-height: 140px; max-height: 180px; }
+  .sheetNav button { font-size: 13px; padding: 8px 2px; }
   .eqSlot { width: 56px; min-height: 56px; }
-  .eqBoard { grid-template-columns: 56px 1fr 56px; }
   #layout { padding: 8px; }
 }
 .slotBox { margin-top: 10px; padding: 8px; border: 2px dashed #8a5a18; border-radius: 12px; background: #3a220812; text-align: center; }
