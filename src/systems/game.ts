@@ -406,6 +406,21 @@ export class Game {
     it.x = x; it.y = y; it.rotated = rot;
     return this.commit();
   }
+  /** 待整理的一件按现有占格规则放进背包。放不下就留在待整理，不合成。 */
+  placeIntoBag(id: string): Result {
+    const blocked = this.prepOnly(); if (blocked) return blocked;
+    const it = this.find(id); if (!it) return fail('找不到装备。');
+    if (itemPlace(it) !== 'temp') return fail('只有待整理的装备可以这样放进背包。');
+    const rots = ITEMS[it.kind].rotatable ? [it.rotated, !it.rotated] : [false];
+    for (const rot of rots) {
+      for (let y = 0; y < this.s.rows; y++) for (let x = 0; x < this.s.cols; x++) {
+        if (!canPlace(this.s.items, this.s.cols, this.s.rows, it.kind, x, y, rot, it.id)) continue;
+        it.x = x; it.y = y; it.rotated = ITEMS[it.kind].rotatable ? rot : false;
+        return this.commit({ ok: true, msg: `${ITEMS[it.kind].name} 已放入背包。` });
+      }
+    }
+    return fail('背包放不下，这件还留在待整理。可以合成、出售或扩容。');
+  }
   toTemp(id: string): Result {
     const g = this.prepOnly(); if (g) return g;
     const it = this.find(id); if (!it) return fail('找不到装备。');

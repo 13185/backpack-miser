@@ -90,6 +90,8 @@ export class App {
   selected: string | null = null;
   drag: DragState | null = null;
   private holdTimer = 0;
+  /** 待整理区双击。只认同一件、间隔够短的第二次松开。 */
+  private lastTempTap: { id: string; t: number } | null = null;
   sellConfirm: { id: string; until: number } | null = null;
   speed = 1;
   heroClass: HeroClassId = 'merchant';
@@ -637,10 +639,13 @@ export class App {
     const tc = Math.min(40, this.cell * 0.7);
     const t = $('temp');
     const n = g.tempItems.length;
-    $('tempTitle').textContent = n ? `待整理（${n}）` : '待整理';
+    $('tempTitle').textContent = n ? `待整理（${n}）· 双击放入背包` : '待整理';
     t.innerHTML = n ? g.tempItems.map(it => this.itemHtml(it, tc, this.selected === it.id ? 'sel' : '')).join('') : `<div class="empty">没有待整理的装备</div>`;
     $('tempWrap').classList.toggle('hasItems', n > 0);
-    t.querySelectorAll<HTMLElement>('.item').forEach(el => el.addEventListener('pointerdown', e => this.onDown(e, el.dataset.id!, 'temp')));
+    t.querySelectorAll<HTMLElement>('.item').forEach(el => {
+      el.title = '双击放入背包';
+      el.addEventListener('pointerdown', e => this.onDown(e, el.dataset.id!, 'temp'));
+    });
   }
   /** 选中/拖动宝石时高亮被强化的武器；选中武器时高亮强化它的宝石 */
   highlightSet(): Set<string> {
@@ -733,7 +738,7 @@ export class App {
     $('closeDet').onclick = () => { this.selected = null; this.render(); };
     if (d.rotatable) $('dRot').onclick = () => this.act(() => g.rotate(it.id));
     if (inBag(it)) $('dTemp').onclick = () => this.act(() => g.toTemp(it.id));
-    else $('dPlace').onclick = () => this.act(() => this.autoPlace(it));
+    else $('dPlace').onclick = () => this.act(() => itemPlace(it) === 'temp' ? g.placeIntoBag(it.id) : this.autoPlace(it));
     const dHand = document.getElementById('dHand');
     const dArmor = document.getElementById('dArmor');
     const dBox = document.getElementById('dBox');
@@ -1006,9 +1011,25 @@ export class App {
     window.clearTimeout(this.holdTimer);
     const d = this.drag; if (!d) return;
     const g = this.game!;
-    if (!d.active) { // 点击 → 查看详情
+    if (!d.active) { // 点击 → 查看详情；待整理区连点两次则放入背包
       this.releaseDrag(false);
       if (!(e.target as HTMLElement).closest('.item, .slotFig')) return;
+      if (d.from === 'temp') {
+        const now = performance.now();
+        const prev = this.lastTempTap;
+        const dbl = !!prev && prev.id === d.id && now - prev.t < 450;
+        this.lastTempTap = dbl ? null : { id: d.id, t: now };
+        if (dbl) {
+          const it = g.find(d.id);
+          if (it && itemPlace(it) === 'temp') {
+            if (g.s.phase !== 'prep') { sfx.error(); this.toast('战斗中无法整理背包。', true); return; }
+            this.selected = d.id;
+            this.sellConfirm = null;
+            this.act(() => g.placeIntoBag(d.id));
+            return;
+          }
+        }
+      }
       this.selected = this.selected === d.id ? null : d.id; this.sellConfirm = null; sfx.click(); this.render(); return;
     }
     this.computeDrop(e.clientX, e.clientY);
@@ -1645,7 +1666,7 @@ export class App {
   showSettings() {
     const ov = $('overlay'); ov.className = 'show';
     ov.innerHTML = `<div class="modal small"><h2>⚙ 设置</h2>
-      <p class="muted">版本 3.8.9 · 平衡 ${BALANCE_VERSION}</p>
+      <p class="muted">版本 3.8.10 · 平衡 ${BALANCE_VERSION}</p>
       <label class="toggle"><input type="checkbox" id="sSound" ${this.settings.sound ? 'checked' : ''}/> 音效</label>
       <label class="voiceSlide">语音 <input type="range" id="sVoice" min="0" max="100" value="${this.settings.voice}"></label>
       <div class="btns col"><button class="btn" id="sOpen">回看开场</button><button class="btn" id="sTut">重新查看引导</button><button class="btn" id="sTitle">返回标题（进度已自动保存）</button>
