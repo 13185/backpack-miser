@@ -385,6 +385,9 @@ export function wallEase(level: number, boss: boolean): number {
   return 1;
 }
 
+/** 相对 3.8.10 已落地预算，小怪和首领的生命、攻击再 floor(×0.8)。 */
+export const GLOBAL_BUDGET_SCALE = 0.8;
+
 export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
   const cut = (n: number) => Math.floor(n * 2 * 0.7);
   const ease = (n: number) => Math.floor(n * 0.9);
@@ -414,6 +417,8 @@ export function applyJackDouble(stages: StageBudget[]): StageBudget[] {
       hp = Math.floor(hp * 0.965);
       damage = Math.floor(damage * 0.965);
     }
+    hp = Math.floor(hp * GLOBAL_BUDGET_SCALE);
+    damage = Math.floor(damage * GLOBAL_BUDGET_SCALE);
     return { ...s, hp, damage };
   });
 }

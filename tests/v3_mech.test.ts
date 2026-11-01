@@ -117,12 +117,13 @@ describe('后期调参', () => {
     const cut = (n: number) => Math.floor(n * 2 * 0.7);
     const ease = (n: number) => Math.floor(n * 0.9);
     const wall = (level: number, n: number) => Math.floor(n * wallEase(level, true));
-    expect(V3_STAGES[0].hp).toBe(cut(pressed[0].hp));
-    expect(V3_STAGES[0].damage).toBe(pressed[0].damage);
+    const scale = (n: number) => Math.floor(n * 0.8);
+    expect(V3_STAGES[0].hp).toBe(scale(cut(pressed[0].hp)));
+    expect(V3_STAGES[0].damage).toBe(scale(pressed[0].damage));
     expect(V3_STAGES[0].hp).toBeGreaterThan(V3_STAGES_BASE[0].hp);
     expect(STORY_BOSS_BUDGET[20].hp).toBe(1100);
-    expect(V3_STAGES[19].hp).toBe(wall(20, ease(cut(pressed[19].hp))));
-    expect(V3_STAGES[19].damage).toBe(wall(20, ease(cut(pressed[19].damage))));
+    expect(V3_STAGES[19].hp).toBe(scale(wall(20, ease(cut(pressed[19].hp)))));
+    expect(V3_STAGES[19].damage).toBe(scale(wall(20, ease(cut(pressed[19].damage)))));
     expect(V3_STAGES[19].hp).not.toBe(1100);
     expect(HARD_BANDS.length).toBe(5);
     expect(hardParams(50).hp).toBeGreaterThan(hardParams(1).hp);
