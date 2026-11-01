@@ -45,12 +45,12 @@ describe('罗纹口袋哥布林', () => {
     expect(late && late.level >= 41 && late.level <= 49 && !isBossLevel(late.level)).toBe(true);
   });
 
-  it('三段血量是固定的 6000 / 12000 / 20000，攻击是 0，没有五行括号', () => {
+  it('三段血量是固定的 3800 / 7000 / 12000，攻击是 0，没有五行括号', () => {
     expect(GOBLIN_SECONDS).toBe(40);
-    expect(GOBLIN_HP).toEqual({ '10-20': 6000, '20-30': 12000, '40-50': 20000 });
-    expect(goblinHp('10-20')).toBe(6000);
-    expect(goblinHp('20-30')).toBe(12000);
-    expect(goblinHp('40-50')).toBe(20000);
+    expect(GOBLIN_HP).toEqual({ '10-20': 3800, '20-30': 7000, '40-50': 12000 });
+    expect(goblinHp('10-20')).toBe(3800);
+    expect(goblinHp('20-30')).toBe(7000);
+    expect(goblinHp('40-50')).toBe(12000);
     const lv = goblinLevel(16);
     expect(lv.title).toBe(GOBLIN_NAME);
     expect(lv.boss).toBe(false);
@@ -59,18 +59,18 @@ describe('罗纹口袋哥布林', () => {
     expect(lv.title.includes('（')).toBe(false);
   });
 
-  it('早段参考武器 40 秒打不完 6000 血，然后逃走，期间怪物不出手', () => {
+  it('早段参考武器 40 秒打不完 3800 血，然后逃走，期间怪物不出手', () => {
     const lv = goblinLevel(16);
     const c = createCombat(pack(['dagger', 'greatsword', 'crossbow', 'warhammer'], 2).map((it, i) => (
       i === 3 ? { ...it, level: 1 as const } : it
     )), 80, 80, lv, { encounterKind: 'lootGoblin' });
-    expect(c.mMaxHp).toBe(6000);
+    expect(c.mMaxHp).toBe(3800);
     const attacks = [];
     while (!c.over) attacks.push(...stepCombat(c, 200));
     expect(c.won).toBe(false);
     expect(c.escaped).toBe(true);
     expect(c.t).toBe(GOBLIN_SECONDS * 1000);
-    expect(c.mHp).toBeGreaterThan(4000);
+    expect(c.mHp).toBeGreaterThan(1500);
     expect(attacks.some(e => e.type === 'monsterAttack')).toBe(false);
     expect(c.hp).toBe(80);
   });

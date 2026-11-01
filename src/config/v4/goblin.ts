@@ -4,9 +4,9 @@ import type { Level } from '../../models/types';
 export const GOBLIN_SECONDS = 40;
 /** 三段固定生命。不按参考火力或关卡预算再乘。 */
 export const GOBLIN_HP = {
-  '10-20': 6000,
-  '20-30': 12000,
-  '40-50': 20000,
+  '10-20': 3800,
+  '20-30': 7000,
+  '40-50': 12000,
 } as const;
 export const GOBLIN_NAME = '罗纹口袋哥布林';
 export const GOBLIN_TAUNT = '哈哈哈，给你机会你中用啊，傻瓜。';
